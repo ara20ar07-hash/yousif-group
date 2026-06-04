@@ -1,0 +1,8 @@
+{
+  "name": "Yousif Group",
+  "description": "Specialists in heating, cooling, gas networks, solar systems, and fire suppression in Sulaymaniyah.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

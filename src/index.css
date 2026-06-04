@@ -1,0 +1,44 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400;1,500&family=DM+Sans:wght@300;400;500;600&family=Noto+Sans+Arabic:wght@400;600&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "DM Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Playfair Display", ui-serif, Georgia, serif;
+  --font-arabic: "Noto Sans Arabic", ui-sans-serif, system-ui, sans-serif;
+
+  --color-navy: #000000;
+  --color-navy-mid: #111111;
+  --color-navy-light: #222222;
+  --color-amber: #FFD600;
+  --color-amber-light: #FFE34D;
+  --color-amber-dim: #D1A500;
+  --color-text-main: #FFFFFF;
+  --color-muted: color-mix(in srgb, #FFFFFF 60%, transparent);
+  --color-border-main: color-mix(in srgb, #FFFFFF 15%, transparent);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: var(--color-navy);
+  color: var(--color-text-main);
+  font-family: var(--font-sans);
+  overflow-x: hidden;
+  line-height: 1.65;
+}
+
+.hero-grid-overlay {
+  background-image:
+    linear-gradient(color-mix(in srgb, var(--color-text-main) 4%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--color-text-main) 4%, transparent) 1px, transparent 1px);
+  background-size: 60px 60px;
+}
+
+.designer-workspace-grid {
+  background-image:
+    linear-gradient(color-mix(in srgb, var(--color-amber) 4%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--color-amber) 4%, transparent) 1px, transparent 1px);
+  background-size: 30px 30px;
+}
