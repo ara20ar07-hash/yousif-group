@@ -1,20 +1,23 @@
 import { useState, useRef, MouseEvent, ChangeEvent } from 'react';
 import { MousePointer2, Flame, Wrench, CircleDot, RefreshCw, Minus, Upload, X, ClipboardList } from 'lucide-react';
+import { useLanguage } from './LanguageContext';
 
 type Tool = 'select' | 'boiler' | 'radiator' | 'manifold' | 'valve' | 'pump' | 'pipe';
 
 type ComponentData = { id: string; type: Exclude<Tool, 'select' | 'pipe'>; x: number; y: number };
 type PipeData = { id: string; x1: number; y1: number; x2: number; y2: number };
 
-const componentSpecs: Record<Exclude<Tool, 'select' | 'pipe'>, { name: string; icon: React.ReactNode; borderColor: string }> = {
-  boiler: { name: 'Boiler / Furnace', icon: <Flame className="w-5 h-5 text-red-500" />, borderColor: '#ef4444' },
-  radiator: { name: 'Radiator Panel', icon: <div className="w-5 h-5 bg-blue-500 rounded-sm border-[1.5px] border-blue-600" />, borderColor: '#3b82f6' },
-  manifold: { name: 'Pipe Manifold', icon: <Wrench className="w-5 h-5 text-emerald-500" />, borderColor: '#10b981' },
-  valve: { name: 'Safety Valve', icon: <CircleDot className="w-5 h-5 text-amber-500" />, borderColor: '#f59e0b' },
-  pump: { name: 'Circulation Pump', icon: <RefreshCw className="w-5 h-5 text-purple-500" />, borderColor: '#8b5cf6' }
+const componentSpecs: Record<Exclude<Tool, 'select' | 'pipe'>, { name: { en: string; ku: string }; icon: React.ReactNode; borderColor: string }> = {
+  boiler: { name: { en: 'Boiler / Furnace', ku: 'بۆیلەر / گەرمکەرەوە' }, icon: <Flame className="w-5 h-5 text-red-500" />, borderColor: '#ef4444' },
+  radiator: { name: { en: 'Radiator Panel', ku: 'شۆفاژ' }, icon: <div className="w-5 h-5 bg-blue-500 rounded-sm border-[1.5px] border-blue-600" />, borderColor: '#3b82f6' },
+  manifold: { name: { en: 'Pipe Manifold', ku: 'مانیفۆڵد' }, icon: <Wrench className="w-5 h-5 text-emerald-500" />, borderColor: '#10b981' },
+  valve: { name: { en: 'Safety Valve', ku: 'قفڵی سەلامەتی' }, icon: <CircleDot className="w-5 h-5 text-amber-500" />, borderColor: '#f59e0b' },
+  pump: { name: { en: 'Circulation Pump', ku: 'پەمپ' }, icon: <RefreshCw className="w-5 h-5 text-purple-500" />, borderColor: '#8b5cf6' }
 };
 
 export default function DesignerTool() {
+  const { lang } = useLanguage();
+
   const [tool, setTool] = useState<Tool>('select');
   const [blueprint, setBlueprint] = useState<string | null>(null);
   const [components, setComponents] = useState<ComponentData[]>([]);
@@ -37,7 +40,7 @@ export default function DesignerTool() {
   };
 
   const handleClear = () => {
-    if (confirm('Clear entire layout and reset design markers?')) {
+    if (confirm(lang === 'ku' ? 'دڵنیای لە سڕینەوەی تەواوی نەخشەکە و ئامێرەکان؟' : 'Clear entire layout and reset design markers?')) {
       setComponents([]);
       setPipes([]);
       setIsDrawing(false);
@@ -114,12 +117,20 @@ export default function DesignerTool() {
 
   return (
     <section id="designer" className="px-6 md:px-12 py-24 bg-navy border-t border-border-main">
-      <span className="block text-[11px] tracking-[0.4em] uppercase text-amber font-semibold mb-4">Interactive Workspace</span>
+      <span className="block text-[11px] tracking-[0.4em] uppercase text-amber font-semibold mb-4">
+        {lang === 'ku' ? 'وێستگەی کاری کارلێککار' : 'Interactive Workspace'}
+      </span>
       <h2 className="font-display text-[60px] md:text-[80px] leading-[0.85] tracking-tight text-text-main mb-6">
-        Heating Layout <br /><span className="italic text-amber">Planner</span>
+        {lang === 'ku' ? (
+          <>نەخشەسازی دانانی <br /><span className="italic text-amber">سیستەم</span></>
+        ) : (
+          <>Heating Layout <br /><span className="italic text-amber">Planner</span></>
+        )}
       </h2>
       <p className="text-lg leading-relaxed font-light text-white/70 max-w-[600px] mb-12">
-        Upload your structural blueprint to sketch custom pipelines and position heating arrays, boilers, and manifold nodes directly onto your floor plan layouts.
+        {lang === 'ku' 
+          ? 'نەخشەی بیناکەت بەرزبکەرەوە بۆ کێشانی بۆرییەکان و دانانی بۆیلەر و ئامێرەکانی تری سیستەمەکە.' 
+          : 'Upload your structural blueprint to sketch custom pipelines and position heating arrays, boilers, and manifold nodes directly onto your floor plan layouts.'}
       </p>
 
       <div className="grid grid-cols-1 lg:grid-cols-[300px_1fr] bg-navy-mid border border-white/5 rounded-[40px] overflow-hidden min-h-[650px]">
@@ -128,7 +139,7 @@ export default function DesignerTool() {
         <div className="bg-navy-mid border-b lg:border-b-0 lg:border-r border-white/5 p-8 flex flex-col gap-8">
           <div className="flex flex-col gap-4">
             <label className="bg-white/5 border border-white/10 text-text-main font-semibold text-[11px] py-4 px-5 rounded-full text-center uppercase tracking-[0.2em] cursor-pointer hover:bg-white/10 transition-colors">
-              <Upload className="w-4 h-4 inline-block mr-2 -mt-0.5" /> Blueprint
+              <Upload className="w-4 h-4 inline-block mr-2 -mt-0.5" /> {lang === 'ku' ? 'نەخشە' : 'Blueprint'}
               <input type="file" accept="image/*" className="hidden" onChange={handleFileUpload} />
             </label>
             {blueprint && (
@@ -136,20 +147,22 @@ export default function DesignerTool() {
                 onClick={handleClear}
                 className="bg-red-500/10 border border-red-500/30 text-red-400 font-semibold text-[11px] py-3.5 px-5 rounded-full uppercase tracking-[0.2em] hover:bg-red-500/20 transition-colors w-full flex items-center justify-center gap-2"
               >
-                <X className="w-4 h-4" /> Reset
+                <X className="w-4 h-4" /> {lang === 'ku' ? 'پاککردنەوە' : 'Reset'}
               </button>
             )}
           </div>
 
           <div className="flex flex-col gap-2">
-            <div className="text-[10px] tracking-widest uppercase text-muted font-semibold mb-3">Toolsets</div>
+            <div className="text-[10px] tracking-widest uppercase text-muted font-semibold mb-3">
+              {lang === 'ku' ? 'ئامرازەکان' : 'Toolsets'}
+            </div>
             
             <button 
               onClick={() => { setTool('select'); setIsDrawing(false); }}
               className={`flex items-center gap-4 text-sm font-light px-5 py-3.5 rounded-2xl transition-all border w-full text-left
                 ${tool === 'select' ? 'bg-navy-light border-amber text-text-main shadow-[inset_4px_0_0_#FFD600]' : 'bg-transparent border-transparent text-muted hover:bg-white/5'}`}
             >
-              <MousePointer2 className="w-[18px] h-[18px]" /> Reposition
+              <MousePointer2 className="w-[18px] h-[18px]" /> {lang === 'ku' ? 'گواستنەوە' : 'Reposition'}
             </button>
             
             {(Object.keys(componentSpecs) as Exclude<Tool, 'select' | 'pipe'>[]).map(compType => (
@@ -159,7 +172,7 @@ export default function DesignerTool() {
                 className={`flex items-center gap-4 text-sm font-light px-5 py-3.5 rounded-2xl transition-all border w-full text-left
                   ${tool === compType ? 'bg-navy-light border-amber text-text-main shadow-[inset_4px_0_0_#FFD600]' : 'bg-transparent border-transparent text-muted hover:bg-white/5'}`}
               >
-                {componentSpecs[compType].icon} {componentSpecs[compType].name}
+                {componentSpecs[compType].icon} {lang === 'ku' ? componentSpecs[compType].name.ku : componentSpecs[compType].name.en}
               </button>
             ))}
 
@@ -168,7 +181,7 @@ export default function DesignerTool() {
               className={`flex items-center gap-4 text-sm font-light px-5 py-3.5 rounded-2xl transition-all border w-full text-left
                 ${tool === 'pipe' ? 'bg-navy-light border-amber text-text-main shadow-[inset_4px_0_0_#FFD600]' : 'bg-transparent border-transparent text-muted hover:bg-white/5'}`}
             >
-              <Minus strokeWidth={4} className="w-[18px] h-[18px] text-amber" /> Connect Pipe
+              <Minus strokeWidth={4} className="w-[18px] h-[18px] text-amber" /> {lang === 'ku' ? 'بەستنەوەی بۆری' : 'Connect Pipe'}
             </button>
           </div>
 
@@ -228,7 +241,7 @@ export default function DesignerTool() {
                        {spec.icon}
                        
                        <span className="absolute -bottom-7 left-1/2 -translate-x-1/2 bg-navy/95 text-white text-[10px] px-2 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity border-[0.5px] border-border-main whitespace-nowrap pointer-events-none">
-                         {spec.name}
+                         {lang === 'ku' ? spec.name.ku : spec.name.en}
                        </span>
 
                        {tool === 'select' && (
@@ -248,7 +261,9 @@ export default function DesignerTool() {
             <div className="w-full max-w-[750px] h-[480px] bg-navy-light/40 flex items-center justify-center border border-dashed border-amber/30 rounded">
                <div className="text-center text-muted p-8 max-w-[400px]">
                   <ClipboardList className="w-14 h-14 mx-auto mb-4 text-amber/60" />
-                  <p className="text-[0.95rem]">Please drop or upload a blueprint floor plan image file in the sidebar to begin mapping infrastructure pipelines.</p>
+                  <p className="text-[0.95rem]">
+                    {lang === 'ku' ? 'تکایە نەخشەیەک بەرزبکەرەوە بۆ دەستپێکردنی کارکردن.' : 'Please drop or upload a blueprint floor plan image file in the sidebar to begin mapping infrastructure pipelines.'}
+                  </p>
                </div>
             </div>
           )}

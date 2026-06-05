@@ -1,48 +1,51 @@
 import { Snowflake, Flame, Heater, Zap, Leaf, FireExtinguisher } from 'lucide-react';
+import { useLanguage } from './LanguageContext';
 
 export default function Services() {
+  const { lang } = useLanguage();
+
   const services = [
     {
       num: '01',
       icon: <Snowflake className="w-8 h-8 mb-4 text-blue-400" />,
       titleAr: 'سیستەمی ساردی',
-      title: 'Cooling Systems',
-      desc: 'Supply and installation of central air conditioning, split units, and ducted cooling systems optimised for the harsh summer heat.',
+      title: lang === 'ku' ? 'سیستەمی ساردی' : 'Cooling Systems',
+      desc: lang === 'ku' ? 'دابینکردن و دانانی سپلیت و سیستەمی ساردی مەرکەزی بۆ بەرگەگرتنی گەرمای هاوین.' : 'Supply and installation of central air conditioning, split units, and ducted cooling systems optimised for the harsh summer heat.',
     },
     {
       num: '02',
       icon: <Flame className="w-8 h-8 mb-4 text-orange-500" />,
       titleAr: 'سیستەمی گەرمی',
-      title: 'Heating Systems',
-      desc: 'Expert design and fitting of underfloor, radiator, and central heating solutions keeping homes warm through cold winters.',
+      title: lang === 'ku' ? 'سیستەمی گەرمی' : 'Heating Systems',
+      desc: lang === 'ku' ? 'نەخشەسازی و دانانی سیستەمی گەرمکەرەوە بۆ هێشتنەوەی ماڵەکان بە گەرمی لە زستاندا.' : 'Expert design and fitting of underfloor, radiator, and central heating solutions keeping homes warm through cold winters.',
     },
     {
       num: '03',
       icon: <Heater className="w-8 h-8 mb-4 text-neutral-300" />,
       titleAr: 'شۆفاژ',
-      title: 'Radiator Heating',
-      desc: 'Supply and installation of modern radiator systems, including full boiler setup and hydronic heating networks.',
+      title: lang === 'ku' ? 'شۆفاژ' : 'Radiator Heating',
+      desc: lang === 'ku' ? 'دابینکردن و دانانی سیستەمی شۆفاژ و بۆیلەر.' : 'Supply and installation of modern radiator systems, including full boiler setup and hydronic heating networks.',
     },
     {
       num: '04',
       icon: <Zap className="w-8 h-8 mb-4 text-yellow-400" />,
       titleAr: 'تۆڕی غاز',
-      title: 'Gas Networks',
-      desc: 'Full-scale gas pipeline engineering, distribution networks, and connection services for residential and commercial properties.',
+      title: lang === 'ku' ? 'تۆڕی غاز' : 'Gas Networks',
+      desc: lang === 'ku' ? 'نەخشەسازی و ڕاکێشانی بۆری غاز بۆ ماڵ و شوێنە بازرگانییەکان.' : 'Full-scale gas pipeline engineering, distribution networks, and connection services for residential and commercial properties.',
     },
     {
       num: '05',
       icon: <Leaf className="w-8 h-8 mb-4 text-emerald-400" />,
       titleAr: 'سۆلار',
-      title: 'Solar Systems',
-      desc: 'Clean-energy solar panel installation for homes and businesses — reducing electricity bills with sustainable, renewable power.',
+      title: lang === 'ku' ? 'سۆلار' : 'Solar Systems',
+      desc: lang === 'ku' ? 'دانانی پانێڵی وزەی خۆر بۆ کەمکردنەوەی تێچووی کارەبا.' : 'Clean-energy solar panel installation for homes and businesses — reducing electricity bills with sustainable, renewable power.',
     },
     {
       num: '06',
       icon: <FireExtinguisher className="w-8 h-8 mb-4 text-red-500" />,
       titleAr: 'ئاگرکوژێنەوە',
-      title: 'Fire Suppression',
-      desc: 'Design and installation of fire detection and suppression systems to keep your property and people protected.',
+      title: lang === 'ku' ? 'ئاگرکوژێنەوە' : 'Fire Suppression',
+      desc: lang === 'ku' ? 'نەخشەسازی و دانانی سیستەمی ئاگرکوژێنەوە بۆ پاراستنی سەلامەتی.' : 'Design and installation of fire detection and suppression systems to keep your property and people protected.',
     },
   ];
 
@@ -51,14 +54,20 @@ export default function Services() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-end mb-14">
         <div>
           <span className="block text-[11px] tracking-[0.4em] uppercase text-amber font-semibold mb-4">
-            Feature Presentation
+            {lang === 'ku' ? 'خستنەڕووی تایبەتمەندی' : 'Feature Presentation'}
           </span>
           <h2 className="font-display text-[60px] md:text-[80px] leading-[0.85] tracking-tight text-text-main">
-            System <br /> <span className="italic text-amber">Solutions</span>
+            {lang === 'ku' ? (
+              <>چارەسەرەکانی <br /> <span className="italic text-amber">سیستەم</span></>
+            ) : (
+              <>System <br /> <span className="italic text-amber">Solutions</span></>
+            )}
           </h2>
         </div>
         <p className="text-lg leading-relaxed font-light text-white/70 max-w-[480px]">
-          From design to installation and maintenance, we handle every stage — delivering reliable systems built for Iraq's climate and construction standards.
+          {lang === 'ku' 
+            ? 'لە نەخشەسازییەوە تا دانان و چاککردنەوە، هەموو قۆناغەکان ئەنجام دەدەین — دابینکردنی سیستەمێکی متمانەپێکراو کە گونجاوە لەگەڵ کەشوهەوا و پێوەرەکانی بیناسازی لە عێراق.' 
+            : "From design to installation and maintenance, we handle every stage — delivering reliable systems built for Iraq's climate and construction standards."}
         </p>
       </div>
 
@@ -75,9 +84,11 @@ export default function Services() {
             {svc.icon}
             
             <div className="mt-8">
-              <span className="block font-arabic text-[10px] uppercase tracking-widest text-white/40 mb-1.5" dir="rtl">
-                {svc.titleAr}
-              </span>
+              {lang === 'en' && (
+                <span className="block font-arabic text-[10px] uppercase tracking-widest text-white/40 mb-1.5" dir="rtl">
+                  {svc.titleAr}
+                </span>
+              )}
               <h3 className="font-serif text-2xl tracking-tight text-text-main mb-2.5">
                 {svc.title}
               </h3>

@@ -1,9 +1,13 @@
+import { useLanguage } from './LanguageContext';
+
 export default function Stats() {
+  const { lang } = useLanguage();
+
   const stats = [
-    { num: '5+', label: 'Years in Business' },
-    { num: '6', label: 'Core Services' },
-    { num: '1.8K+', label: 'Satisfied Clients' },
-    { num: '24/7', label: 'Support Available' },
+    { num: '5+', label: lang === 'ku' ? 'ساڵ لە کارکردن' : 'Years in Business' },
+    { num: '6', label: lang === 'ku' ? 'خزمەتگوزارییە سەرەکییەکان' : 'Core Services' },
+    { num: '1.8K+', label: lang === 'ku' ? 'کڕیاری ڕازی' : 'Satisfied Clients' },
+    { num: '24/7', label: lang === 'ku' ? 'پاڵپشتی بەردەست' : 'Support Available' },
   ];
 
   return (
