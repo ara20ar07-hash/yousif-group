@@ -37,7 +37,6 @@ export default function Hero() {
           transition={{ duration: 0.6, delay: 0.1 }}
           className="font-display text-[80px] sm:text-[100px] leading-[0.85] tracking-tight text-text-main mb-6"
         >
-          The <br />
           <span className="italic text-amber">Yousif</span> <br />
           Group
         </motion.h1>
