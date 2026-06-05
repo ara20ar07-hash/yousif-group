@@ -1,4 +1,4 @@
-import { useState, useRef, MouseEvent, ChangeEvent } from 'react';
+import React, { useState, useRef, MouseEvent, ChangeEvent } from 'react';
 import { MousePointer2, Flame, Wrench, CircleDot, RefreshCw, Minus, Upload, X, ClipboardList } from 'lucide-react';
 import { useLanguage } from './LanguageContext';
 

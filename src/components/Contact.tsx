@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Phone, Mail, MapPin, Instagram } from 'lucide-react';
 import { useLanguage } from './LanguageContext';
 
@@ -8,7 +8,8 @@ export default function Contact() {
   const sentBtnText = lang === 'ku' ? '✓ نامە نێردرا!' : '✓ Message Sent!';
 
   const [btnText, setBtnText] = useState(defaultBtnText);
-  const [btnStyle, setBtnStyle] = useState({});
+  const [btnStyle, setBtnStyle] = useState<React.CSSProperties>({});
+  const [formData, setFormData] = useState({ name: '', phone: '', service: '', message: '' });
 
   useEffect(() => {
     if (btnText !== sentBtnText && btnText !== defaultBtnText) {
@@ -17,11 +18,28 @@ export default function Contact() {
   }, [lang, btnText, defaultBtnText, sentBtnText]);
 
   const handleSubmit = () => {
+    if (!formData.name) {
+      alert(lang === 'ku' ? 'تکایە ناوەکەت بنووسە' : 'Please enter your name');
+      return;
+    }
+
+    const targetPhoneNumber = "9647709700306";
+    const nl = "%0A";
+    let whatsappMessage = `*New Inquiry from Yousif Group Website*${nl}${nl}`;
+    whatsappMessage += `*Name:* ${formData.name}${nl}`;
+    if (formData.phone) whatsappMessage += `*Phone:* ${formData.phone}${nl}`;
+    if (formData.service) whatsappMessage += `*Service:* ${formData.service}${nl}`;
+    if (formData.message) whatsappMessage += `*Message:* ${formData.message}${nl}`;
+    
+    // Open whatsapp URL
+    window.open(`https://wa.me/${targetPhoneNumber}?text=${whatsappMessage}`, '_blank');
+    
     setBtnText(sentBtnText);
     setBtnStyle({ background: '#3B6D11', color: '#EAF3DE' });
     setTimeout(() => {
       setBtnText(defaultBtnText);
       setBtnStyle({});
+      setFormData({ name: '', phone: '', service: '', message: '' });
     }, 3000);
   };
 
@@ -85,21 +103,37 @@ export default function Contact() {
             <label className="block text-[10px] tracking-widest uppercase text-muted mb-2">
               {lang === 'ku' ? 'ناوی تەواو' : 'Full Name'}
             </label>
-            <input type="text" placeholder={lang === 'ku' ? 'ناوەکەت' : 'Your name'} className="w-full bg-navy border border-white/10 text-text-main px-4 py-3.5 text-sm font-light rounded-2xl outline-none focus:border-amber transition-colors placeholder:text-muted/60" />
+            <input 
+              type="text" 
+              placeholder={lang === 'ku' ? 'ناوەکەت' : 'Your name'} 
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              className="w-full bg-navy border border-white/10 text-text-main px-4 py-3.5 text-sm font-light rounded-2xl outline-none focus:border-amber transition-colors placeholder:text-muted/60" 
+            />
           </div>
 
           <div className="mb-6">
             <label className="block text-[10px] tracking-widest uppercase text-muted mb-2">
               {lang === 'ku' ? 'ژمارەی تەلەفۆن' : 'Phone Number'}
             </label>
-            <input type="tel" placeholder="+964 ..." className="w-full bg-navy border border-white/10 text-text-main px-4 py-3.5 text-sm font-light rounded-2xl outline-none focus:border-amber transition-colors placeholder:text-muted/60" />
+            <input 
+              type="tel" 
+              placeholder="+964 ..." 
+              value={formData.phone}
+              onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+              className="w-full bg-navy border border-white/10 text-text-main px-4 py-3.5 text-sm font-light rounded-2xl outline-none focus:border-amber transition-colors placeholder:text-muted/60" 
+            />
           </div>
 
           <div className="mb-6">
             <label className="block text-[10px] tracking-widest uppercase text-muted mb-2">
               {lang === 'ku' ? 'جۆری خزمەتگوزاری' : 'Service Needed'}
             </label>
-            <select className="w-full bg-navy border border-white/10 text-text-main px-4 py-3.5 text-sm font-light rounded-2xl outline-none focus:border-amber transition-colors">
+            <select 
+              value={formData.service}
+              onChange={(e) => setFormData({ ...formData, service: e.target.value })}
+              className="w-full bg-navy border border-white/10 text-text-main px-4 py-3.5 text-sm font-light rounded-2xl outline-none focus:border-amber transition-colors"
+            >
               {lang === 'ku' ? (
                 <>
                   <option value="">خزمەتگوزارییەک هەڵبژێرە...</option>
@@ -130,7 +164,12 @@ export default function Contact() {
             <label className="block text-[10px] tracking-widest uppercase text-muted mb-2">
               {lang === 'ku' ? 'نامە' : 'Message'}
             </label>
-            <textarea placeholder={lang === 'ku' ? 'زانیاری لەسەر پڕۆژەکەت بنووسە...' : 'Tell us about your project...'} className="w-full min-h-[120px] resize-y bg-navy border border-white/10 text-text-main px-4 py-3.5 text-sm font-light rounded-2xl outline-none focus:border-amber transition-colors placeholder:text-muted/60"></textarea>
+            <textarea 
+              placeholder={lang === 'ku' ? 'زانیاری لەسەر پڕۆژەکەت بنووسە...' : 'Tell us about your project...'} 
+              value={formData.message}
+              onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+              className="w-full min-h-[120px] resize-y bg-navy border border-white/10 text-text-main px-4 py-3.5 text-sm font-light rounded-2xl outline-none focus:border-amber transition-colors placeholder:text-muted/60"
+            ></textarea>
           </div>
 
           <button 
