@@ -1,0 +1,54 @@
+{
+  "entities": {
+    "ServiceDetail": {
+      "title": "ServiceDetail",
+      "description": "Customizable information about a technical engineering service",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique identifier for the service (e.g. 01, 02)" },
+        "titleEn": { "type": "string", "description": "English service title" },
+        "titleKu": { "type": "string", "description": "Kurdish service title" },
+        "titleAr": { "type": "string", "description": "Arabic service title" },
+        "cardDescEn": { "type": "string", "description": "English short description" },
+        "cardDescKu": { "type": "string", "description": "Kurdish short description" },
+        "subEn": { "type": "string", "description": "English subtitle" },
+        "subKu": { "type": "string", "description": "Kurdish subtitle" },
+        "descEn": { "type": "string", "description": "English thorough description" },
+        "descKu": { "type": "string", "description": "Kurdish thorough description" },
+        "steps": { 
+          "type": "array", 
+          "description": "Standard engineering process steps"
+        }
+      },
+      "required": ["id", "titleEn", "titleKu"]
+    },
+    "ProjectFolder": {
+      "title": "ProjectFolder",
+      "description": "A structural folder containing several installation images for a service solution",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique identifier of the project folder" },
+        "serviceId": { "type": "string", "description": "The associated service ID (e.g. 01, 02)" },
+        "titleEn": { "type": "string" },
+        "titleKu": { "type": "string" },
+        "descEn": { "type": "string" },
+        "descKu": { "type": "string" },
+        "cityEn": { "type": "string" },
+        "cityKu": { "type": "string" },
+        "date": { "type": "string" },
+        "photos": { "type": "array" }
+      },
+      "required": ["id", "serviceId", "titleEn", "titleKu", "photos"]
+    }
+  },
+  "firestore": {
+    "/services/{serviceId}": {
+      "schema": "ServiceDetail",
+      "description": "Services database storing step-by-step engineering descriptions"
+    },
+    "/projects/{projectId}": {
+      "schema": "ProjectFolder",
+      "description": "Real-time installations portfolio folders by service system"
+    }
+  }
+}

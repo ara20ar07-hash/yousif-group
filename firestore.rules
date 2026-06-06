@@ -1,0 +1,51 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Default global deny catch-all safety net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Reusable, robust security helper primitives
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-\\:\\.]+$');
+    }
+
+    function isValidService(data) {
+      return data.id is string && data.id.size() <= 32 
+        && data.titleEn is string && data.titleEn.size() <= 200
+        && data.titleKu is string && data.titleKu.size() <= 200;
+    }
+
+    function isValidProject(data) {
+      return data.id is string && data.id.size() <= 128
+        && data.serviceId is string && data.serviceId.size() <= 32
+        && data.titleEn is string && data.titleEn.size() <= 200
+        && data.titleKu is string && data.titleKu.size() <= 200
+        && data.photos is list && data.photos.size() <= 1000;
+    }
+
+    match /services/{serviceId} {
+      allow read: if true;
+      allow create, update: if isSignedIn() && isValidId(serviceId) && isValidService(request.resource.data);
+      allow delete: if isSignedIn() && isValidId(serviceId);
+    }
+
+    match /projects/{projectId} {
+      allow read: if true;
+      allow create, update: if isSignedIn() && isValidId(projectId) && isValidProject(request.resource.data);
+      allow delete: if isSignedIn() && isValidId(projectId);
+    }
+
+    match /legacy_photos/{photoId} {
+      allow read: if true;
+      allow create, update: if isSignedIn() && isValidId(photoId);
+      allow delete: if isSignedIn() && isValidId(photoId);
+    }
+  }
+}

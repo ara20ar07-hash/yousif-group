@@ -31,6 +31,7 @@ export default function ServiceDetailModal({ isOpen, onClose, initialServiceId }
   const { lang } = useLanguage();
   const { 
     isOwnerLoggedIn, 
+    authError,
     customProjects,
     addProjectFolder,
     updateProjectFolder,
@@ -418,6 +419,27 @@ export default function ServiceDetailModal({ isOpen, onClose, initialServiceId }
                       </button>
                     )}
                   </div>
+
+                  {isOwnerLoggedIn && authError && (authError.includes('admin-restricted-operation') || authError.includes('restricted-operation')) && (
+                    <div className="mb-6 p-5 bg-amber/5 border border-amber/20 rounded-[24px] text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4 font-sans text-left">
+                      <div className="text-white/80 leading-relaxed">
+                        <strong className="text-amber font-semibold uppercase tracking-wide block mb-1">
+                          ⚠️ {lang === 'ku' ? 'پاکسازی فایەربەیس پێویستە' : 'Firebase Setup Action Required'}
+                        </strong>
+                        {lang === 'ku'
+                          ? 'بۆ پاشەکەوتکردنی دوورمەودای پڕۆژە خزمەتگوزارییەکان، پێویستە سیستەمی "Anonymous Auth" چالاک بکەیت لە فایەربەیس.'
+                          : 'To persist gallery additions and text modifications to the cloud database, please authorize Anonymous sign-in in your Firebase project Authentication tab.'}
+                      </div>
+                      <a 
+                        href="https://console.firebase.google.com/project/gen-lang-client-0516062385/authentication/providers"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="bg-amber hover:bg-amber-bright text-navy font-bold text-[10px] uppercase tracking-wider py-2.5 px-4 rounded-full transition-colors whitespace-nowrap self-start sm:self-center"
+                      >
+                        {lang === 'ku' ? 'کۆنسۆڵی فایەربەیس' : 'Enable Anonymous Sign-In'}
+                      </a>
+                    </div>
+                  )}
 
                   {isOwnerLoggedIn && isEditingCore ? (
                     <div className="bg-white/5 p-6 md:p-8 rounded-[32px] border border-white/10 flex flex-col gap-4 mb-6">

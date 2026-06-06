@@ -11,7 +11,7 @@ interface OwnerLoginModalProps {
 
 export default function OwnerLoginModal({ isOpen, onClose }: OwnerLoginModalProps) {
   const { lang } = useLanguage();
-  const { isOwnerLoggedIn, login, logout } = useOwner();
+  const { isOwnerLoggedIn, login, logout, authError } = useOwner();
   const [password, setPassword] = useState('');
   const [error, setError] = useState(false);
 
@@ -71,6 +71,50 @@ export default function OwnerLoginModal({ isOpen, onClose }: OwnerLoginModalProp
                     ? 'ئێستا دەتوانیت وێنەی تازە بۆ هەر کام لە سیستەمەکان زیاد بکەیت یان بیسڕیتەوە لە پڕۆژەکانی پێشوودا.' 
                     : 'You can now add new project photos directly onto each system SOLUTIONS detail page.'}
                 </p>
+
+                {authError && (authError.includes('admin-restricted-operation') || authError.includes('restricted-operation')) && (
+                  <div className="mb-8 p-5 bg-amber/5 border border-amber/20 rounded-2xl text-left text-xs leading-relaxed font-sans">
+                    <p className="font-semibold text-amber mb-1.5 uppercase tracking-wide flex items-center gap-1.5">
+                      <span>🛠️</span>
+                      <span>{lang === 'ku' ? 'پاکسازی فایەربەیس پێویستە' : 'Firebase Auth Setup Needed'}</span>
+                    </p>
+                    <p className="mb-2 text-white/80">
+                      {lang === 'ku' 
+                        ? 'بۆ ئەوەی بتوانیت گۆڕانکارییەکان بە شێوەی ڕاستەوخۆ پاشەکەوت بکەیت، پێویستە سیستەمی چوونەژوورەوەی نەناسراو (Anonymous Auth) چالاک بکەیت لە فایەربەیس:' 
+                        : 'To persist changes to the cloud database, please authorize Anonymous sign-in under Authentication in your Firebase project console:'}
+                    </p>
+                    <ol className="list-decimal pl-4 space-y-1 mb-3 text-white/60">
+                      {lang === 'ku' ? (
+                        <>
+                          <li>لینکەکەی خوارەوە بکەرەوە تا بچیتە کۆنسۆڵ.</li>
+                          <li>لە لای چەپ بڕۆ بەشی <strong>Authentication</strong> پاشان <strong>Sign-in method</strong>.</li>
+                          <li>کلیک لەسەر <strong>Anonymous</strong> بکە، گڵۆپەکەی پێبکە و <strong>Save</strong> دابگرە.</li>
+                        </>
+                      ) : (
+                        <>
+                          <li>Click the link below to open your Firebase credentials portal.</li>
+                          <li>Under <strong>Authentication</strong> &rarr; <strong>Sign-in method</strong>, choose <strong>Anonymous</strong>.</li>
+                          <li>Enable the toggle switch and click <strong>Save</strong>.</li>
+                        </>
+                      )}
+                    </ol>
+                    <a 
+                      href="https://console.firebase.google.com/project/gen-lang-client-0516062385/authentication/providers"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-block text-navy bg-amber hover:bg-amber-bright text-[10px] uppercase font-bold tracking-wider px-4 py-2 rounded-full transition-colors"
+                    >
+                      {lang === 'ku' ? 'کۆنسۆڵی فایەربەیس دابگرە ➔' : 'Activate in Firebase Console ➔'}
+                    </a>
+                  </div>
+                )}
+
+                {authError && !authError.includes('admin-restricted-operation') && !authError.includes('restricted-operation') && (
+                  <div className="mb-8 p-4 bg-red-500/10 border border-red-500/20 text-red-300 rounded-2xl text-left text-xs leading-relaxed font-sans">
+                    <strong className="text-red-400 block mb-1">🔑 Firebase Auth Error</strong>
+                    {authError}
+                  </div>
+                )}
 
                 <button
                   onClick={() => {

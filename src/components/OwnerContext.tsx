@@ -1,4 +1,15 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { 
+  collection, 
+  doc, 
+  setDoc, 
+  updateDoc, 
+  deleteDoc, 
+  onSnapshot, 
+  arrayUnion 
+} from 'firebase/firestore';
+import { signInAnonymously, signOut, onAuthStateChanged } from 'firebase/auth';
+import { db, auth, handleFirestoreError, OperationType } from './firebase';
 
 export interface ProjectPhoto {
   id: string;
@@ -38,7 +49,7 @@ export interface ServiceDetail {
   id: string;
   titleEn: string;
   titleKu: string;
-  titleAr?: string; // Standard Arabic/Kurdish summary title
+  titleAr?: string;
   cardDescEn: string;
   cardDescKu: string;
   subEn: string;
@@ -52,6 +63,7 @@ interface OwnerContextType {
   isOwnerLoggedIn: boolean;
   login: (password: string) => boolean;
   logout: () => void;
+  authError: string | null;
   customPhotos: Record<string, ProjectPhoto[]>;
   addProjectPhoto: (serviceId: string, photo: Omit<ProjectPhoto, 'id' | 'date'>) => void;
   deleteProjectPhoto: (serviceId: string, photoId: string) => void;
@@ -82,7 +94,7 @@ const initialServicesData: ServiceDetail[] = [
     cardDescKu: 'دابینکردن و دانانی سپلیت و سیستەمی ساردی مەرکەزی بۆ بەرگەگرتنی گەرمای هاوین.',
     subEn: 'Central VRF, Ducted Splits, & High-efficiency cooling grids.',
     subKu: 'سیستەمی فێنککەرەوەی ناوەندی، دەکتی سپلیت و یەکەکانی فێنککردنەوە.',
-    descEn: 'We deliver comprehensive thermal load engineering. Yousif Company installs state-of-the-art Variable Refrigerant Flow (VRF) and inverter systems customized specifically for the severe Iraqi summer temperatures exceed 50°C.',
+    descEn: 'We deliver comprehensive thermal load engineering. Yousif Company installs state-of-the-art Variable Refrigerant Flow (VRF) and inverter systems customized specifically for the Iraqi summer temperatures exceed 50°C.',
     descKu: 'ئێمە لێکۆڵینەوەی تێرماڵی چڕ ئەنجام دەدەین. یوسف کۆمپانی هەڵدەستێت بە بەستنی سیستمە سەرەکی و مۆدێرنەکانی مارکەی جیهانی و تەکنەلۆجیای (VRF) کە گونجاوە بۆ هاوینی گەرمی عێراق و کوردستان کە پلەی گەرمی دەگاتە زیاتر لە ٥٠ پلەی سەدی.',
     steps: [
       {
@@ -133,7 +145,7 @@ const initialServicesData: ServiceDetail[] = [
         titleEn: 'Balanced Manifold Calibrations',
         titleKu: 'ڕێکخستنی مانیفۆڵدی ڕێڕەو',
         descEn: 'Every heating loop is individually adjusted at the central manifold, allowing specific temperature zones per room.',
-        descKu: 'کۆنتڕۆڵ کردنی بڕی گەرمی سووڕاو لە مانیفۆڵدی ناوەندی، گەرەنتی کردنی کۆنتڕۆڵی پلەی گەرمی هەر ژوورێک بە جیا.'
+        descKu: 'کۆنتڕۆڵ کردنی بڕی گەرمی سووڕاو لە مانیفۆڵدی ناوەندی, گەرەنتی کردنی کۆنتڕۆڵی پلەی گەرمی هەر ژوورێک بە جیا.'
       }
     ]
   },
@@ -272,190 +284,116 @@ export function OwnerProvider({ children }: { children: ReactNode }) {
     return localStorage.getItem('yousif_company_owner_auth') === 'true';
   });
 
-  // Photo state starts off completely clean as requested:
-  // "remove the existing pics and make the owner add its own pictures"
-  const [customPhotos, setCustomPhotos] = useState<Record<string, ProjectPhoto[]>>(() => {
-    const saved = localStorage.getItem('yousif_company_custom_photos');
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch (e) {
-        console.error('Error parsing custom photos', e);
-      }
-    }
-    return {};
-  });
-
-  // Projects folder state (starts off clean or migrates old photos)
-  const [customProjects, setCustomProjects] = useState<Record<string, ProjectFolder[]>>(() => {
-    const saved = localStorage.getItem('yousif_company_custom_projects');
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch (e) {
-        console.error('Error parsing custom projects', e);
-      }
-    }
-
-    // Migration logic
-    const oldPhotosSaved = localStorage.getItem('yousif_company_custom_photos');
-    if (oldPhotosSaved) {
-      try {
-        const photosRecord = JSON.parse(oldPhotosSaved) as Record<string, ProjectPhoto[]>;
-        const migrated: Record<string, ProjectFolder[]> = {};
-        
-        Object.keys(photosRecord).forEach((serviceId) => {
-          const list = photosRecord[serviceId];
-          if (list && list.length > 0) {
-            const folder: ProjectFolder = {
-              id: `migrated-${serviceId}-${Date.now()}`,
-              titleEn: 'Direct Uploaded Works',
-              titleKu: 'پڕۆژە بارکراوەکان',
-              descEn: 'Collection of direct company installation images and portfolio works.',
-              descKu: 'کۆمەڵێک لە وێنەی پڕۆژە و کارە جۆراوجۆرە جێبەجێکراوەکانی کۆمپانیای یوسف.',
-              cityEn: list[0].projectCity || 'Iraq',
-              cityKu: list[0].projectCityKu || 'عێراق',
-              date: list[0].date || new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
-              photos: list.map((pic) => ({
-                id: pic.id,
-                url: pic.url
-              }))
-            };
-            migrated[serviceId] = [folder];
-          }
-        });
-        
-        if (Object.keys(migrated).length > 0) {
-          localStorage.setItem('yousif_company_custom_projects', JSON.stringify(migrated));
-          return migrated;
-        }
-      } catch (e) {
-        console.error('Error migrating custom photos to folder format', e);
-      }
-    }
-
-    return {};
-  });
-
-  // Services data state (fully customizable)
-  const [servicesData, setServicesData] = useState<ServiceDetail[]>(() => {
-    const saved = localStorage.getItem('yousif_company_custom_services');
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch (e) {
-        console.error('Error parsing custom service details', e);
-      }
-    }
-    return initialServicesData;
-  });
-
+  const [customPhotos, setCustomPhotos] = useState<Record<string, ProjectPhoto[]>>({});
+  const [customProjects, setCustomProjects] = useState<Record<string, ProjectFolder[]>>({});
+  const [servicesData, setServicesData] = useState<ServiceDetail[]>(initialServicesData);
   const [selectedServiceId, setSelectedServiceId] = useState<string | null>(null);
+  const [authError, setAuthError] = useState<string | null>(null);
 
-  const [isLoadedFromServer, setIsLoadedFromServer] = useState<boolean>(false);
-
-  // Sync state data to the server
-  const syncWithServer = (
-    photos: Record<string, ProjectPhoto[]>,
-    projects: Record<string, ProjectFolder[]>,
-    services: ServiceDetail[]
-  ) => {
-    fetch('/api/projects-data', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        customPhotos: photos,
-        customProjects: projects,
-        servicesData: services
-      })
-    })
-    .then((res) => {
-      if (!res.ok) throw new Error('Network response not ok');
-      return res.json();
-    })
-    .then((data) => {
-      if (data.success) {
-        console.log('Project data successfully synchronized to backend store');
-      }
-    })
-    .catch((err) => {
-      console.error('Error synchronizing project data with server:', err);
-    });
-  };
-
-  // Load data from backend on mount
+  // Auto-signin anonymously to Firebase Auth if owner is authenticated locally on any mount
   useEffect(() => {
-    fetch('/api/projects-data')
-      .then((res) => {
-        if (!res.ok) throw new Error('Failed to fetch from backend');
-        return res.json();
-      })
-      .then((data) => {
-        if (data) {
-          if (!isOwnerLoggedIn) {
-            // Visitors: Force fully synchronized state from the backend (the single source of truth)
-            if (data.customPhotos) {
-              setCustomPhotos(data.customPhotos);
-              localStorage.setItem('yousif_company_custom_photos', JSON.stringify(data.customPhotos));
-            }
-            if (data.customProjects) {
-              setCustomProjects(data.customProjects);
-              localStorage.setItem('yousif_company_custom_projects', JSON.stringify(data.customProjects));
-            }
-            if (data.servicesData && Array.isArray(data.servicesData) && data.servicesData.length > 0) {
-              setServicesData(data.servicesData);
-              localStorage.setItem('yousif_company_custom_services', JSON.stringify(data.servicesData));
-            }
-          } else {
-            // Logged-in Owner: Prevent overwriting their rich client-side edits during first-time migration.
-            // If the server lacks recorded projects/photos but the owner has them locally, we do not overwrite,
-            // which triggers an automatic upload to the backend 400ms later.
-            const serverHasPhotos = data.customPhotos && Object.keys(data.customPhotos).length > 0;
-            const serverHasProjects = data.customProjects && Object.keys(data.customProjects).length > 0;
-
-            if (serverHasPhotos) {
-              setCustomPhotos(data.customPhotos);
-              localStorage.setItem('yousif_company_custom_photos', JSON.stringify(data.customPhotos));
-            }
-
-            if (serverHasProjects) {
-              setCustomProjects(data.customProjects);
-              localStorage.setItem('yousif_company_custom_projects', JSON.stringify(data.customProjects));
-            } else if (!serverHasProjects && Object.keys(customProjects).length > 0) {
-              console.log('Server is clean. Preparing first-time migration of local owner projects to server...');
-            }
-
-            if (data.servicesData && Array.isArray(data.servicesData) && data.servicesData.length > 0) {
-              setServicesData(data.servicesData);
-              localStorage.setItem('yousif_company_custom_services', JSON.stringify(data.servicesData));
-            }
-          }
-        }
-        setIsLoadedFromServer(true);
-      })
-      .catch((err) => {
-        console.error('Error loading data from server, using local defaults:', err);
-        setIsLoadedFromServer(true);
-      });
+    if (isOwnerLoggedIn && !auth.currentUser) {
+      signInAnonymously(auth)
+        .then(() => {
+          console.log('Successfully authenticated owner session on Firebase');
+          setAuthError(null);
+        })
+        .catch((err) => {
+          const errMsg = err instanceof Error ? err.message : String(err);
+          setAuthError(errMsg);
+          console.info('Firebase Auth anonymous sign-in skipped or pending activation in Console:', errMsg);
+        });
+    }
   }, [isOwnerLoggedIn]);
 
-  // Sync data to server: ONLY triggers for the logged-in owner! Visitors cannot push updates.
+  // Real-time listener for Services
   useEffect(() => {
-    if (!isLoadedFromServer || !isOwnerLoggedIn) return;
-    
-    const timer = setTimeout(() => {
-      syncWithServer(customPhotos, customProjects, servicesData);
-    }, 400);
+    const unsub = onSnapshot(collection(db, 'services'), (snapshot) => {
+      if (snapshot.empty) {
+        // Seed initial services data if clean database and user is owner
+        if (isOwnerLoggedIn) {
+          initialServicesData.forEach(async (svc) => {
+            try {
+              await setDoc(doc(db, 'services', svc.id), svc);
+            } catch (err) {
+              console.info("Could not seed database services list:", err);
+            }
+          });
+        }
+        return;
+      }
+      const servicesList: ServiceDetail[] = [];
+      snapshot.forEach((snapshotDoc) => {
+        servicesList.push(snapshotDoc.data() as ServiceDetail);
+      });
+      // Sort alphabetically/numerically by id to prevent sequence jumps
+      servicesList.sort((a, b) => a.id.localeCompare(b.id));
+      setServicesData(servicesList);
+    }, (error) => {
+      console.warn('Firestore Services snapshot listener: database clean/listening offline:', error.message);
+    });
 
-    return () => clearTimeout(timer);
-  }, [customPhotos, customProjects, servicesData, isLoadedFromServer, isOwnerLoggedIn]);
+    return () => unsub();
+  }, [isOwnerLoggedIn]);
+
+  // Real-time listener for Project Folders
+  useEffect(() => {
+    const unsub = onSnapshot(collection(db, 'projects'), (snapshot) => {
+      const records: Record<string, ProjectFolder[]> = {};
+      snapshot.forEach((snapshotDoc) => {
+        const data = snapshotDoc.data();
+        const serviceId = data.serviceId;
+        if (serviceId) {
+          if (!records[serviceId]) {
+            records[serviceId] = [];
+          }
+          records[serviceId].push(data as ProjectFolder);
+        }
+      });
+      setCustomProjects(records);
+    }, (error) => {
+      console.warn('Firestore Projects snapshot listener: database clean/listening offline:', error.message);
+    });
+
+    return () => unsub();
+  }, []);
+
+  // Real-time listener for Legacy Flat Photos
+  useEffect(() => {
+    const unsub = onSnapshot(collection(db, 'legacy_photos'), (snapshot) => {
+      const records: Record<string, ProjectPhoto[]> = {};
+      snapshot.forEach((snapshotDoc) => {
+        const data = snapshotDoc.data();
+        const serviceId = data.serviceId;
+        if (serviceId) {
+          if (!records[serviceId]) {
+            records[serviceId] = [];
+          }
+          records[serviceId].push(data as ProjectPhoto);
+        }
+      });
+      setCustomPhotos(records);
+    }, (error) => {
+      console.warn('Firestore Legacy Photos snapshot listener: database clean/listening offline:', error.message);
+    });
+
+    return () => unsub();
+  }, []);
 
   const login = (password: string): boolean => {
     if (password === '12345') {
       setIsOwnerLoggedIn(true);
       localStorage.setItem('yousif_company_owner_auth', 'true');
+      signInAnonymously(auth)
+        .then(() => {
+          console.log('Successfully logged in anonymously to Firebase');
+          setAuthError(null);
+        })
+        .catch((err) => {
+          const errMsg = err instanceof Error ? err.message : String(err);
+          setAuthError(errMsg);
+          console.info('Firebase login sign-in status:', errMsg);
+        });
       return true;
     }
     return false;
@@ -464,168 +402,121 @@ export function OwnerProvider({ children }: { children: ReactNode }) {
   const logout = () => {
     setIsOwnerLoggedIn(false);
     localStorage.removeItem('yousif_company_owner_auth');
+    setAuthError(null);
+    signOut(auth).catch((err) => console.log('Sign out info:', err));
   };
 
-  const addProjectPhoto = (serviceId: string, photo: Omit<ProjectPhoto, 'id' | 'date'>) => {
+  const addProjectPhoto = async (serviceId: string, photo: Omit<ProjectPhoto, 'id' | 'date'>) => {
+    const photoId = `custom-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
     const newPhoto: ProjectPhoto = {
       ...photo,
-      id: `custom-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      id: photoId,
       date: new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
     };
 
-    setCustomPhotos((prev) => {
-      const updatedList = prev[serviceId] ? [...prev[serviceId], newPhoto] : [newPhoto];
-      const nextCustom = { ...prev, [serviceId]: updatedList };
-      try {
-        localStorage.setItem('yousif_company_custom_photos', JSON.stringify(nextCustom));
-      } catch (e) {
-        console.error('Error writing custom photos to localStorage:', e);
-      }
-      return nextCustom;
-    });
+    try {
+      await setDoc(doc(db, 'legacy_photos', photoId), {
+        serviceId,
+        ...newPhoto
+      });
+    } catch (err) {
+      handleFirestoreError(err, OperationType.CREATE, `legacy_photos/${photoId}`);
+    }
   };
 
-  const deleteProjectPhoto = (serviceId: string, photoId: string) => {
-    setCustomPhotos((prev) => {
-      const currentList = prev[serviceId] || [];
-      const updatedList = currentList.filter(photo => photo.id !== photoId);
-      const nextCustom = { ...prev, [serviceId]: updatedList };
-      try {
-        localStorage.setItem('yousif_company_custom_photos', JSON.stringify(nextCustom));
-      } catch (e) {
-        console.error('Error writing custom photos to localStorage:', e);
-      }
-      return nextCustom;
-    });
+  const deleteProjectPhoto = async (serviceId: string, photoId: string) => {
+    try {
+      await deleteDoc(doc(db, 'legacy_photos', photoId));
+    } catch (err) {
+      handleFirestoreError(err, OperationType.DELETE, `legacy_photos/${photoId}`);
+    }
   };
 
-  const addProjectFolder = (serviceId: string, folderData: Omit<ProjectFolder, 'id' | 'date'>) => {
+  const addProjectFolder = async (serviceId: string, folderData: Omit<ProjectFolder, 'id' | 'date'>) => {
+    const folderId = `folder-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
     const newFolder: ProjectFolder = {
       ...folderData,
-      id: `folder-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
-      date: new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+      id: folderId,
+      date: new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
+      photos: []
     };
 
-    setCustomProjects((prev) => {
-      const currentList = prev[serviceId] || [];
-      const updatedList = [...currentList, newFolder];
-      const nextCustom = { ...prev, [serviceId]: updatedList };
-      try {
-        localStorage.setItem('yousif_company_custom_projects', JSON.stringify(nextCustom));
-      } catch (e) {
-        console.error('Error writing custom projects to localStorage:', e);
-      }
-      return nextCustom;
-    });
-  };
-
-  const updateProjectFolder = (serviceId: string, folderId: string, updated: Partial<ProjectFolder>) => {
-    setCustomProjects((prev) => {
-      const currentList = prev[serviceId] || [];
-      const updatedList = currentList.map((folder) => {
-        if (folder.id === folderId) {
-          return { ...folder, ...updated };
-        }
-        return folder;
+    try {
+      await setDoc(doc(db, 'projects', folderId), {
+        serviceId,
+        ...newFolder
       });
-      const nextCustom = { ...prev, [serviceId]: updatedList };
-      try {
-        localStorage.setItem('yousif_company_custom_projects', JSON.stringify(nextCustom));
-      } catch (e) {
-        console.error('Error writing custom projects to localStorage:', e);
-      }
-      return nextCustom;
-    });
+    } catch (err) {
+      handleFirestoreError(err, OperationType.CREATE, `projects/${folderId}`);
+    }
   };
 
-  const deleteProjectFolder = (serviceId: string, folderId: string) => {
-    setCustomProjects((prev) => {
-      const currentList = prev[serviceId] || [];
-      const updatedList = currentList.filter((folder) => folder.id !== folderId);
-      const nextCustom = { ...prev, [serviceId]: updatedList };
-      try {
-        localStorage.setItem('yousif_company_custom_projects', JSON.stringify(nextCustom));
-      } catch (e) {
-        console.error('Error writing custom projects to localStorage:', e);
-      }
-      return nextCustom;
-    });
+  const updateProjectFolder = async (serviceId: string, folderId: string, updated: Partial<ProjectFolder>) => {
+    try {
+      await setDoc(doc(db, 'projects', folderId), updated, { merge: true });
+    } catch (err) {
+      handleFirestoreError(err, OperationType.UPDATE, `projects/${folderId}`);
+    }
   };
 
-  const addPhotoToFolder = (serviceId: string, folderId: string, photoUrl: string) => {
-    setCustomProjects((prev) => {
-      const currentList = prev[serviceId] || [];
-      const updatedList = currentList.map((folder) => {
-        if (folder.id === folderId) {
-          const newPhoto = {
-            id: `photo-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
-            url: photoUrl
-          };
-          return {
-            ...folder,
-            photos: [...folder.photos, newPhoto]
-          };
-        }
-        return folder;
+  const deleteProjectFolder = async (serviceId: string, folderId: string) => {
+    try {
+      await deleteDoc(doc(db, 'projects', folderId));
+    } catch (err) {
+      handleFirestoreError(err, OperationType.DELETE, `projects/${folderId}`);
+    }
+  };
+
+  const addPhotoToFolder = async (serviceId: string, folderId: string, photoUrl: string) => {
+    const newPhoto = {
+      id: `photo-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      url: photoUrl
+    };
+
+    try {
+      await updateDoc(doc(db, 'projects', folderId), {
+        photos: arrayUnion(newPhoto)
       });
-      const nextCustom = { ...prev, [serviceId]: updatedList };
-      try {
-        localStorage.setItem('yousif_company_custom_projects', JSON.stringify(nextCustom));
-      } catch (e) {
-        console.error('Error writing custom projects to localStorage:', e);
-      }
-      return nextCustom;
-    });
+    } catch (err) {
+      handleFirestoreError(err, OperationType.UPDATE, `projects/${folderId}`);
+    }
   };
 
-  const deletePhotoFromFolder = (serviceId: string, folderId: string, photoId: string) => {
-    setCustomProjects((prev) => {
-      const currentList = prev[serviceId] || [];
-      const updatedList = currentList.map((folder) => {
-        if (folder.id === folderId) {
-          return {
-            ...folder,
-            photos: folder.photos.filter((p) => p.id !== photoId)
-          };
-        }
-        return folder;
+  const deletePhotoFromFolder = async (serviceId: string, folderId: string, photoId: string) => {
+    const folder = (customProjects[serviceId] || []).find((f) => f.id === folderId);
+    if (!folder) return;
+
+    const remainingPhotos = folder.photos.filter((p) => p.id !== photoId);
+
+    try {
+      await updateDoc(doc(db, 'projects', folderId), {
+        photos: remainingPhotos
       });
-      const nextCustom = { ...prev, [serviceId]: updatedList };
-      try {
-        localStorage.setItem('yousif_company_custom_projects', JSON.stringify(nextCustom));
-      } catch (e) {
-        console.error('Error writing custom projects to localStorage:', e);
-      }
-      return nextCustom;
-    });
+    } catch (err) {
+      handleFirestoreError(err, OperationType.UPDATE, `projects/${folderId}`);
+    }
   };
 
-  const updateServiceStep = (serviceId: string, stepIndex: number, updatedStep: EngineeringStep) => {
-    setServicesData((prev) => {
-      const nextData = prev.map((svc) => {
-        if (svc.id === serviceId) {
-          const nextSteps = [...svc.steps];
-          nextSteps[stepIndex] = updatedStep;
-          return { ...svc, steps: nextSteps };
-        }
-        return svc;
-      });
-      localStorage.setItem('yousif_company_custom_services', JSON.stringify(nextData));
-      return nextData;
-    });
+  const updateServiceStep = async (serviceId: string, stepIndex: number, updatedStep: EngineeringStep) => {
+    const svc = servicesData.find((s) => s.id === serviceId);
+    if (!svc) return;
+
+    const nextSteps = [...svc.steps];
+    nextSteps[stepIndex] = updatedStep;
+
+    try {
+      await setDoc(doc(db, 'services', serviceId), { steps: nextSteps }, { merge: true });
+    } catch (err) {
+      handleFirestoreError(err, OperationType.UPDATE, `services/${serviceId}`);
+    }
   };
 
-  const updateServiceCore = (serviceId: string, updatedFields: Partial<Omit<ServiceDetail, 'id' | 'steps'>>) => {
-    setServicesData((prev) => {
-      const nextData = prev.map((svc) => {
-        if (svc.id === serviceId) {
-          return { ...svc, ...updatedFields };
-        }
-        return svc;
-      });
-      localStorage.setItem('yousif_company_custom_services', JSON.stringify(nextData));
-      return nextData;
-    });
+  const updateServiceCore = async (serviceId: string, updatedFields: Partial<Omit<ServiceDetail, 'id' | 'steps'>>) => {
+    try {
+      await setDoc(doc(db, 'services', serviceId), updatedFields, { merge: true });
+    } catch (err) {
+      handleFirestoreError(err, OperationType.UPDATE, `services/${serviceId}`);
+    }
   };
 
   return (
@@ -634,6 +525,7 @@ export function OwnerProvider({ children }: { children: ReactNode }) {
         isOwnerLoggedIn,
         login,
         logout,
+        authError,
         customPhotos,
         addProjectPhoto,
         deleteProjectPhoto,
