@@ -1,8 +1,15 @@
 import { motion } from 'motion/react';
 import { useLanguage } from './LanguageContext';
+import { useOwner } from './OwnerContext';
+import { Lock } from 'lucide-react';
 
-export default function Navbar() {
+interface NavbarProps {
+  onOpenOwnerModal: () => void;
+}
+
+export default function Navbar({ onOpenOwnerModal }: NavbarProps) {
   const { lang, toggleLanguage } = useLanguage();
+  const { isOwnerLoggedIn } = useOwner();
 
   const navItems = [
     { en: 'Services', ku: 'خزمەتگوزارییەکان', id: 'services' },
@@ -35,7 +42,28 @@ export default function Navbar() {
         ))}
       </ul>
 
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-3.5">
+        <button
+          onClick={onOpenOwnerModal}
+          className={`flex items-center gap-2 border rounded-full px-4 py-2 text-[11px] uppercase tracking-widest transition-all duration-200
+            ${isOwnerLoggedIn 
+              ? 'border-amber/80 text-amber bg-amber/10 shadow-[0_0_15px_rgba(255,214,0,0.15)] hover:bg-amber/20' 
+              : 'border-white/10 text-[#E0D8D0] hover:text-amber hover:border-amber/40 bg-transparent'}`}
+          title={isOwnerLoggedIn ? "Owner Dashboard Active" : "Owner Login"}
+        >
+          {isOwnerLoggedIn ? (
+            <>
+              <span className="w-1.5 h-1.5 rounded-full bg-amber animate-ping" />
+              <span>{lang === 'ku' ? 'خاوەن کار' : 'Owner: ON'}</span>
+            </>
+          ) : (
+            <>
+              <Lock className="w-3 h-3 text-muted/80 group-hover:text-amber" />
+              <span>{lang === 'ku' ? 'خاوەن کار' : 'Owner'}</span>
+            </>
+          )}
+        </button>
+
         <button
           onClick={toggleLanguage}
           className="border border-white/10 rounded-full px-4 py-2 text-[11px] uppercase tracking-widest text-[#E0D8D0] hover:text-amber hover:border-amber/50 transition-all duration-200"
