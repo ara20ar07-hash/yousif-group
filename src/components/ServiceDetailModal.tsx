@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { 
   X, Snowflake, Flame, Heater, Zap, Leaf, FireExtinguisher, 
   Plus, Trash2, Camera, MapPin, Calendar, CheckCircle2, Upload,
-  FolderClosed, FolderOpen, Pencil, ChevronLeft, ChevronRight
+  FolderClosed, FolderOpen, Pencil, ChevronLeft, ChevronRight, ChevronDown
 } from 'lucide-react';
 import { useLanguage } from './LanguageContext';
 import { useOwner, ProjectFolder, ProjectPhotoItem } from './OwnerContext';
@@ -67,6 +67,9 @@ export default function ServiceDetailModal({ isOpen, onClose, initialServiceId }
   const fileInputRef = useRef<HTMLInputElement>(null);
   const bulkFileInputRef = useRef<HTMLInputElement>(null);
   const folderPhotosInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
+
+  // Mobile Collapsible solutions menu
+  const [isMobileSolutionsOpen, setIsMobileSolutionsOpen] = useState(false);
 
   // Lightbox viewer states
   const [confirmDelete, setConfirmDelete] = useState<{
@@ -342,31 +345,58 @@ export default function ServiceDetailModal({ isOpen, onClose, initialServiceId }
             <div className="flex-1 overflow-y-auto lg:overflow-hidden grid grid-cols-1 lg:grid-cols-[280px_1fr] h-full min-h-0">
               
               {/* Left Column: Vertical tab list */}
-              <div className="bg-navy-mid border-r border-white/5 p-6 flex flex-col gap-2 lg:overflow-y-auto">
-                <div className="text-[10px] font-bold text-white/40 tracking-widest uppercase px-3 mb-3">
-                  {lang === 'ku' ? 'بژاردەکانی سیستەم' : 'System Solutions'}
+              <div className="bg-navy-mid border-b lg:border-b-0 lg:border-r border-white/5 p-4 lg:p-6 flex flex-col gap-2 lg:overflow-y-auto">
+                {/* Mobile Selector Header Bar */}
+                <button
+                  type="button"
+                  onClick={() => setIsMobileSolutionsOpen(!isMobileSolutionsOpen)}
+                  className="flex lg:hidden items-center justify-between w-full bg-navy/60 border border-white/10 px-5 py-4 rounded-2xl text-sm font-semibold text-text-main transition-all active:scale-[0.99] select-none"
+                >
+                  <span className="flex items-center gap-2.5">
+                    {getServiceIcon(activeTab, "w-5 h-5")}
+                    <span className="text-white font-medium">
+                      {lang === 'ku' 
+                        ? (servicesData.find(s => s.id === activeTab)?.titleKu || 'سیستەمەکان') 
+                        : (servicesData.find(s => s.id === activeTab)?.titleEn || 'System Solutions')}
+                    </span>
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[9px] bg-amber/10 text-amber border border-amber/20 px-2.5 py-1 rounded-full uppercase tracking-wider font-mono">
+                      {lang === 'ku' ? 'بگۆڕە' : 'Change'}
+                    </span>
+                    <ChevronDown className={`w-4 h-4 text-muted transition-transform duration-300 ${isMobileSolutionsOpen ? 'rotate-180 text-amber' : ''}`} />
+                  </div>
+                </button>
+
+                {/* Desktop and Mobile expanded states */}
+                <div className={`flex flex-col gap-2 mt-2 lg:mt-0 ${isMobileSolutionsOpen ? 'flex' : 'hidden lg:flex'}`}>
+                  <div className="text-[10px] font-bold text-white/40 tracking-widest uppercase px-3 mb-2 hidden lg:block">
+                    {lang === 'ku' ? 'بژاردەکانی سیستەم' : 'System Solutions'}
+                  </div>
+                  
+                  {servicesData.map((tab) => {
+                    const isActive = activeTab === tab.id;
+                    return (
+                      <button
+                        key={tab.id}
+                        type="button"
+                        onClick={() => {
+                          setActiveTab(tab.id);
+                          setEditingStepIndex(null);
+                          setIsEditingCore(false);
+                          setIsMobileSolutionsOpen(false); // Auto close on select
+                        }}
+                        className={`flex items-center gap-3.5 text-left px-4 py-3.5 rounded-2xl border text-sm transition-all duration-200 w-full font-light
+                          ${isActive 
+                            ? 'bg-navy-light border-amber/40 text-text-main font-medium shadow-[inset_4px_0_0_#FFD600]' 
+                            : 'border-transparent bg-transparent text-muted hover:bg-white/5 hover:text-text-main'}`}
+                      >
+                        {getServiceIcon(tab.id, "w-5 h-5")}
+                        <span className="truncate">{lang === 'ku' ? tab.titleKu : tab.titleEn}</span>
+                      </button>
+                    );
+                  })}
                 </div>
-                
-                {servicesData.map((tab) => {
-                  const isActive = activeTab === tab.id;
-                  return (
-                    <button
-                      key={tab.id}
-                      onClick={() => {
-                        setActiveTab(tab.id);
-                        setEditingStepIndex(null);
-                        setIsEditingCore(false);
-                      }}
-                      className={`flex items-center gap-3.5 text-left px-4 py-3.5 rounded-2xl border text-sm transition-all duration-200 w-full font-light
-                        ${isActive 
-                          ? 'bg-navy-light border-amber/40 text-text-main font-medium shadow-[inset_4px_0_0_#FFD600]' 
-                          : 'border-transparent bg-transparent text-muted hover:bg-white/5 hover:text-text-main'}`}
-                    >
-                      {getServiceIcon(tab.id, "w-5 h-5")}
-                      <span className="truncate">{lang === 'ku' ? tab.titleKu : tab.titleEn}</span>
-                    </button>
-                  );
-                })}
               </div>
 
               {/* Right Column: Information description and photo panels */}

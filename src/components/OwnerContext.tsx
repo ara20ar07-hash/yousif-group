@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
 export interface ProjectPhoto {
   id: string;
@@ -351,6 +351,80 @@ export function OwnerProvider({ children }: { children: ReactNode }) {
   });
 
   const [selectedServiceId, setSelectedServiceId] = useState<string | null>(null);
+
+  const [isLoadedFromServer, setIsLoadedFromServer] = useState<boolean>(false);
+
+  // Sync state data to the server
+  const syncWithServer = (
+    photos: Record<string, ProjectPhoto[]>,
+    projects: Record<string, ProjectFolder[]>,
+    services: ServiceDetail[]
+  ) => {
+    fetch('/api/projects-data', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        customPhotos: photos,
+        customProjects: projects,
+        servicesData: services
+      })
+    })
+    .then((res) => {
+      if (!res.ok) throw new Error('Network response not ok');
+      return res.json();
+    })
+    .then((data) => {
+      if (data.success) {
+        console.log('Project data successfully synchronized to backend store');
+      }
+    })
+    .catch((err) => {
+      console.error('Error synchronizing project data with server:', err);
+    });
+  };
+
+  // Load data from backend on mount
+  useEffect(() => {
+    fetch('/api/projects-data')
+      .then((res) => {
+        if (!res.ok) throw new Error('Failed to fetch from backend');
+        return res.json();
+      })
+      .then((data) => {
+        if (data) {
+          if (data.customPhotos && Object.keys(data.customPhotos).length > 0) {
+            setCustomPhotos(data.customPhotos);
+            localStorage.setItem('yousif_company_custom_photos', JSON.stringify(data.customPhotos));
+          }
+          if (data.customProjects && Object.keys(data.customProjects).length > 0) {
+            setCustomProjects(data.customProjects);
+            localStorage.setItem('yousif_company_custom_projects', JSON.stringify(data.customProjects));
+          }
+          if (data.servicesData && Array.isArray(data.servicesData) && data.servicesData.length > 0) {
+            setServicesData(data.servicesData);
+            localStorage.setItem('yousif_company_custom_services', JSON.stringify(data.servicesData));
+          }
+        }
+        setIsLoadedFromServer(true);
+      })
+      .catch((err) => {
+        console.error('Error loading data from server, using local defaults:', err);
+        setIsLoadedFromServer(true);
+      });
+  }, []);
+
+  // Sync data to server when loaded has completed and any state changes
+  useEffect(() => {
+    if (!isLoadedFromServer) return;
+    
+    const timer = setTimeout(() => {
+      syncWithServer(customPhotos, customProjects, servicesData);
+    }, 400);
+
+    return () => clearTimeout(timer);
+  }, [customPhotos, customProjects, servicesData, isLoadedFromServer]);
 
   const login = (password: string): boolean => {
     if (password === '12345') {
