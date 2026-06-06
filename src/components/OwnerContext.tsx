@@ -10,6 +10,23 @@ export interface ProjectPhoto {
   date: string;
 }
 
+export interface ProjectPhotoItem {
+  id: string;
+  url: string;
+}
+
+export interface ProjectFolder {
+  id: string;
+  titleEn: string;
+  titleKu: string;
+  descEn: string;
+  descKu: string;
+  cityEn: string;
+  cityKu: string;
+  date: string;
+  photos: ProjectPhotoItem[];
+}
+
 export interface EngineeringStep {
   titleEn: string;
   titleKu: string;
@@ -38,6 +55,13 @@ interface OwnerContextType {
   customPhotos: Record<string, ProjectPhoto[]>;
   addProjectPhoto: (serviceId: string, photo: Omit<ProjectPhoto, 'id' | 'date'>) => void;
   deleteProjectPhoto: (serviceId: string, photoId: string) => void;
+  // Modern project folders methods
+  customProjects: Record<string, ProjectFolder[]>;
+  addProjectFolder: (serviceId: string, folder: Omit<ProjectFolder, 'id' | 'date'>) => void;
+  updateProjectFolder: (serviceId: string, folderId: string, updated: Partial<ProjectFolder>) => void;
+  deleteProjectFolder: (serviceId: string, folderId: string) => void;
+  addPhotoToFolder: (serviceId: string, folderId: string, photoUrl: string) => void;
+  deletePhotoFromFolder: (serviceId: string, folderId: string, photoId: string) => void;
   selectedServiceId: string | null;
   setSelectedServiceId: (id: string | null) => void;
   servicesData: ServiceDetail[];
@@ -262,6 +286,57 @@ export function OwnerProvider({ children }: { children: ReactNode }) {
     return {};
   });
 
+  // Projects folder state (starts off clean or migrates old photos)
+  const [customProjects, setCustomProjects] = useState<Record<string, ProjectFolder[]>>(() => {
+    const saved = localStorage.getItem('yousif_company_custom_projects');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        console.error('Error parsing custom projects', e);
+      }
+    }
+
+    // Migration logic
+    const oldPhotosSaved = localStorage.getItem('yousif_company_custom_photos');
+    if (oldPhotosSaved) {
+      try {
+        const photosRecord = JSON.parse(oldPhotosSaved) as Record<string, ProjectPhoto[]>;
+        const migrated: Record<string, ProjectFolder[]> = {};
+        
+        Object.keys(photosRecord).forEach((serviceId) => {
+          const list = photosRecord[serviceId];
+          if (list && list.length > 0) {
+            const folder: ProjectFolder = {
+              id: `migrated-${serviceId}-${Date.now()}`,
+              titleEn: 'Direct Uploaded Works',
+              titleKu: 'پڕۆژە بارکراوەکان',
+              descEn: 'Collection of direct company installation images and portfolio works.',
+              descKu: 'کۆمەڵێک لە وێنەی پڕۆژە و کارە جۆراوجۆرە جێبەجێکراوەکانی کۆمپانیای یوسف.',
+              cityEn: list[0].projectCity || 'Iraq',
+              cityKu: list[0].projectCityKu || 'عێراق',
+              date: list[0].date || new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
+              photos: list.map((pic) => ({
+                id: pic.id,
+                url: pic.url
+              }))
+            };
+            migrated[serviceId] = [folder];
+          }
+        });
+        
+        if (Object.keys(migrated).length > 0) {
+          localStorage.setItem('yousif_company_custom_projects', JSON.stringify(migrated));
+          return migrated;
+        }
+      } catch (e) {
+        console.error('Error migrating custom photos to folder format', e);
+      }
+    }
+
+    return {};
+  });
+
   // Services data state (fully customizable)
   const [servicesData, setServicesData] = useState<ServiceDetail[]>(() => {
     const saved = localStorage.getItem('yousif_company_custom_services');
@@ -301,7 +376,11 @@ export function OwnerProvider({ children }: { children: ReactNode }) {
     setCustomPhotos((prev) => {
       const updatedList = prev[serviceId] ? [...prev[serviceId], newPhoto] : [newPhoto];
       const nextCustom = { ...prev, [serviceId]: updatedList };
-      localStorage.setItem('yousif_company_custom_photos', JSON.stringify(nextCustom));
+      try {
+        localStorage.setItem('yousif_company_custom_photos', JSON.stringify(nextCustom));
+      } catch (e) {
+        console.error('Error writing custom photos to localStorage:', e);
+      }
       return nextCustom;
     });
   };
@@ -311,7 +390,112 @@ export function OwnerProvider({ children }: { children: ReactNode }) {
       const currentList = prev[serviceId] || [];
       const updatedList = currentList.filter(photo => photo.id !== photoId);
       const nextCustom = { ...prev, [serviceId]: updatedList };
-      localStorage.setItem('yousif_company_custom_photos', JSON.stringify(nextCustom));
+      try {
+        localStorage.setItem('yousif_company_custom_photos', JSON.stringify(nextCustom));
+      } catch (e) {
+        console.error('Error writing custom photos to localStorage:', e);
+      }
+      return nextCustom;
+    });
+  };
+
+  const addProjectFolder = (serviceId: string, folderData: Omit<ProjectFolder, 'id' | 'date'>) => {
+    const newFolder: ProjectFolder = {
+      ...folderData,
+      id: `folder-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      date: new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+    };
+
+    setCustomProjects((prev) => {
+      const currentList = prev[serviceId] || [];
+      const updatedList = [...currentList, newFolder];
+      const nextCustom = { ...prev, [serviceId]: updatedList };
+      try {
+        localStorage.setItem('yousif_company_custom_projects', JSON.stringify(nextCustom));
+      } catch (e) {
+        console.error('Error writing custom projects to localStorage:', e);
+      }
+      return nextCustom;
+    });
+  };
+
+  const updateProjectFolder = (serviceId: string, folderId: string, updated: Partial<ProjectFolder>) => {
+    setCustomProjects((prev) => {
+      const currentList = prev[serviceId] || [];
+      const updatedList = currentList.map((folder) => {
+        if (folder.id === folderId) {
+          return { ...folder, ...updated };
+        }
+        return folder;
+      });
+      const nextCustom = { ...prev, [serviceId]: updatedList };
+      try {
+        localStorage.setItem('yousif_company_custom_projects', JSON.stringify(nextCustom));
+      } catch (e) {
+        console.error('Error writing custom projects to localStorage:', e);
+      }
+      return nextCustom;
+    });
+  };
+
+  const deleteProjectFolder = (serviceId: string, folderId: string) => {
+    setCustomProjects((prev) => {
+      const currentList = prev[serviceId] || [];
+      const updatedList = currentList.filter((folder) => folder.id !== folderId);
+      const nextCustom = { ...prev, [serviceId]: updatedList };
+      try {
+        localStorage.setItem('yousif_company_custom_projects', JSON.stringify(nextCustom));
+      } catch (e) {
+        console.error('Error writing custom projects to localStorage:', e);
+      }
+      return nextCustom;
+    });
+  };
+
+  const addPhotoToFolder = (serviceId: string, folderId: string, photoUrl: string) => {
+    setCustomProjects((prev) => {
+      const currentList = prev[serviceId] || [];
+      const updatedList = currentList.map((folder) => {
+        if (folder.id === folderId) {
+          const newPhoto = {
+            id: `photo-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+            url: photoUrl
+          };
+          return {
+            ...folder,
+            photos: [...folder.photos, newPhoto]
+          };
+        }
+        return folder;
+      });
+      const nextCustom = { ...prev, [serviceId]: updatedList };
+      try {
+        localStorage.setItem('yousif_company_custom_projects', JSON.stringify(nextCustom));
+      } catch (e) {
+        console.error('Error writing custom projects to localStorage:', e);
+      }
+      return nextCustom;
+    });
+  };
+
+  const deletePhotoFromFolder = (serviceId: string, folderId: string, photoId: string) => {
+    setCustomProjects((prev) => {
+      const currentList = prev[serviceId] || [];
+      const updatedList = currentList.map((folder) => {
+        if (folder.id === folderId) {
+          return {
+            ...folder,
+            photos: folder.photos.filter((p) => p.id !== photoId)
+          };
+        }
+        return folder;
+      });
+      const nextCustom = { ...prev, [serviceId]: updatedList };
+      try {
+        localStorage.setItem('yousif_company_custom_projects', JSON.stringify(nextCustom));
+      } catch (e) {
+        console.error('Error writing custom projects to localStorage:', e);
+      }
       return nextCustom;
     });
   };
@@ -353,6 +537,12 @@ export function OwnerProvider({ children }: { children: ReactNode }) {
         customPhotos,
         addProjectPhoto,
         deleteProjectPhoto,
+        customProjects,
+        addProjectFolder,
+        updateProjectFolder,
+        deleteProjectFolder,
+        addPhotoToFolder,
+        deletePhotoFromFolder,
         selectedServiceId,
         setSelectedServiceId,
         servicesData,

@@ -112,7 +112,7 @@ export default function OwnerLoginModal({ isOpen, onClose }: OwnerLoginModalProp
                   />
                   {error && (
                     <p className="text-xs text-red-400 mt-2 text-center">
-                      {lang === 'ku' ? 'تێپەڕەوشە هەڵەیە. تکایە دووبارە تاقی بکەرەوە.' : 'Incorrect password. Hint: 12345'}
+                      {lang === 'ku' ? 'تێپەڕەوشە هەڵەیە. تکایە دووبارە تاقی بکەرەوە.' : 'Incorrect password. Please try again.'}
                     </p>
                   )}
                 </div>
