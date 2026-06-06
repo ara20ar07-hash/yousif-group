@@ -1,57 +1,34 @@
 import { useState } from 'react';
 import { Snowflake, Flame, Heater, Zap, Leaf, FireExtinguisher, ArrowUpRight } from 'lucide-react';
 import { useLanguage } from './LanguageContext';
+import { useOwner } from './OwnerContext';
 import ServiceDetailModal from './ServiceDetailModal';
 
 export default function Services() {
   const { lang } = useLanguage();
+  const { servicesData } = useOwner();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [isOpen, setIsOpen] = useState(false);
 
-  const services = [
-    {
-      num: '01',
-      icon: <Snowflake className="w-8 h-8 mb-4 text-blue-400" />,
-      titleAr: 'سیستەمی ساردی',
-      title: lang === 'ku' ? 'سیستەمی ساردی' : 'Cooling Systems',
-      desc: lang === 'ku' ? 'دابینکردن و دانانی سپلیت و سیستەمی ساردی مەرکەزی بۆ بەرگەگرتنی گەرمای هاوین.' : 'Supply and installation of central air conditioning, split units, and ducted cooling systems optimised for the harsh summer heat.',
-    },
-    {
-      num: '02',
-      icon: <Flame className="w-8 h-8 mb-4 text-orange-500" />,
-      titleAr: 'سیستەمی گەرمی',
-      title: lang === 'ku' ? 'سیستەمی گەرمی' : 'Heating Systems',
-      desc: lang === 'ku' ? 'نەخشەسازی و دانانی سیستەمی گەرمکەرەوە بۆ هێشتنەوەی ماڵەکان بە گەرمی لە زستاندا.' : 'Expert design and fitting of underfloor, radiator, and central heating solutions keeping homes warm through cold winters.',
-    },
-    {
-      num: '03',
-      icon: <Heater className="w-8 h-8 mb-4 text-neutral-300" />,
-      titleAr: 'شۆفاژ',
-      title: lang === 'ku' ? 'شۆفاژ' : 'Radiator Heating',
-      desc: lang === 'ku' ? 'دابینکردن و دانانی سیستەمی شۆفاژ و بۆیلەر.' : 'Supply and installation of modern radiator systems, including full boiler setup and hydronic heating networks.',
-    },
-    {
-      num: '04',
-      icon: <Zap className="w-8 h-8 mb-4 text-yellow-400" />,
-      titleAr: 'تۆڕی غاز',
-      title: lang === 'ku' ? 'تۆڕی غاز' : 'Gas Networks',
-      desc: lang === 'ku' ? 'نەخشەسازی و ڕاکێشانی بۆری غاز بۆ ماڵ و شوێنە بازرگانییەکان.' : 'Full-scale gas pipeline engineering, distribution networks, and connection services for residential and commercial properties.',
-    },
-    {
-      num: '05',
-      icon: <Leaf className="w-8 h-8 mb-4 text-emerald-400" />,
-      titleAr: 'سۆلار',
-      title: lang === 'ku' ? 'سۆلار' : 'Solar Systems',
-      desc: lang === 'ku' ? 'دانانی پانێڵی وزەی خۆر بۆ کەمکردنەوەی تێچووی کارەبا.' : 'Clean-energy solar panel installation for homes and businesses — reducing electricity bills with sustainable, renewable power.',
-    },
-    {
-      num: '06',
-      icon: <FireExtinguisher className="w-8 h-8 mb-4 text-red-500" />,
-      titleAr: 'ئاگرکوژێنەوە',
-      title: lang === 'ku' ? 'ئاگرکوژێنەوە' : 'Fire Suppression',
-      desc: lang === 'ku' ? 'نەخشەسازی و دانانی سیستەمی ئاگرکوژێنەوە بۆ پاراستنی سەلامەتی.' : 'Design and installation of fire detection and suppression systems to keep your property and people protected.',
-    },
-  ];
+  const getServiceIcon = (id: string) => {
+    switch (id) {
+      case '01': return <Snowflake className="w-8 h-8 mb-4 text-blue-400" />;
+      case '02': return <Flame className="w-8 h-8 mb-4 text-orange-500" />;
+      case '03': return <Heater className="w-8 h-8 mb-4 text-neutral-300" />;
+      case '04': return <Zap className="w-8 h-8 mb-4 text-yellow-400" />;
+      case '05': return <Leaf className="w-8 h-8 mb-4 text-emerald-400" />;
+      case '06': return <FireExtinguisher className="w-8 h-8 mb-4 text-red-500" />;
+      default: return <Snowflake className="w-8 h-8 mb-4 text-blue-400" />;
+    }
+  };
+
+  const services = servicesData.map(svc => ({
+    num: svc.id,
+    icon: getServiceIcon(svc.id),
+    titleAr: svc.titleAr || svc.titleKu,
+    title: lang === 'ku' ? svc.titleKu : svc.titleEn,
+    desc: lang === 'ku' ? svc.cardDescKu : svc.cardDescEn,
+  }));
 
   return (
     <section id="services" className="px-6 md:px-12 py-24 bg-navy">

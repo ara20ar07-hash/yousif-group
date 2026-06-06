@@ -2,10 +2,10 @@ import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   X, Snowflake, Flame, Heater, Zap, Leaf, FireExtinguisher, 
-  Plus, Trash2, Camera, MapPin, Calendar, CheckCircle2, ArrowRight, Upload
+  Plus, Trash2, Camera, MapPin, Calendar, CheckCircle2, Upload
 } from 'lucide-react';
 import { useLanguage } from './LanguageContext';
-import { useOwner, defaultPhotos, ProjectPhoto } from './OwnerContext';
+import { useOwner, ProjectPhoto } from './OwnerContext';
 
 interface ServiceDetailModalProps {
   isOpen: boolean;
@@ -26,186 +26,17 @@ const getServiceIcon = (id: string, className: string = "w-6 h-6") => {
   }
 };
 
-const serviceDetailsData = [
-  {
-    id: '01',
-    titleEn: 'Cooling Systems',
-    titleKu: 'سیستەمی ساردی',
-    subEn: 'Central VRF, Ducted Splits, & High-efficiency cooling grids.',
-    subKu: 'سیستەمی فێنککەرەوەی ناوەندی، دەکتی سپلیت و یەکەکانی فێنککردنەوە.',
-    descEn: 'We deliver comprehensive thermal load engineering. Yousif Company installs state-of-the-art Variable Refrigerant Flow (VRF) and inverter systems customized specifically for the severe Iraqi summer temperatures exceed 50°C.',
-    descKu: 'ئێمە لێکۆڵینەوەی تێرماڵی چڕ ئەنجام دەدەین. یوسف کۆمپانی هەڵدەستێت بە بەستنی سیستمە سەرەکی و مۆدێرنەکانی مارکەی جیهانی و تەکنەلۆجیای (VRF) کە گونجاوە بۆ هاوینی گەرمی عێراق و کوردستان کە پلەی گەرمی دەگاتە زیاتر لە ٥٠ پلەی سەدی.',
-    steps: [
-      {
-        titleEn: 'Thermal Load Calculation',
-        titleKu: 'حیسابکردنی بڕی گەرمی',
-        descEn: 'We measure exact space volume, window directions, insulation efficiency, and roof exposure using professional software.',
-        descKu: 'ئەندازە گرتنی ووردی رووبەر، ئاڕاستەی تیشکی خۆر، کاریگەری دەرگا و پەنجەرەکان بۆ دیاریکردنی هێزی مەکینەی فێنککەرەوە.'
-      },
-      {
-        titleEn: 'Continuous Duct Engineering',
-        titleKu: 'ڕاکێشان و سازدانی دەکتی هەوا',
-        descEn: 'Design of custom insulated galvanized ducts ensures zero moisture leakage and quiet, uniform air dispersion.',
-        descKu: 'دیزاین کردنی دەکتی مەتاتی جۆراوجۆر بە دژە تەڕبوون کە فێنکییەکە بە بێدەنگی و یەکسانی بڵاودەکاتەوە.'
-      },
-      {
-        titleEn: 'Intelligent VRF Modulation',
-        titleKu: 'بەستن و بەگەڕخستنی سیستەمی VRF',
-        descEn: 'Advanced electronic expansion valves modulate cool gas flow in real-time, reducing electrical energy waste up to 45%.',
-        descKu: 'کۆنتڕۆڵکردنی ڕێڕەوی غازی فێنککەرەوە بە شێوەی کاتی بە تەکنەلۆجیای نوێ کە تێچووی کارەبا کەم دەکاتەوە زیاتر لە ٤٥٪.'
-      }
-    ]
-  },
-  {
-    id: '02',
-    titleEn: 'Heating Systems',
-    titleKu: 'سیستەمی گەرمی',
-    subEn: 'In-slab Hydronic Underfloor Heating & complete thermal envelopes.',
-    subKu: 'گەرمکەرەوەی ژێرزەوی پێشکەوتوو بە تۆڕی ئاوی و پەیلی و چیمەنتۆ.',
-    descEn: 'Underfloor heating provides the ultimate luxury of silent, dust-free radiant comfort. Perfect comfort is distributed from the floor up, leaving no cold spots and saving space on interior design.',
-    descKu: 'سیستەمی گەرمکەرەوەی ژێرزەوی تەواو ئاسوودەیی و بێدەنگی دەبەخشێت بە ماڵەکەت بێ دروستکردنی هیچ تۆز و خۆڵێک. گەرمی لە خوارەوە بۆ سەرەوە بڵاودەبێتەوە و سوودی هەیە بۆ دیزاینی ناوەوە.',
-    steps: [
-      {
-        titleEn: 'Polystyrene High-Density Isolation',
-        titleKu: 'عەزلکردنی ژێر زەوی بە فۆمی چڕ',
-        descEn: 'High-compressive polystyrene boards block heat transfers to structural floors, reflecting all radiant warmth upward.',
-        descKu: 'دانانی تەوەرە و فۆمی عەزل لەسەر زەوی کۆنکرێت بۆ رێگریکردن لە ونبوونی گەرمی بۆ بن بێنا.'
-      },
-      {
-        titleEn: 'Continuous Pipe Stitching',
-        titleKu: 'ڕاکێشانی بۆری PEX بەردەوام',
-        descEn: 'Standard PEX-a barrier pipes are mounted in spiral formats, guaranteeing zero joints in the entire concrete underlay.',
-        descKu: 'ڕاکێشان و رێکخستنی بۆری بازنەیی PEX-a بێ بەکارهێنانی جوین لەژێر زەوی بۆ نەهێشتنی ئەگەری تەقین.'
-      },
-      {
-        titleEn: 'Balanced Manifold Calibrations',
-        titleKu: 'ڕێکخستنی مانیفۆڵدی ڕێڕەو',
-        descEn: 'Every heating loop is individually adjusted at the central manifold, allowing specific temperature zones per room.',
-        descKu: 'کۆنتڕۆڵ کردنی بڕی گەرمی سووڕاو لە مانیفۆڵدی ناوەندی، گەرەنتی کردنی کۆنتڕۆڵی پلەی گەرمی هەر ژوورێک بە جیا.'
-      }
-    ]
-  },
-  {
-    id: '03',
-    titleEn: 'Radiator Heating',
-    titleKu: 'شۆفاژ',
-    subEn: 'Elegant European panel radiators, gas/diesel boiler systems.',
-    subKu: 'شۆفاژی مۆدێرنی دیواری، سیستەمەکانی بۆیلەری کارەبایی و غازی متمانەپێکراو.',
-    descEn: 'We supply and install modern hydronic panel radiators from top Turkish and Italian manufacturers. Configured with smart boilers to provide immediate and warm convection for residences and corporate projects.',
-    descKu: 'ئێمە پانێڵی شۆفاژ لە باشترین جۆر و مارکەی جیهانی دابین دەکەین. گونجاو لەگەڵ بۆیلەرە پێشکەوتووەکان تا گەرمیەکی کتوپڕ و بەردەوام ببەخشێت بە پرۆژە نیشتەجێبوون و بازرگانییەکانتان.',
-    steps: [
-      {
-        titleEn: 'Central Energy Boiler Station',
-        titleKu: 'دامەزراندنی بۆیلەر',
-        descEn: 'We design complete boiler systems using highly insulated copper manifolds to manage central thermal grids.',
-        descKu: 'نەخشەسازی کۆمەڵە بۆیلەری ناوەندی و پەمپەکانی سووڕانەوە بە بۆری مس و دژە هەوا.'
-      },
-      {
-        titleEn: 'Hydronic Pipe Ring Layouts',
-        titleKu: 'ڕاکێشانی هێڵی ئاوی سووڕاو',
-        descEn: 'Heavy duty pressure-tested pipes are run concealed in masonry to connect the radiator panels safely.',
-        descKu: 'ڕاکێشانی بۆریە شاراوەکان لەناو دیوارەکاندا بۆ گەیاندنی ئاوی گەرم بۆ پانێڵ فێنککەرەکان.'
-      },
-      {
-        titleEn: 'Thermostatic Valve Automation',
-        titleKu: 'بەستنی قوفڵە حەرارییەکان',
-        descEn: 'We fit custom programmable valves directly on the radiators so heating shuts off when a room reaches target comfort.',
-        descKu: 'بەستنی قوفڵی هەستیار بۆ کوژانەوەی ئۆتۆماتیکی شۆفاژەکە کاتێک ژوورەکە گەرمی پێویست بەدەستدەهێنێت.'
-      }
-    ]
-  },
-  {
-    id: '04',
-    titleEn: 'Gas Networks',
-    titleKu: 'تۆڕی غاز',
-    subEn: 'Certified LPG / NG infrastructure, leak detection solenoids.',
-    subKu: 'تۆڕی متمانەپێکراوی غاز بە بۆری بێ درز و سیستەمی ئاگادارکەرەوە لە کاتی دزەکردن.',
-    descEn: 'Safety is paramount. Yousif Company engineers highly secure Liquefied Petroleum Gas (LPG) pipelines for residential buildings, hotels, and luxury villas using heavy-gauge seamless steel.',
-    descKu: 'سەلامەتی پێش هەموو شتێکە. ئەندازیارانی یوسف کۆمپانی هەڵدەستن بە دروستکردنی بۆری و هێڵی پۆڵای تۆڕی غازی شل (LPG) بۆ خانوو، شوقە و چێشتخانەکان بە بەرزترین جۆری سەلامەتی.',
-    steps: [
-      {
-        titleEn: 'Carbon Seamless Welding',
-        titleKu: 'جۆشکاری کاربۆنی پتەوی بێ درز',
-        descEn: 'All gas pipes are seamlessly welded with certified joint testing, ensuring zero risk of structural pressure drop.',
-        descKu: 'جۆشکردنی تەواوی بۆرییەکان بە کۆنتڕۆڵ و تاقی کردنەوەی بەهێز بۆ نەهێشتنی درز و دڵنیابوون لە نەبوونی کێشە.'
-      },
-      {
-        titleEn: 'Automated Leak Interlocking',
-        titleKu: 'سیستەمی زنجیرەیی دۆزینەوەی دزەکردن',
-        descEn: 'Smart gas sensors trigger central electronic solenoids, immediately locking the main valve if any vapor is detected.',
-        descKu: 'هەستیاری پێشکەوتوو غازی لێکچوو دەدۆزێتەوە و خێرا بە شێوەی ئۆتۆماتیکی قوفڵی سەرەکی غازی ناوەند دادەخات.'
-      },
-      {
-        titleEn: 'Pressure Reduction Stations',
-        titleKu: 'وێستگەی رێکخستنی پەستان',
-        descEn: 'Custom dual-stage brass regulators reduce high pressure down to safe working metrics for kitchens and boilers.',
-        descKu: 'دانانی ڕێکخەری برۆنزی دوو قۆناغی بۆ کمکردنەوەی پەستانی بەهێز بۆ سەرانسەر ئامێرەکان بە پارێزراوی.'
-      }
-    ]
-  },
-  {
-    id: '05',
-    titleEn: 'Solar Systems',
-    titleKu: 'سۆلار',
-    subEn: 'Grid-tied & Hybrid photovoltaic solar arrays with premium battery banks.',
-    subKu: 'سیستەمی پانێڵی وزەی خۆر بە پاتری کۆگاکردنی لیسیۆم و ئینڤێرتەری زیرەک.',
-    descEn: 'Maximize energy independence. We install professional solar installations featuring Tier-1 monocrystalline panels, hybrid smart inverters, and long-life Lithium Iron Phosphate (LiFePO4) storage banks.',
-    descKu: 'سەربەخۆیی وزە بەدەستبهێنە. ئێمە کاردەکەین لەسەر بەستنی باشترین پانێڵی مۆنۆ-کریستاڵی ئەڵمانی و ئینڤێرتەری مۆدێرن لەگەڵ پاتری دژە تەقین و تەمەن درێژی لیثیۆم فۆسفاتی ئاسن بۆ وزەی بەردەوام.',
-    steps: [
-      {
-        titleEn: 'Azimuth & Shade Optimization',
-        titleKu: 'ئاراستەکردن بەرامبەر تیشکی خۆر',
-        descEn: 'Solar panels are positioned and tilted at optimized angles to maximize yearly kilowatt production, avoiding building shadows.',
-        descKu: 'دانانی پانێڵەکان بە گۆشەی گونجاو و دیاریکردن لە ڕووی باشوور بۆ زۆرترین برهەم هێنای وزەی فۆتۆڤۆلتایی.'
-      },
-      {
-        titleEn: 'Hybrid Smart Inverter Sync',
-        titleKu: 'ڕێکخستنی ئینڤێرتەری زیرەک',
-        descEn: 'We program the inverter to prioritize solar consumption first, bypass to batteries during grid outages, and automatically charge when power is cheapest.',
-        descKu: 'پرۆگرام کردنی ئینڤێرتەر کە سەرەتا وزەی خۆر بەکاربهێنێت و لە کاتی نەبوونی کارەبادا خۆکارانە کارەبای پاتریەکان بداتەوە.'
-      },
-      {
-        titleEn: 'Smart Lithium Energy Buffer',
-        titleKu: 'بەستنی کۆمەڵە پاتری لیثیۆم',
-        descEn: 'LiFePO4 battery storage arrays provide high active currents and complete zero-latency transitions during generator cuts.',
-        descKu: 'پاراستنی و بارگاوی کردنی وزە لە پاتریەکان کە بە بێ پچڕان لە کاتی گۆڕینی کارەبای نیشتمانیدا ڕاستەوخۆ دەگوازرێتەوە.'
-      }
-    ]
-  },
-  {
-    id: '06',
-    titleEn: 'Fire Suppression',
-    titleKu: 'ئاگرکوژێنەوە',
-    subEn: 'NFPA standard addressable detection, wet sprinkler, & fire main stations.',
-    subKu: 'سیستەمی ئاگرکوژێنەوەی سەر زەوی و قوفڵی شووشەی هەستیار بەپێی ستانداردەکانی NFPA.',
-    descEn: 'Absolute asset protection. Yousif Company layouts fully automated fire detection and suppression machinery designed strictly to certified NFPA code guidelines to safeguard residential and business areas.',
-    descKu: 'پاراستنی تەواوی ژیان و سەروەت و سامانەکانتان. کۆمپانیای یوسف نەخشەسازی و دامەزراندنی سیستەمەکانی کوژانەوەی ئاگری پیستر دەکات بەپێی باشترین مەرج و رێنماییە سەلامەتەکانی NFPA بۆ پاراستنی هەمیشەیی.',
-    steps: [
-      {
-        titleEn: 'Thermal Bulb Sprinklers',
-        titleKu: 'بەستنی زمانەکانی ئاوپڕژێنی هەستیار',
-        descEn: 'Localized glass spray bulbs melt instantly at 68°C, releasing targeted high velocity water jets only where active flame is present.',
-        descKu: 'دانانی یەکەی ئاوپڕژێنی سەری شووشەیی کە کاتێک پلەی گەرمی دەگاتە ٦٨ پلە بە شێوەی خۆکارانە تەقین دەکەن و ئاو دەڕێژن.'
-      },
-      {
-        titleEn: 'Dual-Backup Main Pumps',
-        titleKu: 'بەستنی پەمپی پاڵنەری گەورە',
-        descEn: 'Central electric pumps paired with critical backup diesel pumps fire up instantly if sprinkler line pressure drops.',
-        descKu: 'بەستنی پەمپی الەکتریکی یاوەر بە پەمپی مەکینەی دیزڵ بۆ هێشتنەوەی هەمیشەیی پەستانی مەرکەزی ئاوی کوژانەوە.'
-      },
-      {
-        titleEn: 'Addressable Control Syncing',
-        titleKu: 'بەستنەوە بە پانێلی مەرکەزی',
-        descEn: 'Fire trigger flow indicators instantly report zones to building sirens, turning off main fans to suppress smoke spreading.',
-        descKu: 'هاوکات کردنی لەرەلەرەکان بە ڕاپۆرت کردنی ئۆتۆماتیکی شوێنەکە بە سیستەمی کۆنتڕۆڵی دووکەڵی جێگیر.'
-      }
-    ]
-  }
-];
-
 export default function ServiceDetailModal({ isOpen, onClose, initialServiceId }: ServiceDetailModalProps) {
   const { lang } = useLanguage();
-  const { isOwnerLoggedIn, customPhotos, addProjectPhoto, deleteProjectPhoto } = useOwner();
+  const { 
+    isOwnerLoggedIn, 
+    customPhotos, 
+    addProjectPhoto, 
+    deleteProjectPhoto,
+    servicesData,
+    updateServiceStep,
+    updateServiceCore
+  } = useOwner();
 
   const [activeTab, setActiveTab] = useState<string>(initialServiceId);
 
@@ -218,13 +49,30 @@ export default function ServiceDetailModal({ isOpen, onClose, initialServiceId }
   const [isUploadingLocal, setIsUploadingLocal] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Find active service item
-  const service = serviceDetailsData.find(s => s.id === activeTab) || serviceDetailsData[0];
+  // Steps editing states
+  const [editingStepIndex, setEditingStepIndex] = useState<number | null>(null);
+  const [tempStepTitleEn, setTempStepTitleEn] = useState('');
+  const [tempStepTitleKu, setTempStepTitleKu] = useState('');
+  const [tempStepDescEn, setTempStepDescEn] = useState('');
+  const [tempStepDescKu, setTempStepDescKu] = useState('');
 
-  // Resolve merged photos (Default Pre-seeded + Owner custom additions)
-  const defaultList = defaultPhotos[activeTab] || [];
-  const customList = customPhotos[activeTab] || [];
-  const mergedPhotos = [...defaultList, ...customList];
+  // Core fields editing states
+  const [isEditingCore, setIsEditingCore] = useState(false);
+  const [tempCoreTitleEn, setTempCoreTitleEn] = useState('');
+  const [tempCoreTitleKu, setTempCoreTitleKu] = useState('');
+  const [tempCoreSubEn, setTempCoreSubEn] = useState('');
+  const [tempCoreSubKu, setTempCoreSubKu] = useState('');
+  const [tempCoreDescEn, setTempCoreDescEn] = useState('');
+  const [tempCoreDescKu, setTempCoreDescKu] = useState('');
+  const [tempCoreCardDescEn, setTempCoreCardDescEn] = useState('');
+  const [tempCoreCardDescKu, setTempCoreCardDescKu] = useState('');
+
+  // Find active service item from dynamic state
+  const service = servicesData.find(s => s.id === activeTab) || servicesData[0];
+
+  // Resolve pictures uploaded by the owner as requested:
+  // "remove the existing pics and make the owner add its own pictures"
+  const mergedPhotos = customPhotos[activeTab] || [];
 
   // File to base64 converter
   const handleLocalFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -266,6 +114,51 @@ export default function ServiceDetailModal({ isOpen, onClose, initialServiceId }
     setCityEn('');
     setCityKu('');
     if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  // Inline editing actions
+  const startEditingStep = (i: number, step: any) => {
+    setEditingStepIndex(i);
+    setTempStepTitleEn(step.titleEn);
+    setTempStepTitleKu(step.titleKu);
+    setTempStepDescEn(step.descEn);
+    setTempStepDescKu(step.descKu);
+  };
+
+  const handleSaveStep = (i: number) => {
+    updateServiceStep(activeTab, i, {
+      titleEn: tempStepTitleEn,
+      titleKu: tempStepTitleKu,
+      descEn: tempStepDescEn,
+      descKu: tempStepDescKu
+    });
+    setEditingStepIndex(null);
+  };
+
+  const startEditingCore = () => {
+    setIsEditingCore(true);
+    setTempCoreTitleEn(service.titleEn);
+    setTempCoreTitleKu(service.titleKu);
+    setTempCoreSubEn(service.subEn);
+    setTempCoreSubKu(service.subKu);
+    setTempCoreDescEn(service.descEn);
+    setTempCoreDescKu(service.descKu);
+    setTempCoreCardDescEn(service.cardDescEn || '');
+    setTempCoreCardDescKu(service.cardDescKu || '');
+  };
+
+  const handleSaveCore = () => {
+    updateServiceCore(activeTab, {
+      titleEn: tempCoreTitleEn,
+      titleKu: tempCoreTitleKu,
+      subEn: tempCoreSubEn,
+      subKu: tempCoreSubKu,
+      descEn: tempCoreDescEn,
+      descKu: tempCoreDescKu,
+      cardDescEn: tempCoreCardDescEn,
+      cardDescKu: tempCoreCardDescKu
+    });
+    setIsEditingCore(false);
   };
 
   return (
@@ -316,12 +209,16 @@ export default function ServiceDetailModal({ isOpen, onClose, initialServiceId }
                   {lang === 'ku' ? 'بژاردەکانی سیستەم' : 'System Solutions'}
                 </div>
                 
-                {serviceDetailsData.map((tab) => {
+                {servicesData.map((tab) => {
                   const isActive = activeTab === tab.id;
                   return (
                     <button
                       key={tab.id}
-                      onClick={() => setActiveTab(tab.id)}
+                      onClick={() => {
+                        setActiveTab(tab.id);
+                        setEditingStepIndex(null);
+                        setIsEditingCore(false);
+                      }}
                       className={`flex items-center gap-3.5 text-left px-4 py-3.5 rounded-2xl border text-sm transition-all duration-200 w-full font-light
                         ${isActive 
                           ? 'bg-navy-light border-amber/40 text-text-main font-medium shadow-[inset_4px_0_0_#FFD600]' 
@@ -339,21 +236,140 @@ export default function ServiceDetailModal({ isOpen, onClose, initialServiceId }
                 
                 {/* Intro details with huge layout title */}
                 <div>
-                  <div className="flex items-center gap-3 mb-4">
-                    {getServiceIcon(service.id, "w-8 h-8")}
-                    <span className="font-mono text-amber text-sm font-semibold tracking-wider">SYSTEM 0{service.id}</span>
+                  <div className="flex items-center justify-between gap-4 mb-4">
+                    <div className="flex items-center gap-3">
+                      {getServiceIcon(service.id, "w-8 h-8")}
+                      <span className="font-mono text-amber text-sm font-semibold tracking-wider">SYSTEM 0{service.id}</span>
+                    </div>
+                    {isOwnerLoggedIn && !isEditingCore && (
+                      <button
+                        onClick={startEditingCore}
+                        className="px-4 py-2 bg-amber/10 border border-amber/20 hover:bg-amber/20 text-amber text-[10px] tracking-widest uppercase font-bold rounded-full transition-all"
+                      >
+                        {lang === 'ku' ? 'دەستکاری دەقی سەرەکی' : 'Edit Main Texts'}
+                      </button>
+                    )}
                   </div>
-                  
-                  <h2 className="font-display text-4xl md:text-5xl tracking-tight text-text-main mb-3">
-                    {lang === 'ku' ? service.titleKu : service.titleEn}
-                  </h2>
-                  <p className="text-sm font-light uppercase tracking-widest text-muted mb-6">
-                    {lang === 'ku' ? service.subKu : service.subEn}
-                  </p>
-                  
-                  <p className="text-md leading-relaxed text-white/80 font-light max-w-4xl bg-white/5 p-6 rounded-3xl border border-white/5">
-                    {lang === 'ku' ? service.descKu : service.descEn}
-                  </p>
+
+                  {isOwnerLoggedIn && isEditingCore ? (
+                    <div className="bg-white/5 p-6 md:p-8 rounded-[32px] border border-white/10 flex flex-col gap-4 mb-6">
+                      <div className="text-xs uppercase tracking-wider text-amber font-semibold mb-2">
+                        {lang === 'ku' ? 'مۆدی دەستکاری دەقی سەرەکی' : 'Editing Core Information'}
+                      </div>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-[10px] uppercase text-muted tracking-wider mb-1">Title (English)</label>
+                          <input 
+                            type="text" 
+                            className="w-full bg-navy border border-white/10 text-sm text-white px-3 py-2 rounded-lg focus:border-amber outline-none"
+                            value={tempCoreTitleEn}
+                            onChange={(e) => setTempCoreTitleEn(e.target.value)}
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[10px] uppercase text-muted tracking-wider mb-1">Title (Kurdish)</label>
+                          <input 
+                            type="text" 
+                            className="w-full bg-navy border border-white/10 text-sm text-white px-3 py-2 rounded-lg focus:border-amber outline-none"
+                            value={tempCoreTitleKu}
+                            onChange={(e) => setTempCoreTitleKu(e.target.value)}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-[10px] uppercase text-muted tracking-wider mb-1">Subtitle (English)</label>
+                          <input 
+                            type="text" 
+                            className="w-full bg-navy border border-white/10 text-sm text-white px-3 py-2 rounded-lg focus:border-amber outline-none"
+                            value={tempCoreSubEn}
+                            onChange={(e) => setTempCoreSubEn(e.target.value)}
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[10px] uppercase text-muted tracking-wider mb-1">Subtitle (Kurdish)</label>
+                          <input 
+                            type="text" 
+                            className="w-full bg-navy border border-white/10 text-sm text-white px-3 py-2 rounded-lg focus:border-amber outline-none"
+                            value={tempCoreSubKu}
+                            onChange={(e) => setTempCoreSubKu(e.target.value)}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-[10px] uppercase text-muted tracking-wider mb-1">Brief Card Description (English)</label>
+                          <textarea 
+                            className="w-full bg-navy border border-white/10 text-sm text-white px-3 py-2 rounded-lg focus:border-amber outline-none font-sans"
+                            rows={2}
+                            value={tempCoreCardDescEn}
+                            onChange={(e) => setTempCoreCardDescEn(e.target.value)}
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[10px] uppercase text-muted tracking-wider mb-1">Brief Card Description (Kurdish)</label>
+                          <textarea 
+                            className="w-full bg-navy border border-white/10 text-sm text-white px-3 py-2 rounded-lg focus:border-amber outline-none font-sans"
+                            rows={2}
+                            value={tempCoreCardDescKu}
+                            onChange={(e) => setTempCoreCardDescKu(e.target.value)}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-[10px] uppercase text-muted tracking-wider mb-1">Full Detailed Description (English)</label>
+                          <textarea 
+                            className="w-full bg-navy border border-white/10 text-sm text-white px-3 py-2 rounded-lg focus:border-amber outline-none font-sans"
+                            rows={4}
+                            value={tempCoreDescEn}
+                            onChange={(e) => setTempCoreDescEn(e.target.value)}
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[10px] uppercase text-muted tracking-wider mb-1">Full Detailed Description (Kurdish)</label>
+                          <textarea 
+                            className="w-full bg-navy border border-white/10 text-sm text-white px-3 py-2 rounded-lg focus:border-amber outline-none font-sans"
+                            rows={4}
+                            value={tempCoreDescKu}
+                            onChange={(e) => setTempCoreDescKu(e.target.value)}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="flex gap-2 justify-end mt-2">
+                        <button 
+                          onClick={() => setIsEditingCore(false)}
+                          className="px-4 py-2 bg-white/10 text-[10px] tracking-widest uppercase rounded-full text-white hover:bg-white/20 transition-all font-semibold"
+                        >
+                          Cancel
+                        </button>
+                        <button 
+                          onClick={handleSaveCore}
+                          className="px-4 py-2 bg-amber text-navy text-[10px] tracking-widest uppercase rounded-full font-bold hover:bg-amber-bright transition-all"
+                        >
+                          Save Changes
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <h2 className="font-display text-4xl md:text-5xl tracking-tight text-text-main mb-3">
+                        {lang === 'ku' ? service.titleKu : service.titleEn}
+                      </h2>
+                      <p className="text-sm font-light uppercase tracking-widest text-muted mb-6">
+                        {lang === 'ku' ? service.subKu : service.subEn}
+                      </p>
+                      
+                      <p className="text-md leading-relaxed text-white/80 font-light max-w-4xl bg-white/5 p-6 rounded-3xl border border-white/5">
+                        {lang === 'ku' ? service.descKu : service.descEn}
+                      </p>
+                    </>
+                  )}
                 </div>
 
                 {/* How it Works / Steps List */}
@@ -365,19 +381,94 @@ export default function ServiceDetailModal({ isOpen, onClose, initialServiceId }
                   
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     {service.steps.map((st, i) => (
-                      <div key={i} className="relative bg-navy-mid border border-white/5 p-6 rounded-3xl">
-                        <div className="absolute top-4 right-4 text-3xl font-mono text-white/5 font-extrabold leading-none">
-                          0{i+1}
+                      <div key={i} className="relative bg-navy-mid border border-white/5 p-6 rounded-3xl flex flex-col justify-between min-h-[220px]">
+                        <div>
+                          <div className="absolute top-4 right-4 text-3xl font-mono text-white/5 font-extrabold leading-none">
+                            0{i+1}
+                          </div>
+                          <div className="w-8 h-8 rounded-full bg-amber/10 text-amber flex items-center justify-center text-xs font-bold mb-4">
+                            {i+1}
+                          </div>
+
+                          {isOwnerLoggedIn && editingStepIndex === i ? (
+                            <div className="flex flex-col gap-3 mt-2 text-left">
+                              <div className="text-xs uppercase tracking-wider text-amber font-semibold mb-1">
+                                {lang === 'ku' ? 'دەستکاریکردنی هەنگاو' : 'Modify Step'}
+                              </div>
+                              <div>
+                                <label className="block text-[8px] uppercase text-muted tracking-wider mb-0.5">Title (English)</label>
+                                <input 
+                                  type="text" 
+                                  className="w-full bg-navy border border-white/10 text-xs text-white p-2 rounded-lg focus:border-amber outline-none"
+                                  value={tempStepTitleEn}
+                                  onChange={(e) => setTempStepTitleEn(e.target.value)}
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-[8px] uppercase text-muted tracking-wider mb-0.5">Title (Kurdish)</label>
+                                <input 
+                                  type="text" 
+                                  className="w-full bg-navy border border-white/10 text-xs text-white p-2 rounded-lg focus:border-amber outline-none"
+                                  value={tempStepTitleKu}
+                                  onChange={(e) => setTempStepTitleKu(e.target.value)}
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-[8px] uppercase text-muted tracking-wider mb-0.5">Description (English)</label>
+                                <textarea 
+                                  className="w-full bg-navy border border-white/10 text-xs text-white p-2 rounded-lg focus:border-amber outline-none"
+                                  rows={3}
+                                  value={tempStepDescEn}
+                                  onChange={(e) => setTempStepDescEn(e.target.value)}
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-[8px] uppercase text-muted tracking-wider mb-0.5">Description (Kurdish)</label>
+                                <textarea 
+                                  className="w-full bg-navy border border-white/10 text-xs text-white p-2 rounded-lg focus:border-amber outline-none"
+                                  rows={3}
+                                  value={tempStepDescKu}
+                                  onChange={(e) => setTempStepDescKu(e.target.value)}
+                                />
+                              </div>
+                              <div className="flex gap-2 justify-end mt-2">
+                                <button 
+                                  type="button"
+                                  onClick={() => setEditingStepIndex(null)}
+                                  className="px-2.5 py-1 bg-white/10 text-[9px] tracking-widest uppercase rounded-md text-white hover:bg-white/20 transition-all font-semibold"
+                                >
+                                  Cancel
+                                </button>
+                                <button 
+                                  type="button"
+                                  onClick={() => handleSaveStep(i)}
+                                  className="px-2.5 py-1 bg-amber text-navy text-[9px] tracking-widest uppercase rounded-md font-bold hover:bg-amber-bright transition-all"
+                                >
+                                  Save
+                                </button>
+                              </div>
+                            </div>
+                          ) : (
+                            <>
+                              <h4 className="font-serif text-lg text-text-main mb-2">
+                                {lang === 'ku' ? st.titleKu : st.titleEn}
+                              </h4>
+                              <p className="text-xs leading-relaxed text-muted font-light">
+                                {lang === 'ku' ? st.descKu : st.descEn}
+                              </p>
+                            </>
+                          )}
                         </div>
-                        <div className="w-8 h-8 rounded-full bg-amber/10 text-amber flex items-center justify-center text-xs font-bold mb-4">
-                          {i+1}
-                        </div>
-                        <h4 className="font-serif text-lg text-text-main mb-2">
-                          {lang === 'ku' ? st.titleKu : st.titleEn}
-                        </h4>
-                        <p className="text-xs leading-relaxed text-muted font-light">
-                          {lang === 'ku' ? st.descKu : st.descEn}
-                        </p>
+
+                        {isOwnerLoggedIn && editingStepIndex !== i && (
+                          <button
+                            type="button"
+                            onClick={() => startEditingStep(i, st)}
+                            className="mt-4 px-3 py-1.5 bg-amber/10 border border-amber/20 hover:bg-amber/20 text-amber text-[9px] tracking-widest uppercase font-bold rounded-lg transition-all self-start"
+                          >
+                            {lang === 'ku' ? 'دەستکاری هەنگاو' : 'Edit Step'}
+                          </button>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -392,7 +483,7 @@ export default function ServiceDetailModal({ isOpen, onClose, initialServiceId }
 
                   {mergedPhotos.length === 0 ? (
                     <div className="bg-navy-mid border border-dashed border-white/10 rounded-3xl p-12 text-center text-muted text-sm">
-                      {lang === 'ku' ? 'هیچ وێنەیەکی پڕۆژە نییە بۆ ئەم خزمەتگوزارییە هێشتا.' : 'No active portfolio images uploaded for this system category.'}
+                      {lang === 'ku' ? 'هیچ وێنەیەکی پڕۆژە نییە بۆ ئەم خزمەتگوزارییە هێشتا. با شتێک زیاد بکەین!' : 'No active portfolio images uploaded for this system category yet.'}
                     </div>
                   ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -405,7 +496,7 @@ export default function ServiceDetailModal({ isOpen, onClose, initialServiceId }
                               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                               referrerPolicy="no-referrer"
                               onError={(e) => {
-                                // fallback if image is broken
+                                // fallback if image is broken or blank
                                 e.currentTarget.src = "https://images.unsplash.com/photo-1581094288338-2314dddb7ecc?auto=format&fit=crop&w=800&q=80";
                               }}
                             />
@@ -418,6 +509,7 @@ export default function ServiceDetailModal({ isOpen, onClose, initialServiceId }
                             {/* Delete Button (Only shown if Owner is logged in) */}
                             {isOwnerLoggedIn && (
                               <button
+                                type="button"
                                 onClick={() => {
                                   if (confirm(lang === 'ku' ? 'دڵنیایت لە سڕینەوەی ئەم وێنەیە؟' : 'Are you sure you want to delete this project photo?')) {
                                     deleteProjectPhoto(activeTab, img.id);
@@ -454,7 +546,7 @@ export default function ServiceDetailModal({ isOpen, onClose, initialServiceId }
                   <motion.div 
                     initial={{ opacity: 0, y: 15 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="border border-amber/30 bg-amber/5 rounded-[32px] p-8 md:p-10 relative overflow-hidden"
+                    className="border border-amber/30 bg-amber/5 rounded-[32px] p-8 md:p-10 relative overflow-hidden text-left"
                   >
                     {/* Glowing structural background element */}
                     <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-amber/10 blur-3xl pointer-events-none" />

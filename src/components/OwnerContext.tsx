@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
+import React, { createContext, useContext, useState, ReactNode } from 'react';
 
 export interface ProjectPhoto {
   id: string;
@@ -10,6 +10,27 @@ export interface ProjectPhoto {
   date: string;
 }
 
+export interface EngineeringStep {
+  titleEn: string;
+  titleKu: string;
+  descEn: string;
+  descKu: string;
+}
+
+export interface ServiceDetail {
+  id: string;
+  titleEn: string;
+  titleKu: string;
+  titleAr?: string; // Standard Arabic/Kurdish summary title
+  cardDescEn: string;
+  cardDescKu: string;
+  subEn: string;
+  subKu: string;
+  descEn: string;
+  descKu: string;
+  steps: EngineeringStep[];
+}
+
 interface OwnerContextType {
   isOwnerLoggedIn: boolean;
   login: (password: string) => boolean;
@@ -19,130 +40,216 @@ interface OwnerContextType {
   deleteProjectPhoto: (serviceId: string, photoId: string) => void;
   selectedServiceId: string | null;
   setSelectedServiceId: (id: string | null) => void;
+  servicesData: ServiceDetail[];
+  updateServiceStep: (serviceId: string, stepIndex: number, updatedStep: EngineeringStep) => void;
+  updateServiceCore: (serviceId: string, updatedFields: Partial<Omit<ServiceDetail, 'id' | 'steps'>>) => void;
 }
 
 const OwnerContext = createContext<OwnerContextType | undefined>(undefined);
 
-// Default Pre-seeded high-quality Unsplash image configurations for each service categories
-export const defaultPhotos: Record<string, ProjectPhoto[]> = {
-  '01': [
-    {
-      id: 'def-01-1',
-      url: 'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?auto=format&fit=crop&w=800&q=80',
-      caption: 'VRF Central Air Conditioning compressors installed on restaurant roof block.',
-      captionKu: 'کۆمپرێسەری مەرکەزی VRF تازە دامەزراو لەسەر سەقفی پڕۆژەی خواردنگە.',
-      projectCity: 'Sulaymaniyah',
-      projectCityKu: 'سلێمانی',
-      date: 'May 2026'
-    },
-    {
-      id: 'def-01-2',
-      url: 'https://images.unsplash.com/photo-1581094288338-2314dddb7ecc?auto=format&fit=crop&w=800&q=80',
-      caption: 'Main indoor air handler maintenance inspection & air balance configuration.',
-      captionKu: 'پشکنین و سەرپەرشتیکردنی فلتەرەکان و بڵاوکارە مەرکەزییەکان.',
-      projectCity: 'Ranya',
-      projectCityKu: 'ڕانیە',
-      date: 'April 2026'
-    }
-  ],
-  '02': [
-    {
-      id: 'def-02-1',
-      url: 'https://images.unsplash.com/photo-1504307651254-35680f356dfd?auto=format&fit=crop&w=800&q=80',
-      caption: 'Underfloor radiant PEX-a hydronic loop laying atop thick polyurethane isolation panels.',
-      captionKu: 'دانانی هێڵە حەرارییەکانی ژێر زەوی PEX-a لەسەر فۆمی نەهێشتنی بەفیڕۆچوونی گەرمی.',
-      projectCity: 'Sulaymaniyah (Sarchinar)',
-      projectCityKu: 'سلێمانی (سەرچنار)',
-      date: 'February 2026'
-    },
-    {
-      id: 'def-02-2',
-      url: 'https://images.unsplash.com/photo-1621905252507-b354bc25edac?auto=format&fit=crop&w=800&q=80',
-      caption: 'Premium control flow manifolds with computerized balance dials and pressure regulators.',
-      captionKu: 'مانیفۆڵدی گواستنەوەی سەرەکی پێکهاتوو لە پێوەر و رێکخەرەکانی پەستان.',
-      projectCity: 'Halabja',
-      projectCityKu: 'هەڵەبجە',
-      date: 'March 2026'
-    }
-  ],
-  '03': [
-    {
-      id: 'def-03-1',
-      url: 'https://images.unsplash.com/photo-1585338107529-13afc5f02586?auto=format&fit=crop&w=800&q=80',
-      caption: 'Minimalist aluminum panel radiator mounted inside high-end custom designed villa living room.',
-      captionKu: 'پانێڵی سپی کلاسیك بۆ شۆفاژی دیواری لە ناوەوەی ڤێلا.',
-      projectCity: 'Erbil',
-      projectCityKu: 'هەولێر',
-      date: 'December 2025'
-    },
-    {
-      id: 'def-03-2',
-      url: 'https://images.unsplash.com/photo-1605647540924-852290f6b0d5?auto=format&fit=crop&w=800&q=80',
-      caption: 'Integrated boiler system installation check with fully pressure-certified copper couplings.',
-      captionKu: 'پشکنینی بۆرییە مسە کورت و سەرەکییەکانی پەرەپێدانی بۆیلەر.',
-      projectCity: 'Sulaymaniyah (Bakrajo)',
-      projectCityKu: 'سلێمانی (بەکراین)',
-      date: 'January 2026'
-    }
-  ],
-  '04': [
-    {
-      id: 'def-04-1',
-      url: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=800&q=80',
-      caption: 'Heavy gas distribution line manifolds equipped with quick trigger shutoff valves.',
-      captionKu: 'تۆڕی مانیفۆڵدی دابەشکاری غاز یاوەر بە قوفڵی پارامی لەرەلەر.',
-      projectCity: 'Sulaymaniyah Industrial Zone',
-      projectCityKu: 'ناوچەی پیشەسازی سلێمانی',
-      date: 'April 2026'
-    },
-    {
-      id: 'def-04-2',
-      url: 'https://images.unsplash.com/photo-1504917595217-d4dc5ebe6122?auto=format&fit=crop&w=800&q=80',
-      caption: 'Solenoid automated emergency cutoff tests on welded seamless carbon lines.',
-      captionKu: 'پۆڵای بەستراوی بێ درز و تاقیکردنەوەی گرژی دزەکردن.',
-      projectCity: 'Kalar',
-      projectCityKu: 'کەلار',
-      date: 'March 2026'
-    }
-  ],
-  '05': [
-    {
-      id: 'def-05-1',
-      url: 'https://images.unsplash.com/photo-1509391366360-2e959784a276?auto=format&fit=crop&w=800&q=80',
-      caption: 'Curvaceous high-efficiency solar panel modules aligned on south-facing structural angles.',
-      captionKu: 'پانێڵی پێشکەوتووی وزەی خۆر لەسەر سەقفی خانوو بۆ بەرهەمهێنانی کارەبا.',
-      projectCity: 'Sulaymaniyah (Qaiwan City)',
-      projectCityKu: 'سلێمانی (شارۆچکەی قەیوان)',
-      date: 'May 2026'
-    },
-    {
-      id: 'def-05-2',
-      url: 'https://images.unsplash.com/photo-1516216628859-9bccecad13fa?auto=format&fit=crop&w=800&q=80',
-      caption: 'Deep cell lithium storage cabinet installation configured with smart digital inverter control screen.',
-      captionKu: 'کابینەی پێشکەوتووی پاترییەکان و ئینڤێرتەر بۆ کارەبای هەمیشەیی.',
-      projectCity: 'Koya',
-      projectCityKu: 'کۆیە',
-      date: 'June 2026'
-    }
-  ],
-  '06': [
-    {
-      id: 'def-06-1',
-      url: 'https://images.unsplash.com/photo-1598971861713-54ad16a7e72e?auto=format&fit=crop&w=800&q=80',
-      caption: 'Wet carbon fire suppression distribution line installation under concrete base ceilings.',
-      captionKu: 'بۆری مەرکەزی ئاگری ئۆتۆماتیکی و جێگیرکردنی زمانەی هەستیار بۆ گەرمی.',
-      projectCity: 'Sulaymaniyah Mall',
-      projectCityKu: 'سلێمانی مۆڵ',
-      date: 'January 2026'
-    }
-  ]
-};
+// Core initial system solutions and steps
+const initialServicesData: ServiceDetail[] = [
+  {
+    id: '01',
+    titleEn: 'Cooling Systems',
+    titleKu: 'سیستەمی ساردی',
+    titleAr: 'سیستەمی ساردی',
+    cardDescEn: 'Supply and installation of central air conditioning, split units, and ducted cooling systems optimised for the harsh summer heat.',
+    cardDescKu: 'دابینکردن و دانانی سپلیت و سیستەمی ساردی مەرکەزی بۆ بەرگەگرتنی گەرمای هاوین.',
+    subEn: 'Central VRF, Ducted Splits, & High-efficiency cooling grids.',
+    subKu: 'سیستەمی فێنککەرەوەی ناوەندی، دەکتی سپلیت و یەکەکانی فێنککردنەوە.',
+    descEn: 'We deliver comprehensive thermal load engineering. Yousif Company installs state-of-the-art Variable Refrigerant Flow (VRF) and inverter systems customized specifically for the severe Iraqi summer temperatures exceed 50°C.',
+    descKu: 'ئێمە لێکۆڵینەوەی تێرماڵی چڕ ئەنجام دەدەین. یوسف کۆمپانی هەڵدەستێت بە بەستنی سیستمە سەرەکی و مۆدێرنەکانی مارکەی جیهانی و تەکنەلۆجیای (VRF) کە گونجاوە بۆ هاوینی گەرمی عێراق و کوردستان کە پلەی گەرمی دەگاتە زیاتر لە ٥٠ پلەی سەدی.',
+    steps: [
+      {
+        titleEn: 'Thermal Load Calculation',
+        titleKu: 'حیسابکردنی بڕی گەرمی',
+        descEn: 'We measure exact space volume, window directions, insulation efficiency, and roof exposure using professional software.',
+        descKu: 'ئەندازە گرتنی ووردی رووبەر، ئاڕاستەی تیشکی خۆر، کاریگەری دەرگا و پەنجەرەکان بۆ دیاریکردنی هێزی مەکینەی فێنککەرەوە.'
+      },
+      {
+        titleEn: 'Continuous Duct Engineering',
+        titleKu: 'ڕاکێشان و سازدانی دەکتی هەوا',
+        descEn: 'Design of custom insulated galvanized ducts ensures zero moisture leakage and quiet, uniform air dispersion.',
+        descKu: 'دیزاین کردنی دەکتی مەتاتی جۆراوجۆر بە دژە تەڕبوون کە فێنکییەکە بە بێدەنگی و یەکسانی بڵاودەکاتەوە.'
+      },
+      {
+        titleEn: 'Intelligent VRF Modulation',
+        titleKu: 'بەستن و بەگەڕخستنی سیستەمی VRF',
+        descEn: 'Advanced electronic expansion valves modulate cool gas flow in real-time, reducing electrical energy waste up to 45%.',
+        descKu: 'کۆنتڕۆڵکردنی ڕێڕەوی غازی فێنککەرەوە بە شێوەی کاتی بە تەکنەلۆجیای نوێ کە تێچووی کارەبا کەم دەکاتەوە زیاتر لە ٤٥٪.'
+      }
+    ]
+  },
+  {
+    id: '02',
+    titleEn: 'Heating Systems',
+    titleKu: 'سیستەمی گەرمی',
+    titleAr: 'سیستەمی گەرمی',
+    cardDescEn: 'Expert design and fitting of underfloor, radiator, and central heating solutions keeping homes warm through cold winters.',
+    cardDescKu: 'نەخشەسازی و دانانی سیستەمی گەرمکەرەوە بۆ هێشتنەوەی ماڵەکان بە گەرمی لە زستاندا.',
+    subEn: 'In-slab Hydronic Underfloor Heating & complete thermal envelopes.',
+    subKu: 'گەرمکەرەوەی ژێرزەوی پێشکەوتوو بە تۆڕی ئاوی و پەیلی و چیمەنتۆ.',
+    descEn: 'Underfloor heating provides the ultimate luxury of silent, dust-free radiant comfort. Perfect comfort is distributed from the floor up, leaving no cold spots and saving space on interior design.',
+    descKu: 'سیستەمی گەرمکەرەوەی ژێرزەوی تەواو ئاسوودەیی و بێدەنگی دەبەخشێت بە ماڵەکەت بێ دروستکردنی هیچ تۆز و خۆڵێک. گەرمی لە خوارەوە بۆ سەرەوە بڵاودەبێتەوە و سوودی هەیە بۆ دیزاینی ناوەوە.',
+    steps: [
+      {
+        titleEn: 'Polystyrene High-Density Isolation',
+        titleKu: 'عەزلکردنی ژێر زەوی بە فۆمی چڕ',
+        descEn: 'High-compressive polystyrene boards block heat transfers to structural floors, reflecting all radiant warmth upward.',
+        descKu: 'دانانی تەوەرە و فۆمی عەزل لەسەر زەوی کۆنکرێت بۆ رێگریکردن لە ونبوونی گەرمی بۆ بن بێنا.'
+      },
+      {
+        titleEn: 'Continuous Pipe Stitching',
+        titleKu: 'ڕاکێشانی بۆری PEX بەردەوام',
+        descEn: 'Standard PEX-a barrier pipes are mounted in spiral formats, guaranteeing zero joints in the entire concrete underlay.',
+        descKu: 'ڕاکێشان و رێکخستنی بۆری بازنەیی PEX-a بێ بەکارهێنانی جوین لەژێر زەوی بۆ نەهێشتنی ئەگەری تەقین.'
+      },
+      {
+        titleEn: 'Balanced Manifold Calibrations',
+        titleKu: 'ڕێکخستنی مانیفۆڵدی ڕێڕەو',
+        descEn: 'Every heating loop is individually adjusted at the central manifold, allowing specific temperature zones per room.',
+        descKu: 'کۆنتڕۆڵ کردنی بڕی گەرمی سووڕاو لە مانیفۆڵدی ناوەندی، گەرەنتی کردنی کۆنتڕۆڵی پلەی گەرمی هەر ژوورێک بە جیا.'
+      }
+    ]
+  },
+  {
+    id: '03',
+    titleEn: 'Radiator Heating',
+    titleKu: 'شۆفاژ',
+    titleAr: 'شۆفاژ',
+    cardDescEn: 'Supply and installation of modern radiator systems, including full boiler setup and hydronic heating networks.',
+    cardDescKu: 'دابینکردن و دانانی سیستەمی شۆفاژ و بۆیلەر.',
+    subEn: 'Elegant European panel radiators, gas/diesel boiler systems.',
+    subKu: 'شۆفاژی مۆدێرنی دیواری، سیستەمەکانی بۆیلەری کارەبایی و غازی متمانەپێکراو.',
+    descEn: 'We supply and install modern hydronic panel radiators from top Turkish and Italian manufacturers. Configured with smart boilers to provide immediate and warm convection for residences and corporate projects.',
+    descKu: 'ئێمە پانێڵی شۆفاژ لە باشترین جۆر و مارکەی جیهانی دابین دەکەین. گونجاو لەگەڵ بۆیلەرە پێشکەوتووەکان تا گەرمیەکی کتوپڕ و بەردەوام ببەخشێت بە پرۆژە نیشتەجێبوون و بازرگانییەکانتان.',
+    steps: [
+      {
+        titleEn: 'Central Energy Boiler Station',
+        titleKu: 'دامەزراندنی بۆیلەر',
+        descEn: 'We design complete boiler systems using highly insulated copper manifolds to manage central thermal grids.',
+        descKu: 'نەخشەسازی کۆمەڵە بۆیلەری ناوەندی و پەمپەکانی سووڕانەوە بە بۆری مس و دژە هەوا.'
+      },
+      {
+        titleEn: 'Hydronic Pipe Ring Layouts',
+        titleKu: 'ڕاکێشانی هێڵی ئاوی سووڕاو',
+        descEn: 'Heavy duty pressure-tested pipes are run concealed in masonry to connect the radiator panels safely.',
+        descKu: 'ڕاکێشانی بۆریە شاراوەکان لەناو دیوارەکاندا بۆ گەیاندنی ئاوی گەرم بۆ پانێڵ فێنککەرەکان.'
+      },
+      {
+        titleEn: 'Thermostatic Valve Automation',
+        titleKu: 'بەستنی قوفڵە حەرارییەکان',
+        descEn: 'We fit custom programmable valves directly on the radiators so heating shuts off when a room reaches target comfort.',
+        descKu: 'بەستنی قوفڵی هەستیار بۆ کوژانەوەی ئۆتۆماتیکی شۆفاژەکە کاتێک ژوورەکە گەرمی پێویست بەدەستدەهێنێت.'
+      }
+    ]
+  },
+  {
+    id: '04',
+    titleEn: 'Gas Networks',
+    titleKu: 'تۆڕی غاز',
+    titleAr: 'تۆڕی غاز',
+    cardDescEn: 'Full-scale gas pipeline engineering, distribution networks, and connection services for residential and commercial properties.',
+    cardDescKu: 'نەخشەسازی و ڕاکێشانی بۆری غاز بۆ ماڵ و شوێنە بازرگانییەکان.',
+    subEn: 'Certified LPG / NG infrastructure, leak detection solenoids.',
+    subKu: 'تۆڕی متمانەپێکراوی غاز بە بۆری بێ درز و سیستەمی ئاگادارکەرەوە لە کاتی دزەکردن.',
+    descEn: 'Safety is paramount. Yousif Company engineers highly secure Liquefied Petroleum Gas (LPG) pipelines for residential buildings, hotels, and luxury villas using heavy-gauge seamless steel.',
+    descKu: 'سەلامەتی پێش هەموو شتێکە. ئەندازیارانی یوسف کۆمپانی هەڵدەستن بە دروستکردنی بۆری و هێڵی پۆڵای تۆڕی غازی شل (LPG) بۆ خانوو، شوقە و چێشتخانەکان بە بەرزترین جۆری سەلامەتی.',
+    steps: [
+      {
+        titleEn: 'Carbon Seamless Welding',
+        titleKu: 'جۆشکاری کاربۆنی پتەوی بێ درز',
+        descEn: 'All gas pipes are seamlessly welded with certified joint testing, ensuring zero risk of structural pressure drop.',
+        descKu: 'جۆشکردنی تەواوی بۆرییەکان بە کۆنتڕۆڵ و تاقی کردنەوەی بەهێز بۆ نەهێشتنی درز و دڵنیابوون لە نەبوونی کێشە.'
+      },
+      {
+        titleEn: 'Automated Leak Interlocking',
+        titleKu: 'سیستەمی زنجیرەیی دۆزینەوەی دزەکردن',
+        descEn: 'Smart gas sensors trigger central electronic solenoids, immediately locking the main valve if any vapor is detected.',
+        descKu: 'هەستیاری پێشکەوتوو غازی لێکچوو دەدۆزێتەوە و خێرا بە شێوەی ئۆتۆماتیکی قوفڵی سەرەکی غازی ناوەند دادەخات.'
+      },
+      {
+        titleEn: 'Pressure Reduction Stations',
+        titleKu: 'وێستگەی رێکخستنی پەستان',
+        descEn: 'Custom dual-stage brass regulators reduce high pressure down to safe working metrics for kitchens and boilers.',
+        descKu: 'دانانی ڕێکخەری برۆنزی دوو قۆناغی بۆ کمکردنەوەی پەستانی بەهێز بۆ سەرانسەر ئامێرەکان بە پارێزراوی.'
+      }
+    ]
+  },
+  {
+    id: '05',
+    titleEn: 'Solar Systems',
+    titleKu: 'سۆلار',
+    titleAr: 'سۆلار',
+    cardDescEn: 'Clean-energy solar panel installation for homes and businesses — reducing electricity bills with sustainable, renewable power.',
+    cardDescKu: 'دانانی پانێڵی وزەی خۆر بۆ کەمکردنەوەی تێچووی کارەبا.',
+    subEn: 'Grid-tied & Hybrid photovoltaic solar arrays with premium battery banks.',
+    subKu: 'سیستەمی پانێڵی وزەی خۆر بە پاتری کۆگاکردنی لیسیۆم و ئینڤێرتەری زیرەک.',
+    descEn: 'Maximize energy independence. We install professional solar installations featuring Tier-1 monocrystalline panels, hybrid smart inverters, and long-life Lithium Iron Phosphate (LiFePO4) storage banks.',
+    descKu: 'سەربەخۆیی وزە بەدەستبهێنە. ئێمە کاردەکەین لەسەر بەستنی باشترین پانێڵی مۆنۆ-کریستاڵی ئەڵمانی و ئینڤێرتەری مۆدێرن لەگەڵ پاتری دژە تەقین و تەمەن درێژی لیثیۆم فۆسفاتی ئاسن بۆ وزەی بەردەوام.',
+    steps: [
+      {
+        titleEn: 'Azimuth & Shade Optimization',
+        titleKu: 'ئاراستەکردن بەرامبەر تیشکی خۆر',
+        descEn: 'Solar panels are positioned and tilted at optimized angles to maximize yearly kilowatt production, avoiding building shadows.',
+        descKu: 'دانانی پانێڵەکان بە گۆشەی گونجاو و دیاریکردن لە ڕووی باشوور بۆ زۆرترین برهەم هێنای وزەی فۆتۆڤۆلتایی.'
+      },
+      {
+        titleEn: 'Hybrid Smart Inverter Sync',
+        titleKu: 'ڕێکخستنی ئینڤێرتەری زیرەک',
+        descEn: 'We program the inverter to prioritize solar consumption first, bypass to batteries during grid outages, and automatically charge when power is cheapest.',
+        descKu: 'پرۆگرام کردنی ئینڤێرتەر کە سەرەتا وزەی خۆر بەکاربهێنێت و لە کاتی نەبوونی کارەبادا خۆکارانە کارەبای پاتریەکان بداتەوە.'
+      },
+      {
+        titleEn: 'Smart Lithium Energy Buffer',
+        titleKu: 'بەستنی کۆمەڵە پاتری لیثیۆم',
+        descEn: 'LiFePO4 battery storage arrays provide high active currents and complete zero-latency transitions during generator cuts.',
+        descKu: 'پاراستنی و بارگاوی کردنی وزە لە پاتریەکان کە بە بێ پچڕان لە کاتی گۆڕینی کارەبای نیشتمانیدا ڕاستەوخۆ دەگوازرێتەوە.'
+      }
+    ]
+  },
+  {
+    id: '06',
+    titleEn: 'Fire Suppression',
+    titleKu: 'ئاگرکوژێنەوە',
+    titleAr: 'ئاگرکوژێنەوە',
+    cardDescEn: 'Design and installation of fire detection and suppression systems to keep your property and people protected.',
+    cardDescKu: 'نەخشەسازی و دانانی سیستەمی ئاگرکوژێنەوە بۆ پاراستنی سەلامەتی.',
+    subEn: 'NFPA standard addressable detection, wet sprinkler, & fire main stations.',
+    subKu: 'سیستەمی ئاگرکوژێنەوەی سەر زەوی و قوفڵی شووشەی هەستیار بەپێی ستانداردەکانی NFPA.',
+    descEn: 'Absolute asset protection. Yousif Company layouts fully automated fire detection and suppression machinery designed strictly to certified NFPA code guidelines to safeguard residential and business areas.',
+    descKu: 'پاراستنی تەواوی ژیان و سەروەت و سامانەکانتان. کۆمپانیای یوسف نەخشەسازی و دامەزراندنی سیستەمەکانی کوژانەوەی ئاگری پیستر دەکات بەپێی باشترین مەرج و رێنماییە سەلامەتەکانی NFPA بۆ پاراستنی هەمیشەیی.',
+    steps: [
+      {
+        titleEn: 'Thermal Bulb Sprinklers',
+        titleKu: 'بەستنی زمانەکانی ئاوپڕژێنی هەستیار',
+        descEn: 'Localized glass spray bulbs melt instantly at 68°C, releasing targeted high velocity water jets only where active flame is present.',
+        descKu: 'دانانی یەکەی ئاوپڕژێنی سەری شووشەیی کە کاتێک پلەی گەرمی دەگاتە ٦٨ پلە بە شێوەی خۆکارانە تەقین دەکەن و ئاو دەڕێژن.'
+      },
+      {
+        titleEn: 'Dual-Backup Main Pumps',
+        titleKu: 'بەستنی پەمپی پاڵنەری گەورە',
+        descEn: 'Central electric pumps paired with critical backup diesel pumps fire up instantly if sprinkler line pressure drops.',
+        descKu: 'بەستنی پەمپی الەکتریکی یاوەر بە پەمپی مەکینەی دیزڵ بۆ هێشتنەوەی هەمیشەیی پەستانی مەرکەزی ئاوی کوژانەوە.'
+      },
+      {
+        titleEn: 'Addressable Control Syncing',
+        titleKu: 'بەستنەوە بە پانێلی مەرکەزی',
+        descEn: 'Fire trigger flow indicators instantly report zones to building sirens, turning off main fans to suppress smoke spreading.',
+        descKu: 'هاوکات کردنی لەرەلەرەکان بە ڕاپۆرت کردنی ئۆتۆماتیکی شوێنەکە بە سیستەمی کۆنتڕۆڵی دووکەڵی جێگیر.'
+      }
+    ]
+  }
+];
 
 export function OwnerProvider({ children }: { children: ReactNode }) {
   const [isOwnerLoggedIn, setIsOwnerLoggedIn] = useState<boolean>(() => {
     return localStorage.getItem('yousif_company_owner_auth') === 'true';
   });
 
+  // Photo state starts off completely clean as requested:
+  // "remove the existing pics and make the owner add its own pictures"
   const [customPhotos, setCustomPhotos] = useState<Record<string, ProjectPhoto[]>>(() => {
     const saved = localStorage.getItem('yousif_company_custom_photos');
     if (saved) {
@@ -153,6 +260,19 @@ export function OwnerProvider({ children }: { children: ReactNode }) {
       }
     }
     return {};
+  });
+
+  // Services data state (fully customizable)
+  const [servicesData, setServicesData] = useState<ServiceDetail[]>(() => {
+    const saved = localStorage.getItem('yousif_company_custom_services');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        console.error('Error parsing custom service details', e);
+      }
+    }
+    return initialServicesData;
   });
 
   const [selectedServiceId, setSelectedServiceId] = useState<string | null>(null);
@@ -196,6 +316,34 @@ export function OwnerProvider({ children }: { children: ReactNode }) {
     });
   };
 
+  const updateServiceStep = (serviceId: string, stepIndex: number, updatedStep: EngineeringStep) => {
+    setServicesData((prev) => {
+      const nextData = prev.map((svc) => {
+        if (svc.id === serviceId) {
+          const nextSteps = [...svc.steps];
+          nextSteps[stepIndex] = updatedStep;
+          return { ...svc, steps: nextSteps };
+        }
+        return svc;
+      });
+      localStorage.setItem('yousif_company_custom_services', JSON.stringify(nextData));
+      return nextData;
+    });
+  };
+
+  const updateServiceCore = (serviceId: string, updatedFields: Partial<Omit<ServiceDetail, 'id' | 'steps'>>) => {
+    setServicesData((prev) => {
+      const nextData = prev.map((svc) => {
+        if (svc.id === serviceId) {
+          return { ...svc, ...updatedFields };
+        }
+        return svc;
+      });
+      localStorage.setItem('yousif_company_custom_services', JSON.stringify(nextData));
+      return nextData;
+    });
+  };
+
   return (
     <OwnerContext.Provider
       value={{
@@ -206,7 +354,10 @@ export function OwnerProvider({ children }: { children: ReactNode }) {
         addProjectPhoto,
         deleteProjectPhoto,
         selectedServiceId,
-        setSelectedServiceId
+        setSelectedServiceId,
+        servicesData,
+        updateServiceStep,
+        updateServiceCore
       }}
     >
       {children}
