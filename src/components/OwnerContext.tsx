@@ -290,25 +290,33 @@ export function OwnerProvider({ children }: { children: ReactNode }) {
   const [selectedServiceId, setSelectedServiceId] = useState<string | null>(null);
   const [authError, setAuthError] = useState<string | null>(null);
 
-  // Auto-signin anonymously to Firebase Auth if owner is authenticated locally on any mount
+  // Auto-signin ALL visitors anonymously to guarantee unhindered real-time Firestore synchronization
   useEffect(() => {
-    if (isOwnerLoggedIn && !auth.currentUser) {
-      signInAnonymously(auth)
-        .then(() => {
-          console.log('Successfully authenticated owner session on Firebase');
-          setAuthError(null);
-        })
-        .catch((err) => {
-          const errMsg = err instanceof Error ? err.message : String(err);
-          setAuthError(errMsg);
-          console.info('Firebase Auth anonymous sign-in skipped or pending activation in Console:', errMsg);
-        });
-    }
+    const unsub = onAuthStateChanged(auth, (user) => {
+      if (!user) {
+        signInAnonymously(auth)
+          .then(() => {
+            console.log('Successfully authenticated session on Firebase anonymously');
+            setAuthError(null);
+          })
+          .catch((err) => {
+            const errMsg = err instanceof Error ? err.message : String(err);
+            // Hide normal client logins from throwing full block screens unless owner is trying to log in
+            if (isOwnerLoggedIn) {
+              setAuthError(errMsg);
+            }
+            console.info('Firebase Auth anonymous activation update:', errMsg);
+          });
+      }
+    });
+    return () => unsub();
   }, [isOwnerLoggedIn]);
 
-  // Real-time listener for Services
+  // Real-time listener for Services with strict deduplication and auto-override fallbacks
   useEffect(() => {
     const unsub = onSnapshot(collection(db, 'services'), (snapshot) => {
+      const ALLOWED_CORE_IDS = ['01', '02', '03', '04', '05', '06'];
+      
       if (snapshot.empty) {
         // Seed initial services data if clean database and user is owner
         if (isOwnerLoggedIn) {
@@ -320,17 +328,46 @@ export function OwnerProvider({ children }: { children: ReactNode }) {
             }
           });
         }
+        // Fallback to initial local copy
+        setServicesData(initialServicesData);
         return;
       }
-      const servicesList: ServiceDetail[] = [];
-      snapshot.forEach((snapshotDoc) => {
-        servicesList.push(snapshotDoc.data() as ServiceDetail);
+
+      // Initialize with our 6 core default services to guarantee complete structural continuity
+      const mergedMap = new Map<string, ServiceDetail>();
+      initialServicesData.forEach((svc) => {
+        mergedMap.set(svc.id, svc);
       });
-      // Sort alphabetically/numerically by id to prevent sequence jumps
+
+      snapshot.forEach((snapshotDoc) => {
+        const docId = snapshotDoc.id;
+        const rawData = snapshotDoc.data() as ServiceDetail;
+        
+        if (ALLOWED_CORE_IDS.includes(docId)) {
+          // It's a valid core service document. Merge it!
+          mergedMap.set(docId, {
+            ...mergedMap.get(docId)!,
+            ...rawData,
+            id: docId
+          });
+        } else {
+          // If a document with a non-core ID (e.g., 'heating-systems', old/duplicate) is found,
+          // and the owner is logged in, we purge it from the Firestore collection to clean the DB!
+          if (isOwnerLoggedIn) {
+            deleteDoc(doc(db, 'services', docId)).catch((err) => {
+              console.info(`Auto-purged duplicate or unmapped service document: ${docId}`, err);
+            });
+          }
+        }
+      });
+
+      const servicesList = Array.from(mergedMap.values());
       servicesList.sort((a, b) => a.id.localeCompare(b.id));
       setServicesData(servicesList);
     }, (error) => {
       console.warn('Firestore Services snapshot listener: database clean/listening offline:', error.message);
+      // Fail-safe: Keep the UI populated with local initial copy if there's any temporary network or permission delay
+      setServicesData((prev) => prev.length ? prev : initialServicesData);
     });
 
     return () => unsub();
@@ -347,7 +384,13 @@ export function OwnerProvider({ children }: { children: ReactNode }) {
           if (!records[serviceId]) {
             records[serviceId] = [];
           }
-          records[serviceId].push(data as ProjectFolder);
+          const folderData = data as ProjectFolder;
+          const folderId = folderData.id || snapshotDoc.id;
+          
+          // Deduplicate folder ID inside same service category
+          if (!records[serviceId].some((f) => f.id === folderId)) {
+            records[serviceId].push({ ...folderData, id: folderId });
+          }
         }
       });
       setCustomProjects(records);
@@ -369,7 +412,13 @@ export function OwnerProvider({ children }: { children: ReactNode }) {
           if (!records[serviceId]) {
             records[serviceId] = [];
           }
-          records[serviceId].push(data as ProjectPhoto);
+          const photoData = data as ProjectPhoto;
+          const photoId = photoData.id || snapshotDoc.id;
+          
+          // Deduplicate photo ID inside same service category
+          if (!records[serviceId].some((p) => p.id === photoId)) {
+            records[serviceId].push({ ...photoData, id: photoId });
+          }
         }
       });
       setCustomPhotos(records);
