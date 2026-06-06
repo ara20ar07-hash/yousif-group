@@ -394,17 +394,43 @@ export function OwnerProvider({ children }: { children: ReactNode }) {
       })
       .then((data) => {
         if (data) {
-          if (data.customPhotos && Object.keys(data.customPhotos).length > 0) {
-            setCustomPhotos(data.customPhotos);
-            localStorage.setItem('yousif_company_custom_photos', JSON.stringify(data.customPhotos));
-          }
-          if (data.customProjects && Object.keys(data.customProjects).length > 0) {
-            setCustomProjects(data.customProjects);
-            localStorage.setItem('yousif_company_custom_projects', JSON.stringify(data.customProjects));
-          }
-          if (data.servicesData && Array.isArray(data.servicesData) && data.servicesData.length > 0) {
-            setServicesData(data.servicesData);
-            localStorage.setItem('yousif_company_custom_services', JSON.stringify(data.servicesData));
+          if (!isOwnerLoggedIn) {
+            // Visitors: Force fully synchronized state from the backend (the single source of truth)
+            if (data.customPhotos) {
+              setCustomPhotos(data.customPhotos);
+              localStorage.setItem('yousif_company_custom_photos', JSON.stringify(data.customPhotos));
+            }
+            if (data.customProjects) {
+              setCustomProjects(data.customProjects);
+              localStorage.setItem('yousif_company_custom_projects', JSON.stringify(data.customProjects));
+            }
+            if (data.servicesData && Array.isArray(data.servicesData) && data.servicesData.length > 0) {
+              setServicesData(data.servicesData);
+              localStorage.setItem('yousif_company_custom_services', JSON.stringify(data.servicesData));
+            }
+          } else {
+            // Logged-in Owner: Prevent overwriting their rich client-side edits during first-time migration.
+            // If the server lacks recorded projects/photos but the owner has them locally, we do not overwrite,
+            // which triggers an automatic upload to the backend 400ms later.
+            const serverHasPhotos = data.customPhotos && Object.keys(data.customPhotos).length > 0;
+            const serverHasProjects = data.customProjects && Object.keys(data.customProjects).length > 0;
+
+            if (serverHasPhotos) {
+              setCustomPhotos(data.customPhotos);
+              localStorage.setItem('yousif_company_custom_photos', JSON.stringify(data.customPhotos));
+            }
+
+            if (serverHasProjects) {
+              setCustomProjects(data.customProjects);
+              localStorage.setItem('yousif_company_custom_projects', JSON.stringify(data.customProjects));
+            } else if (!serverHasProjects && Object.keys(customProjects).length > 0) {
+              console.log('Server is clean. Preparing first-time migration of local owner projects to server...');
+            }
+
+            if (data.servicesData && Array.isArray(data.servicesData) && data.servicesData.length > 0) {
+              setServicesData(data.servicesData);
+              localStorage.setItem('yousif_company_custom_services', JSON.stringify(data.servicesData));
+            }
           }
         }
         setIsLoadedFromServer(true);
@@ -413,18 +439,18 @@ export function OwnerProvider({ children }: { children: ReactNode }) {
         console.error('Error loading data from server, using local defaults:', err);
         setIsLoadedFromServer(true);
       });
-  }, []);
+  }, [isOwnerLoggedIn]);
 
-  // Sync data to server when loaded has completed and any state changes
+  // Sync data to server: ONLY triggers for the logged-in owner! Visitors cannot push updates.
   useEffect(() => {
-    if (!isLoadedFromServer) return;
+    if (!isLoadedFromServer || !isOwnerLoggedIn) return;
     
     const timer = setTimeout(() => {
       syncWithServer(customPhotos, customProjects, servicesData);
     }, 400);
 
     return () => clearTimeout(timer);
-  }, [customPhotos, customProjects, servicesData, isLoadedFromServer]);
+  }, [customPhotos, customProjects, servicesData, isLoadedFromServer, isOwnerLoggedIn]);
 
   const login = (password: string): boolean => {
     if (password === '12345') {
