@@ -69,7 +69,7 @@ export default function Contact() {
             {[
               { icon: <Phone className="w-5 h-5" />, label: lang === 'ku' ? 'تەلەفۆن' : 'Phone', value: '+964 770 970 0306', link: 'tel:+9647709700306' },
               { icon: <Mail className="w-5 h-5" />, label: lang === 'ku' ? 'ئیمەیڵ' : 'Email', value: 'Yusf.hawramy27@gmail.com', link: 'mailto:Yusf.hawramy27@gmail.com' },
-              { icon: <MapPin className="w-5 h-5" />, label: lang === 'ku' ? 'ناونیشان' : 'Location', value: lang === 'ku' ? 'سلێمانی، هەرێمی کوردستان، عێراق' : 'Sulaymaniyah, Kurdistan Region, Iraq', link: null },
+              { icon: <MapPin className="w-5 h-5" />, label: lang === 'ku' ? 'ناونیشان' : 'Location', value: lang === 'ku' ? 'سلێمانی و هەموو کوردستان، عێراق' : 'Sulaymaniyah and whole of kurdistan, Iraq', link: null },
               { icon: <Instagram className="w-5 h-5" />, label: lang === 'ku' ? 'ئینستاگرام' : 'Instagram', value: '@Yousif.group', link: 'https://instagram.com/Yousif.group' }
             ].map((item, idx) => (
               <div key={idx} className="flex items-start gap-6 pb-6 border-b border-border-main last:border-b-0">

@@ -740,7 +740,7 @@ export default function ServiceDetailModal({ isOpen, onClose, initialServiceId }
                                 <label className="block text-[10px] uppercase text-muted tracking-widest mb-1.5 font-mono">Project Name / Title (Kurdish)</label>
                                 <input
                                   type="text"
-                                  placeholder="بۆ نموونە: سیستەمی مەرکەزی نەخۆشخانەی سلێمانی"
+                                  placeholder="بۆ نموونە: سیستەمی مەرکەزی نەخۆشخانەی سلێمانی و هەموو کوردستان"
                                   className="w-full bg-navy border border-white/10 text-sm text-white px-4 py-3 rounded-2xl focus:border-amber outline-none text-end"
                                   value={projTitleKu}
                                   onChange={(e) => setProjTitleKu(e.target.value)}
@@ -753,7 +753,7 @@ export default function ServiceDetailModal({ isOpen, onClose, initialServiceId }
                                 <label className="block text-[10px] uppercase text-muted tracking-widest mb-1.5 font-mono">City (English)</label>
                                 <input
                                   type="text"
-                                  placeholder="e.g., Sulaymaniyah"
+                                  placeholder="e.g., Sulaymaniyah and whole of kurdistan"
                                   className="w-full bg-navy border border-white/10 text-sm text-white px-4 py-3 rounded-2xl focus:border-amber outline-none"
                                   value={projCityEn}
                                   onChange={(e) => setProjCityEn(e.target.value)}
@@ -763,7 +763,7 @@ export default function ServiceDetailModal({ isOpen, onClose, initialServiceId }
                                 <label className="block text-[10px] uppercase text-muted tracking-widest mb-1.5 font-mono">City (Kurdish)</label>
                                 <input
                                   type="text"
-                                  placeholder="بۆ نموونە: سلێمانی"
+                                  placeholder="بۆ نموونە: سلێمانی و هەموو کوردستان"
                                   className="w-full bg-navy border border-white/10 text-sm text-white px-4 py-3 rounded-2xl focus:border-amber outline-none text-end"
                                   value={projCityKu}
                                   onChange={(e) => setProjCityKu(e.target.value)}

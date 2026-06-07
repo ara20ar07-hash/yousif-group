@@ -6,13 +6,13 @@ export default function About() {
 
   const points = lang === 'ku' ? [
     'دانانی بڕوانامەداری سیستەمی غاز و ساردی و گەرمی',
-    'پڕۆژەکان لە سلێمانی و هەرێمی کوردستان',
+    'پڕۆژەکان لە سلێمانی و هەموو کوردستان',
     'پاڵپشتی و چاککردنەوەی تەواو دوای فرۆشتن',
     'متمانەپێکراو لەلایەن خاوەن ماڵ، بەڵێندەر و بازرگانەکان',
     'چارەسەری سەردەمیانەی سۆلار و وزەی نوێبوەوە',
   ] : [
     'Certified installation of gas and HVAC systems',
-    'Projects across Sulaymaniyah and the Kurdistan Region',
+    'Projects across Sulaymaniyah and whole of kurdistan',
     'Full after-sales maintenance and support',
     'Trusted by homeowners, contractors, and businesses',
     'Modern solar and sustainable energy solutions',
@@ -35,8 +35,8 @@ export default function About() {
           </h2>
           <p className="text-lg leading-relaxed font-light text-white/70 max-w-[520px]">
             {lang === 'ku' 
-              ? 'یوسف گروپ بەڵێندەرێکی پسپۆڕە لە سلێمانی بۆ دابینکردنی چارەسەری میکانیکی و وزە. ئێمە کار لە پڕۆژە نیشتەجێبوون، بازرگانی و پیشەسازییەکاندا دەکەین بە پابەندبوون بە کوالێتی و متمانەی درێژخایەن.' 
-              : 'Yousif Group (یوسف گروپ) is a Sulaymaniyah-based specialist contractor delivering end-to-end mechanical and energy solutions. We work across residential, commercial, and industrial projects with a commitment to quality and long-term reliability.'}
+              ? 'یوسف گروپ بەڵێندەرێکی پسپۆڕە لە سلێمانی و هەموو کوردستان بۆ دابینکردنی چارەسەری میکانیکی و وزە. ئێمە کار لە پڕۆژە نیشتەجێبوون، بازرگانی و پیشەسازییەکاندا دەکەین بە پابەندبوون بە کوالێتی و متمانەی درێژخایەن.' 
+              : 'Yousif Group (یوسف گروپ) is a Sulaymaniyah and whole of kurdistan-based specialist contractor delivering end-to-end mechanical and energy solutions. We work across residential, commercial, and industrial projects with a commitment to quality and long-term reliability.'}
           </p>
           
           <ul className="mt-8 flex flex-col gap-4">

@@ -1,5 +1,5 @@
 import React, { useState, useRef, MouseEvent, ChangeEvent } from 'react';
-import { MousePointer2, Flame, Wrench, CircleDot, RefreshCw, Minus, Upload, X, ClipboardList } from 'lucide-react';
+import { MousePointer2, Flame, Wrench, CircleDot, RefreshCw, Minus, Upload, X, ClipboardList, Heater, Send } from 'lucide-react';
 import { useLanguage } from './LanguageContext';
 
 type Tool = 'select' | 'boiler' | 'radiator' | 'manifold' | 'valve' | 'pump' | 'pipe';
@@ -9,7 +9,7 @@ type PipeData = { id: string; x1: number; y1: number; x2: number; y2: number };
 
 const componentSpecs: Record<Exclude<Tool, 'select' | 'pipe'>, { name: { en: string; ku: string }; icon: React.ReactNode; borderColor: string }> = {
   boiler: { name: { en: 'Boiler / Furnace', ku: 'بۆیلەر / گەرمکەرەوە' }, icon: <Flame className="w-5 h-5 text-red-500" />, borderColor: '#ef4444' },
-  radiator: { name: { en: 'Radiator Panel', ku: 'شۆفاژ' }, icon: <div className="w-5 h-5 bg-blue-500 rounded-sm border-[1.5px] border-blue-600" />, borderColor: '#3b82f6' },
+  radiator: { name: { en: 'Radiator Panel', ku: 'شۆفاژ' }, icon: <Heater className="w-5 h-5 text-neutral-300" />, borderColor: '#d4d4d4' },
   manifold: { name: { en: 'Pipe Manifold', ku: 'مانیفۆڵد' }, icon: <Wrench className="w-5 h-5 text-emerald-500" />, borderColor: '#10b981' },
   valve: { name: { en: 'Safety Valve', ku: 'قفڵی سەلامەتی' }, icon: <CircleDot className="w-5 h-5 text-amber-500" />, borderColor: '#f59e0b' },
   pump: { name: { en: 'Circulation Pump', ku: 'پەمپ' }, icon: <RefreshCw className="w-5 h-5 text-purple-500" />, borderColor: '#8b5cf6' }
@@ -115,6 +115,26 @@ export default function DesignerTool() {
     }
   };
 
+  const handleSendToWhatsApp = () => {
+    let text = lang === 'ku' ? '*داواکاری نەخشەی سیستەم*\n\nپێکهاتەکان:\n' : '*System Blueprint Setup*\n\nComponents:\n';
+    
+    const count: Record<string, number> = {};
+    components.forEach(c => {
+      count[c.type] = (count[c.type] || 0) + 1;
+    });
+
+    Object.entries(count).forEach(([type, c]) => {
+      const spec = componentSpecs[type as Exclude<Tool, 'select' | 'pipe'>];
+      const name = lang === 'ku' ? spec.name.ku : spec.name.en;
+      text += `- ${name}: ${c}\n`;
+    });
+
+    text += lang === 'ku' ? `\nژمارەی بۆرییەکان: ${pipes.length}\n` : `\nPipes lines: ${pipes.length}\n`;
+
+    const encodedText = encodeURIComponent(text);
+    window.open(`https://wa.me/9647709700306?text=${encodedText}`, '_blank');
+  };
+
   return (
     <section id="designer" className="px-6 md:px-12 py-24 bg-navy border-t border-border-main">
       <span className="block text-[11px] tracking-[0.4em] uppercase text-amber font-semibold mb-4">
@@ -143,12 +163,20 @@ export default function DesignerTool() {
               <input type="file" accept="image/*" className="hidden" onChange={handleFileUpload} />
             </label>
             {blueprint && (
-              <button 
-                onClick={handleClear}
-                className="bg-red-500/10 border border-red-500/30 text-red-400 font-semibold text-[11px] py-3.5 px-5 rounded-full uppercase tracking-[0.2em] hover:bg-red-500/20 transition-colors w-full flex items-center justify-center gap-2"
-              >
-                <X className="w-4 h-4" /> {lang === 'ku' ? 'پاککردنەوە' : 'Reset'}
-              </button>
+              <>
+                <button 
+                  onClick={handleSendToWhatsApp}
+                  className="bg-[#25D366]/10 border border-[#25D366]/30 text-[#25D366] font-semibold text-[11px] py-3.5 px-5 rounded-full uppercase tracking-[0.2em] hover:bg-[#25D366]/20 transition-colors w-full flex items-center justify-center gap-2"
+                >
+                  <Send className="w-4 h-4" /> {lang === 'ku' ? 'ناردن بۆ واتسئاپ' : 'Send via WhatsApp'}
+                </button>
+                <button 
+                  onClick={handleClear}
+                  className="bg-red-500/10 border border-red-500/30 text-red-400 font-semibold text-[11px] py-3.5 px-5 rounded-full uppercase tracking-[0.2em] hover:bg-red-500/20 transition-colors w-full flex items-center justify-center gap-2"
+                >
+                  <X className="w-4 h-4" /> {lang === 'ku' ? 'پاککردنەوە' : 'Reset'}
+                </button>
+              </>
             )}
           </div>
 

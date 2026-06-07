@@ -20,7 +20,7 @@ export default function Hero() {
       <div className="absolute inset-0 z-0 hero-grid-overlay pointer-events-none" />
 
       {/* Decorative Logo Background */}
-      <div className="absolute right-[6%] top-1/2 -translate-y-1/2 w-[380px] opacity-75 mix-blend-screen pointer-events-none hidden lg:flex justify-center items-center drop-shadow-[0_0_60px_rgba(255,214,0,0.25)]">
+      <div className={`absolute ${lang === 'ku' ? 'left-[6%]' : 'right-[6%]'} top-1/2 -translate-y-1/2 w-[380px] opacity-75 mix-blend-screen pointer-events-none hidden lg:flex justify-center items-center drop-shadow-[0_0_60px_rgba(255,214,0,0.25)]`}>
          <div className="text-[240px] font-display tracking-tighter text-amber/20 leading-none">YG</div>
       </div>
 
@@ -31,7 +31,7 @@ export default function Hero() {
           transition={{ duration: 0.6 }}
           className="inline-block text-[11px] tracking-[0.4em] uppercase text-amber font-semibold mb-4"
         >
-          {lang === 'ku' ? 'سلێمانی، عێراق · دامەزراوە لە ٢٠٢٠' : 'Sulaymaniyah, Iraq · Est. 2020'}
+          {lang === 'ku' ? 'سلێمانی و هەموو کوردستان، عێراق · دامەزراوە لە ٢٠٢٠' : 'Sulaymaniyah and whole of kurdistan, Iraq · Est. 2020'}
         </motion.span>
 
         <motion.h1 
@@ -71,8 +71,8 @@ export default function Hero() {
           className="text-lg leading-relaxed font-light text-white/70 max-w-[480px] mb-9"
         >
           {lang === 'ku' 
-            ? 'تایبەتمەندێکی متمانەپێکراو لە سلێمانی لە بوارەکانی ساردی و گەرمی، تۆڕی غاز، سیستەمی سۆلار و ئاگرکوژێنەوە – دابینکردنی چارەسەری ئاسوودەیی و سەلامەتی بۆ ماڵ و شوێنە بازرگانییەکان.' 
-            : 'An architectural exploration of mechanical systems located in Sulaymaniyah. Designed for reliability, safety, and comfort.'}
+            ? 'تایبەتمەندێکی متمانەپێکراو لە سلێمانی و هەموو کوردستان لە بوارەکانی ساردی و گەرمی، تۆڕی غاز، سیستەمی سۆلار و ئاگرکوژێنەوە – دابینکردنی چارەسەری ئاسوودەیی و سەلامەتی بۆ ماڵ و شوێنە بازرگانییەکان.' 
+            : 'An architectural exploration of mechanical systems located in Sulaymaniyah and whole of kurdistan. Designed for reliability, safety, and comfort.'}
         </motion.p>
 
         <motion.div 
