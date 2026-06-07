@@ -553,16 +553,23 @@ export function OwnerProvider({ children }: { children: ReactNode }) {
     const nextSteps = [...svc.steps];
     nextSteps[stepIndex] = updatedStep;
 
+    const fullUpdatedSvc = { ...svc, steps: nextSteps, id: serviceId };
+
     try {
-      await setDoc(doc(db, 'services', serviceId), { steps: nextSteps }, { merge: true });
+      await setDoc(doc(db, 'services', serviceId), fullUpdatedSvc);
     } catch (err) {
       handleFirestoreError(err, OperationType.UPDATE, `services/${serviceId}`);
     }
   };
 
   const updateServiceCore = async (serviceId: string, updatedFields: Partial<Omit<ServiceDetail, 'id' | 'steps'>>) => {
+    const svc = servicesData.find((s) => s.id === serviceId);
+    if (!svc) return;
+
+    const fullUpdatedSvc = { ...svc, ...updatedFields, id: serviceId };
+
     try {
-      await setDoc(doc(db, 'services', serviceId), updatedFields, { merge: true });
+      await setDoc(doc(db, 'services', serviceId), fullUpdatedSvc);
     } catch (err) {
       handleFirestoreError(err, OperationType.UPDATE, `services/${serviceId}`);
     }

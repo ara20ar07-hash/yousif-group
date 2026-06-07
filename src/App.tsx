@@ -22,7 +22,7 @@ export default function App() {
   return (
     <LanguageProvider>
       <OwnerProvider>
-        <div className="min-h-screen bg-navy text-text-main font-sans selection:bg-amber selection:text-navy">
+        <div className="min-h-screen bg-navy text-text-main selection:bg-amber selection:text-navy">
           <Navbar onOpenOwnerModal={() => setIsOwnerModalOpen(true)} />
           <main>
             <Hero />

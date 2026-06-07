@@ -38,13 +38,13 @@ export default function Hero() {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.1 }}
-          className="font-display text-[80px] sm:text-[100px] leading-[0.85] tracking-tight text-text-main mb-6"
+          className={`font-display text-[80px] sm:text-[100px] ${lang === 'ku' ? 'leading-[1.3]' : 'leading-[0.85]'} tracking-tight text-text-main mb-6`}
         >
           {lang === 'ku' ? (
-            <>
-              <span className="italic text-amber">یوسف</span> <br />
-              گروپ
-            </>
+            <div className="flex flex-col gap-2">
+              <span className="italic text-amber">یوسف</span>
+              <span>گروپ</span>
+            </div>
           ) : (
             <>
               <span className="italic text-amber">Yousif</span> <br />
@@ -58,7 +58,7 @@ export default function Hero() {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
-            className="font-arabic text-sm tracking-widest text-white/70 text-left mb-6" dir="rtl"
+            className="font-arabic text-sm tracking-widest text-white/70 text-start mb-6" dir="rtl"
           >
             یوسف گروپ — دابین و دانانی سیستەمی گەرمی، ساردی، و غاز
           </motion.p>

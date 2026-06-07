@@ -18,13 +18,20 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     document.documentElement.dir = lang === 'ku' ? 'rtl' : 'ltr';
+    document.documentElement.lang = lang;
+    
+    if (lang === 'ku') {
+      document.body.classList.add('font-arabic');
+      document.body.classList.remove('font-sans');
+    } else {
+      document.body.classList.add('font-sans');
+      document.body.classList.remove('font-arabic');
+    }
   }, [lang]);
 
   return (
     <LanguageContext.Provider value={{ lang, toggleLanguage }}>
-      <div className={lang === 'ku' ? 'font-arabic' : ''}>
-        {children}
-      </div>
+      {children}
     </LanguageContext.Provider>
   );
 }

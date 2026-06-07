@@ -73,7 +73,7 @@ export default function OwnerLoginModal({ isOpen, onClose }: OwnerLoginModalProp
                 </p>
 
                 {authError && (authError.includes('admin-restricted-operation') || authError.includes('restricted-operation')) && (
-                  <div className="mb-8 p-5 bg-amber/5 border border-amber/20 rounded-2xl text-left text-xs leading-relaxed font-sans">
+                  <div className="mb-8 p-5 bg-amber/5 border border-amber/20 rounded-2xl text-start text-xs leading-relaxed">
                     <p className="font-semibold text-amber mb-1.5 uppercase tracking-wide flex items-center gap-1.5">
                       <span>🛠️</span>
                       <span>{lang === 'ku' ? 'پاکسازی فایەربەیس پێویستە' : 'Firebase Auth Setup Needed'}</span>
@@ -83,7 +83,7 @@ export default function OwnerLoginModal({ isOpen, onClose }: OwnerLoginModalProp
                         ? 'بۆ ئەوەی بتوانیت گۆڕانکارییەکان بە شێوەی ڕاستەوخۆ پاشەکەوت بکەیت، پێویستە سیستەمی چوونەژوورەوەی نەناسراو (Anonymous Auth) چالاک بکەیت لە فایەربەیس:' 
                         : 'To persist changes to the cloud database, please authorize Anonymous sign-in under Authentication in your Firebase project console:'}
                     </p>
-                    <ol className="list-decimal pl-4 space-y-1 mb-3 text-white/60">
+                    <ol className="list-decimal ps-4 space-y-1 mb-3 text-white/60">
                       {lang === 'ku' ? (
                         <>
                           <li>لینکەکەی خوارەوە بکەرەوە تا بچیتە کۆنسۆڵ.</li>
@@ -110,7 +110,7 @@ export default function OwnerLoginModal({ isOpen, onClose }: OwnerLoginModalProp
                 )}
 
                 {authError && !authError.includes('admin-restricted-operation') && !authError.includes('restricted-operation') && (
-                  <div className="mb-8 p-4 bg-red-500/10 border border-red-500/20 text-red-300 rounded-2xl text-left text-xs leading-relaxed font-sans">
+                  <div className="mb-8 p-4 bg-red-500/10 border border-red-500/20 text-red-300 rounded-2xl text-start text-xs leading-relaxed">
                     <strong className="text-red-400 block mb-1">🔑 Firebase Auth Error</strong>
                     {authError}
                   </div>

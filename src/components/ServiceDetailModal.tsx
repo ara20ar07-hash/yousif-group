@@ -387,7 +387,7 @@ export default function ServiceDetailModal({ isOpen, onClose, initialServiceId }
                           setIsEditingCore(false);
                           setIsMobileSolutionsOpen(false); // Auto close on select
                         }}
-                        className={`flex items-center gap-3.5 text-left px-4 py-3.5 rounded-2xl border text-sm transition-all duration-200 w-full font-light
+                        className={`flex items-center gap-3.5 text-start px-4 py-3.5 rounded-2xl border text-sm transition-all duration-200 w-full font-light
                           ${isActive 
                             ? 'bg-navy-light border-amber/40 text-text-main font-medium shadow-[inset_4px_0_0_#FFD600]' 
                             : 'border-transparent bg-transparent text-muted hover:bg-white/5 hover:text-text-main'}`}
@@ -421,7 +421,7 @@ export default function ServiceDetailModal({ isOpen, onClose, initialServiceId }
                   </div>
 
                   {isOwnerLoggedIn && authError && (authError.includes('admin-restricted-operation') || authError.includes('restricted-operation')) && (
-                    <div className="mb-6 p-5 bg-amber/5 border border-amber/20 rounded-[24px] text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4 font-sans text-left">
+                    <div className="mb-6 p-5 bg-amber/5 border border-amber/20 rounded-[24px] text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-start">
                       <div className="text-white/80 leading-relaxed">
                         <strong className="text-amber font-semibold uppercase tracking-wide block mb-1">
                           ⚠️ {lang === 'ku' ? 'پاکسازی فایەربەیس پێویستە' : 'Firebase Setup Action Required'}
@@ -493,7 +493,7 @@ export default function ServiceDetailModal({ isOpen, onClose, initialServiceId }
                         <div>
                           <label className="block text-[10px] uppercase text-muted tracking-wider mb-1">Brief Card Description (English)</label>
                           <textarea 
-                            className="w-full bg-navy border border-white/10 text-sm text-white px-3 py-2 rounded-lg focus:border-amber outline-none font-sans"
+                            className="w-full bg-navy border border-white/10 text-sm text-white px-3 py-2 rounded-lg focus:border-amber outline-none"
                             rows={2}
                             value={tempCoreCardDescEn}
                             onChange={(e) => setTempCoreCardDescEn(e.target.value)}
@@ -502,7 +502,7 @@ export default function ServiceDetailModal({ isOpen, onClose, initialServiceId }
                         <div>
                           <label className="block text-[10px] uppercase text-muted tracking-wider mb-1">Brief Card Description (Kurdish)</label>
                           <textarea 
-                            className="w-full bg-navy border border-white/10 text-sm text-white px-3 py-2 rounded-lg focus:border-amber outline-none font-sans"
+                            className="w-full bg-navy border border-white/10 text-sm text-white px-3 py-2 rounded-lg focus:border-amber outline-none"
                             rows={2}
                             value={tempCoreCardDescKu}
                             onChange={(e) => setTempCoreCardDescKu(e.target.value)}
@@ -514,7 +514,7 @@ export default function ServiceDetailModal({ isOpen, onClose, initialServiceId }
                         <div>
                           <label className="block text-[10px] uppercase text-muted tracking-wider mb-1">Full Detailed Description (English)</label>
                           <textarea 
-                            className="w-full bg-navy border border-white/10 text-sm text-white px-3 py-2 rounded-lg focus:border-amber outline-none font-sans"
+                            className="w-full bg-navy border border-white/10 text-sm text-white px-3 py-2 rounded-lg focus:border-amber outline-none"
                             rows={4}
                             value={tempCoreDescEn}
                             onChange={(e) => setTempCoreDescEn(e.target.value)}
@@ -523,7 +523,7 @@ export default function ServiceDetailModal({ isOpen, onClose, initialServiceId }
                         <div>
                           <label className="block text-[10px] uppercase text-muted tracking-wider mb-1">Full Detailed Description (Kurdish)</label>
                           <textarea 
-                            className="w-full bg-navy border border-white/10 text-sm text-white px-3 py-2 rounded-lg focus:border-amber outline-none font-sans"
+                            className="w-full bg-navy border border-white/10 text-sm text-white px-3 py-2 rounded-lg focus:border-amber outline-none"
                             rows={4}
                             value={tempCoreDescKu}
                             onChange={(e) => setTempCoreDescKu(e.target.value)}
@@ -573,7 +573,7 @@ export default function ServiceDetailModal({ isOpen, onClose, initialServiceId }
                     {service.steps.map((st, i) => (
                       <div key={i} className="relative bg-navy-mid border border-white/5 p-6 rounded-3xl flex flex-col justify-between min-h-[220px]">
                         <div>
-                          <div className="absolute top-4 right-4 text-3xl font-mono text-white/5 font-extrabold leading-none">
+                          <div className="absolute top-4 end-4 text-3xl font-mono text-white/5 font-extrabold leading-none">
                             0{i+1}
                           </div>
                           <div className="w-8 h-8 rounded-full bg-amber/10 text-amber flex items-center justify-center text-xs font-bold mb-4">
@@ -581,7 +581,7 @@ export default function ServiceDetailModal({ isOpen, onClose, initialServiceId }
                           </div>
 
                           {isOwnerLoggedIn && editingStepIndex === i ? (
-                            <div className="flex flex-col gap-3 mt-2 text-left">
+                            <div className="flex flex-col gap-3 mt-2 text-start">
                               <div className="text-xs uppercase tracking-wider text-amber font-semibold mb-1">
                                 {lang === 'ku' ? 'دەستکاریکردنی هەنگاو' : 'Modify Step'}
                               </div>
@@ -680,7 +680,7 @@ export default function ServiceDetailModal({ isOpen, onClose, initialServiceId }
 
                   {/* Creation of new Project Panel (Only visible when logged in as Owner) */}
                   {isOwnerLoggedIn && (
-                    <div className="mb-10 text-left">
+                    <div className="mb-10 text-start">
                       {!isCreatingProject ? (
                         <div 
                           onClick={() => setIsCreatingProject(true)}
@@ -705,7 +705,7 @@ export default function ServiceDetailModal({ isOpen, onClose, initialServiceId }
                         <motion.div 
                           initial={{ opacity: 0, y: 15 }}
                           animate={{ opacity: 1, y: 0 }}
-                          className="bg-navy-mid border border-amber/35 p-8 md:p-10 rounded-[40px] text-left relative overflow-hidden"
+                          className="bg-navy-mid border border-amber/35 p-8 md:p-10 rounded-[40px] text-start relative overflow-hidden"
                         >
                           <div className="flex items-center justify-between gap-4 border-b border-white/5 pb-4 mb-6">
                             <h3 className="font-serif text-2xl text-text-main flex items-center gap-2">
@@ -731,7 +731,7 @@ export default function ServiceDetailModal({ isOpen, onClose, initialServiceId }
                                 <input
                                   type="text"
                                   placeholder="e.g., Al-Sulaymaniah Central Hospital System"
-                                  className="w-full bg-navy border border-white/10 text-sm text-white px-4 py-3 rounded-2xl focus:border-amber outline-none font-sans"
+                                  className="w-full bg-navy border border-white/10 text-sm text-white px-4 py-3 rounded-2xl focus:border-amber outline-none"
                                   value={projTitleEn}
                                   onChange={(e) => setProjTitleEn(e.target.value)}
                                 />
@@ -741,7 +741,7 @@ export default function ServiceDetailModal({ isOpen, onClose, initialServiceId }
                                 <input
                                   type="text"
                                   placeholder="بۆ نموونە: سیستەمی مەرکەزی نەخۆشخانەی سلێمانی"
-                                  className="w-full bg-navy border border-white/10 text-sm text-white px-4 py-3 rounded-2xl focus:border-amber outline-none font-sans text-right"
+                                  className="w-full bg-navy border border-white/10 text-sm text-white px-4 py-3 rounded-2xl focus:border-amber outline-none text-end"
                                   value={projTitleKu}
                                   onChange={(e) => setProjTitleKu(e.target.value)}
                                 />
@@ -754,7 +754,7 @@ export default function ServiceDetailModal({ isOpen, onClose, initialServiceId }
                                 <input
                                   type="text"
                                   placeholder="e.g., Sulaymaniyah"
-                                  className="w-full bg-navy border border-white/10 text-sm text-white px-4 py-3 rounded-2xl focus:border-amber outline-none font-sans"
+                                  className="w-full bg-navy border border-white/10 text-sm text-white px-4 py-3 rounded-2xl focus:border-amber outline-none"
                                   value={projCityEn}
                                   onChange={(e) => setProjCityEn(e.target.value)}
                                 />
@@ -764,7 +764,7 @@ export default function ServiceDetailModal({ isOpen, onClose, initialServiceId }
                                 <input
                                   type="text"
                                   placeholder="بۆ نموونە: سلێمانی"
-                                  className="w-full bg-navy border border-white/10 text-sm text-white px-4 py-3 rounded-2xl focus:border-amber outline-none font-sans text-right"
+                                  className="w-full bg-navy border border-white/10 text-sm text-white px-4 py-3 rounded-2xl focus:border-amber outline-none text-end"
                                   value={projCityKu}
                                   onChange={(e) => setProjCityKu(e.target.value)}
                                 />
@@ -773,20 +773,20 @@ export default function ServiceDetailModal({ isOpen, onClose, initialServiceId }
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                               <div>
-                                <label className="block text-[10px] uppercase text-muted tracking-widest mb-1.5 font-mono font-sans">Detailed Description (English)</label>
+                                <label className="block text-[10px] uppercase text-muted tracking-widest mb-1.5 font-mono">Detailed Description (English)</label>
                                 <textarea
                                   placeholder="Describe what was installed, system design, capacity, cooling load, piping, materials etc."
-                                  className="w-full bg-navy border border-white/10 text-sm text-white px-4 py-3 rounded-2xl focus:border-amber outline-none font-sans"
+                                  className="w-full bg-navy border border-white/10 text-sm text-white px-4 py-3 rounded-2xl focus:border-amber outline-none"
                                   rows={3}
                                   value={projDescEn}
                                   onChange={(e) => setProjDescEn(e.target.value)}
                                 />
                               </div>
                               <div>
-                                <label className="block text-[10px] uppercase text-muted tracking-widest mb-1.5 font-mono font-sans">Detailed Description (Kurdish)</label>
+                                <label className="block text-[10px] uppercase text-muted tracking-widest mb-1.5 font-mono">Detailed Description (Kurdish)</label>
                                 <textarea
                                   placeholder="سیستەمی فێنککەرەوە و هێڵەکان چۆن دانراون..."
-                                  className="w-full bg-navy border border-white/10 text-sm text-white px-4 py-3 rounded-2xl focus:border-amber outline-none font-sans text-right"
+                                  className="w-full bg-navy border border-white/10 text-sm text-white px-4 py-3 rounded-2xl focus:border-amber outline-none text-end"
                                   rows={3}
                                   value={projDescKu}
                                   onChange={(e) => setProjDescKu(e.target.value)}
@@ -881,12 +881,12 @@ export default function ServiceDetailModal({ isOpen, onClose, initialServiceId }
                             <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 border-b border-white/5 pb-6 mb-6">
                               <div className="flex-1">
                                 {isEditingThisFolder ? (
-                                  <div className="flex flex-col gap-4 text-left">
+                                  <div className="flex flex-col gap-4 text-start">
                                     <div>
                                       <label className="block text-[9px] uppercase tracking-wider text-amber mb-1 font-mono">Project Title (English)</label>
                                       <input
                                         type="text"
-                                        className="w-full bg-navy border border-white/10 text-sm p-3 rounded-xl focus:border-amber outline-none font-sans"
+                                        className="w-full bg-navy border border-white/10 text-sm p-3 rounded-xl focus:border-amber outline-none"
                                         value={editTitleEn}
                                         onChange={(e) => setEditTitleEn(e.target.value)}
                                         placeholder="Project Title"
@@ -896,7 +896,7 @@ export default function ServiceDetailModal({ isOpen, onClose, initialServiceId }
                                       <label className="block text-[9px] uppercase tracking-wider text-amber mb-1 font-mono">Project Title (Kurdish)</label>
                                       <input
                                         type="text"
-                                        className="w-full bg-navy border border-white/10 text-sm p-3 rounded-xl focus:border-amber outline-none font-sans text-right"
+                                        className="w-full bg-navy border border-white/10 text-sm p-3 rounded-xl focus:border-amber outline-none text-end"
                                         value={editTitleKu}
                                         onChange={(e) => setEditTitleKu(e.target.value)}
                                         placeholder="ناونیشانی پڕۆژە"
@@ -916,7 +916,7 @@ export default function ServiceDetailModal({ isOpen, onClose, initialServiceId }
                                         <label className="block text-[9px] uppercase tracking-wider text-amber mb-1 font-mono">City (Kurdish)</label>
                                         <input
                                           type="text"
-                                          className="w-full bg-navy border border-white/10 text-xs p-2.5 rounded-xl focus:border-amber outline-none text-right"
+                                          className="w-full bg-navy border border-white/10 text-xs p-2.5 rounded-xl focus:border-amber outline-none text-end"
                                           value={editCityKu}
                                           onChange={(e) => setEditCityKu(e.target.value)}
                                         />
@@ -924,7 +924,7 @@ export default function ServiceDetailModal({ isOpen, onClose, initialServiceId }
                                     </div>
                                   </div>
                                 ) : (
-                                  <div className="flex items-start gap-3 text-left">
+                                  <div className="flex items-start gap-3 text-start">
                                     <div className="w-12 h-12 rounded-2xl bg-amber/10 text-amber flex items-center justify-center shrink-0 mt-1">
                                       <FolderOpen className="w-6 h-6 animate-pulse" />
                                     </div>
@@ -1039,9 +1039,7 @@ export default function ServiceDetailModal({ isOpen, onClose, initialServiceId }
 
                             {/* Project Description Block */}
                             <div 
-                              className={`mb-6 bg-navy/60 p-6 rounded-3xl border border-white/10 shadow-inner ${
-                                lang === 'ku' ? 'text-right' : 'text-left'
-                              }`}
+                              className="mb-6 bg-navy/60 p-6 rounded-3xl border border-white/10 shadow-inner text-start"
                               dir={lang === 'ku' ? 'rtl' : 'ltr'}
                             >
                               {isEditingThisFolder ? (
@@ -1049,7 +1047,7 @@ export default function ServiceDetailModal({ isOpen, onClose, initialServiceId }
                                   <div>
                                     <label className="block text-[9px] uppercase tracking-wider text-amber mb-1 font-mono">Detailed Description (English)</label>
                                     <textarea
-                                      className="w-full bg-navy border border-white/10 text-sm p-3 rounded-xl focus:border-amber outline-none font-sans"
+                                      className="w-full bg-navy border border-white/10 text-sm p-3 rounded-xl focus:border-amber outline-none"
                                       rows={3}
                                       value={editDescEn}
                                       onChange={(e) => setEditDescEn(e.target.value)}
@@ -1059,7 +1057,7 @@ export default function ServiceDetailModal({ isOpen, onClose, initialServiceId }
                                   <div>
                                     <label className="block text-[9px] uppercase tracking-wider text-amber mb-1 font-mono">Detailed Description (Kurdish)</label>
                                     <textarea
-                                      className="w-full bg-navy border border-white/10 text-sm p-3 rounded-xl focus:border-amber outline-none font-sans text-right"
+                                      className="w-full bg-navy border border-white/10 text-sm p-3 rounded-xl focus:border-amber outline-none text-end"
                                       rows={3}
                                       value={editDescKu}
                                       onChange={(e) => setEditDescKu(e.target.value)}
@@ -1070,7 +1068,7 @@ export default function ServiceDetailModal({ isOpen, onClose, initialServiceId }
                                 </div>
                               ) : (
                                 <div>
-                                  <p className="text-base md:text-lg font-normal text-slate-100 leading-relaxed font-sans">
+                                  <p className="text-base md:text-lg font-normal text-slate-100 leading-relaxed">
                                     {lang === 'ku' ? folder.descKu : folder.descEn}
                                   </p>
                                 </div>

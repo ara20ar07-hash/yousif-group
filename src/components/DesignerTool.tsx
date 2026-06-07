@@ -139,7 +139,7 @@ export default function DesignerTool() {
         <div className="bg-navy-mid border-b lg:border-b-0 lg:border-r border-white/5 p-8 flex flex-col gap-8">
           <div className="flex flex-col gap-4">
             <label className="bg-white/5 border border-white/10 text-text-main font-semibold text-[11px] py-4 px-5 rounded-full text-center uppercase tracking-[0.2em] cursor-pointer hover:bg-white/10 transition-colors">
-              <Upload className="w-4 h-4 inline-block mr-2 -mt-0.5" /> {lang === 'ku' ? 'نەخشە' : 'Blueprint'}
+              <Upload className="w-4 h-4 inline-block me-2 -mt-0.5" /> {lang === 'ku' ? 'نەخشە' : 'Blueprint'}
               <input type="file" accept="image/*" className="hidden" onChange={handleFileUpload} />
             </label>
             {blueprint && (
@@ -159,7 +159,7 @@ export default function DesignerTool() {
             
             <button 
               onClick={() => { setTool('select'); setIsDrawing(false); }}
-              className={`flex items-center gap-4 text-sm font-light px-5 py-3.5 rounded-2xl transition-all border w-full text-left
+              className={`flex items-center gap-4 text-sm font-light px-5 py-3.5 rounded-2xl transition-all border w-full text-start
                 ${tool === 'select' ? 'bg-navy-light border-amber text-text-main shadow-[inset_4px_0_0_#FFD600]' : 'bg-transparent border-transparent text-muted hover:bg-white/5'}`}
             >
               <MousePointer2 className="w-[18px] h-[18px]" /> {lang === 'ku' ? 'گواستنەوە' : 'Reposition'}
@@ -169,7 +169,7 @@ export default function DesignerTool() {
                <button 
                 key={compType}
                 onClick={() => { setTool(compType); setIsDrawing(false); }}
-                className={`flex items-center gap-4 text-sm font-light px-5 py-3.5 rounded-2xl transition-all border w-full text-left
+                className={`flex items-center gap-4 text-sm font-light px-5 py-3.5 rounded-2xl transition-all border w-full text-start
                   ${tool === compType ? 'bg-navy-light border-amber text-text-main shadow-[inset_4px_0_0_#FFD600]' : 'bg-transparent border-transparent text-muted hover:bg-white/5'}`}
               >
                 {componentSpecs[compType].icon} {lang === 'ku' ? componentSpecs[compType].name.ku : componentSpecs[compType].name.en}
@@ -178,7 +178,7 @@ export default function DesignerTool() {
 
             <button 
               onClick={() => setTool('pipe')}
-              className={`flex items-center gap-4 text-sm font-light px-5 py-3.5 rounded-2xl transition-all border w-full text-left
+              className={`flex items-center gap-4 text-sm font-light px-5 py-3.5 rounded-2xl transition-all border w-full text-start
                 ${tool === 'pipe' ? 'bg-navy-light border-amber text-text-main shadow-[inset_4px_0_0_#FFD600]' : 'bg-transparent border-transparent text-muted hover:bg-white/5'}`}
             >
               <Minus strokeWidth={4} className="w-[18px] h-[18px] text-amber" /> {lang === 'ku' ? 'بەستنەوەی بۆری' : 'Connect Pipe'}

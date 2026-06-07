@@ -62,7 +62,7 @@ export default function Services() {
             }}
             className="group relative bg-navy-mid rounded-[32px] p-8 border border-white/5 flex flex-col justify-between overflow-hidden hover:bg-navy-light hover:border-amber/20 transition-all duration-300 cursor-pointer shadow-lg hover:shadow-2xl"
           >
-            <span className="absolute top-6 right-7 font-serif text-5xl text-white/5 group-hover:text-amber/5 leading-none transition-colors duration-300 pointer-events-none">
+            <span className="absolute top-6 end-7 font-serif text-5xl text-white/5 group-hover:text-amber/5 leading-none transition-colors duration-300 pointer-events-none">
               {svc.num}
             </span>
             
