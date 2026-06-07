@@ -66,9 +66,44 @@ export default function Navbar({ onOpenOwnerModal }: NavbarProps) {
 
         <button
           onClick={toggleLanguage}
-          className="border border-white/10 rounded-full px-4 py-2 text-[11px] uppercase tracking-widest text-[#E0D8D0] hover:text-amber hover:border-amber/50 transition-all duration-200"
+          className="flex items-center gap-2 border border-white/10 rounded-full px-4 py-2 text-[11px] uppercase tracking-widest text-[#E0D8D0] hover:text-amber hover:border-amber/50 transition-all duration-200"
         >
-          {lang === 'en' ? 'کوردی' : 'English'}
+          {lang === 'en' ? (
+            <>
+              <svg width="16" height="12" viewBox="0 0 3 2" className="rounded-[2px] shrink-0">
+                <rect width="3" height="2" fill="#278e43"/>
+                <rect width="3" height="1.333" fill="#fff"/>
+                <rect width="3" height="0.666" fill="#ed2024"/>
+                <circle cx="1.5" cy="1" r="0.3" fill="#f9af1b"/>
+              </svg>
+              <span>کوردی</span>
+            </>
+          ) : (
+            <>
+              <svg width="16" height="12" viewBox="0 0 60 40" className="rounded-[2px] shrink-0 overflow-hidden">
+                <rect width="60" height="40" fill="#fff"/>
+                <rect width="60" height="3.07" fill="#be0a26"/>
+                <rect width="60" height="3.07" y="6.15" fill="#be0a26"/>
+                <rect width="60" height="3.07" y="12.3" fill="#be0a26"/>
+                <rect width="60" height="3.07" y="18.46" fill="#be0a26"/>
+                <rect width="60" height="3.07" y="24.6" fill="#be0a26"/>
+                <rect width="60" height="3.07" y="30.76" fill="#be0a26"/>
+                <rect width="60" height="3.07" y="36.9" fill="#be0a26"/>
+                <rect width="24" height="21.5" fill="#002868"/>
+                <circle cx="4" cy="4" r="1" fill="#fff"/>
+                <circle cx="12" cy="4" r="1" fill="#fff"/>
+                <circle cx="20" cy="4" r="1" fill="#fff"/>
+                <circle cx="8" cy="8" r="1" fill="#fff"/>
+                <circle cx="16" cy="8" r="1" fill="#fff"/>
+                <circle cx="4" cy="12" r="1" fill="#fff"/>
+                <circle cx="12" cy="12" r="1" fill="#fff"/>
+                <circle cx="20" cy="12" r="1" fill="#fff"/>
+                <circle cx="8" cy="16" r="1" fill="#fff"/>
+                <circle cx="16" cy="16" r="1" fill="#fff"/>
+              </svg>
+              <span>English</span>
+            </>
+          )}
         </button>  
         <a
           href="#contact"
