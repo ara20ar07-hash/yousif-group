@@ -40,12 +40,11 @@ export default function DesignerTool() {
   };
 
   const handleClear = () => {
-    if (confirm(lang === 'ku' ? 'دڵنیای لە سڕینەوەی تەواوی نەخشەکە و ئامێرەکان؟' : 'Clear entire layout and reset design markers?')) {
-      setComponents([]);
-      setPipes([]);
-      setIsDrawing(false);
-      setPipeStart(null);
-    }
+    setComponents([]);
+    setPipes([]);
+    setIsDrawing(false);
+    setPipeStart(null);
+    setBlueprint(null);
   };
 
   const getCanvasCoords = (e: MouseEvent<HTMLDivElement | SVGSVGElement>) => {
