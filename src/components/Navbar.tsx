@@ -19,12 +19,15 @@ export default function Navbar({ onOpenOwnerModal }: NavbarProps) {
   ];
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 md:px-12 py-6 bg-navy/90 backdrop-blur-md border-b border-border-main">
-      <a href="#" className="flex items-center gap-2.5 no-underline">
-        <div className="w-12 h-12 bg-amber/10 rounded-full border border-amber/30 flex items-center justify-center font-display text-amber text-xl tracking-wider">
+    <nav 
+      style={{ fontSize: '16px' }}
+      className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-4 sm:px-6 md:px-12 py-4 sm:py-6 bg-navy/90 backdrop-blur-md border-b border-border-main"
+    >
+      <a href="#" className="flex items-center gap-1.5 sm:gap-2.5 no-underline">
+        <div className="w-9 h-9 sm:w-12 sm:h-12 bg-amber/10 rounded-full border border-amber/30 flex items-center justify-center font-display text-amber text-base sm:text-xl tracking-wider shrink-0">
           YG
         </div>
-        <span className="font-display text-2xl tracking-tight italic text-text-main leading-none">
+        <span className="font-display text-lg sm:text-2xl tracking-tight italic text-text-main leading-none">
           Yousif<span className="text-amber">.</span>Group
         </span>
       </a>
@@ -42,10 +45,10 @@ export default function Navbar({ onOpenOwnerModal }: NavbarProps) {
         ))}
       </ul>
 
-      <div className="flex items-center gap-3.5">
+      <div className="flex items-center gap-1.5 sm:gap-3.5">
         <button
           onClick={onOpenOwnerModal}
-          className={`flex items-center gap-2 border rounded-full px-4 py-2 text-[11px] uppercase tracking-widest transition-all duration-200
+          className={`flex items-center gap-1.5 sm:gap-2 border rounded-full px-2.5 py-1.5 sm:px-4 sm:py-2 text-[11px] uppercase tracking-widest transition-all duration-200
             ${isOwnerLoggedIn 
               ? 'border-amber/80 text-amber bg-amber/10 shadow-[0_0_15px_rgba(255,214,0,0.15)] hover:bg-amber/20' 
               : 'border-white/10 text-[#E0D8D0] hover:text-amber hover:border-amber/40 bg-transparent'}`}
@@ -54,19 +57,19 @@ export default function Navbar({ onOpenOwnerModal }: NavbarProps) {
           {isOwnerLoggedIn ? (
             <>
               <span className="w-1.5 h-1.5 rounded-full bg-amber animate-ping" />
-              <span>{lang === 'ku' ? 'خاوەن کار' : 'Owner: ON'}</span>
+              <span className="hidden sm:inline">{lang === 'ku' ? 'خاوەن کار' : 'Owner: ON'}</span>
             </>
           ) : (
             <>
               <Lock className="w-3 h-3 text-muted/80 group-hover:text-amber" />
-              <span>{lang === 'ku' ? 'خاوەن کار' : 'Owner'}</span>
+              <span className="hidden sm:inline">{lang === 'ku' ? 'خاوەن کار' : 'Owner'}</span>
             </>
           )}
         </button>
 
         <button
           onClick={toggleLanguage}
-          className="flex items-center gap-2 border border-white/10 rounded-full px-4 py-2 text-[11px] uppercase tracking-widest text-[#E0D8D0] hover:text-amber hover:border-amber/50 transition-all duration-200"
+          className="flex items-center gap-1.5 sm:gap-2 border border-white/10 rounded-full px-2.5 py-1.5 sm:px-4 sm:py-2 text-[11px] uppercase tracking-widest text-[#E0D8D0] hover:text-amber hover:border-amber/50 transition-all duration-200"
         >
           {lang === 'en' ? (
             <>
@@ -76,7 +79,7 @@ export default function Navbar({ onOpenOwnerModal }: NavbarProps) {
                 <rect width="3" height="0.666" fill="#ed2024"/>
                 <circle cx="1.5" cy="1" r="0.3" fill="#f9af1b"/>
               </svg>
-              <span>کوردی</span>
+              <span className="hidden sm:inline">کوردی</span>
             </>
           ) : (
             <>
@@ -101,15 +104,16 @@ export default function Navbar({ onOpenOwnerModal }: NavbarProps) {
                 <circle cx="8" cy="16" r="1" fill="#fff"/>
                 <circle cx="16" cy="16" r="1" fill="#fff"/>
               </svg>
-              <span>English</span>
+              <span className="hidden sm:inline">English</span>
             </>
           )}
         </button>  
         <a
           href="#contact"
-          className="border border-border-main rounded-full px-6 py-2 text-[11px] uppercase tracking-widest text-text-main hover:bg-text-main hover:text-navy transition-all duration-200"
+          className="border border-border-main rounded-full px-2.5 py-1.5 sm:px-6 sm:py-2 text-[11px] uppercase tracking-widest text-text-main hover:bg-text-main hover:text-navy transition-all duration-200"
         >
-          {lang === 'ku' ? 'داواکردنی نرخ' : 'Get a Quote'}
+          <span className="sm:hidden">{lang === 'ku' ? 'نرخ' : 'Quote'}</span>
+          <span className="hidden sm:inline">{lang === 'ku' ? 'داواکردنی نرخ' : 'Get a Quote'}</span>
         </a>
       </div>
     </nav>
