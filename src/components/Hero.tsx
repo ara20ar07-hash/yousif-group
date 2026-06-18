@@ -42,8 +42,21 @@ export default function Hero() {
         >
           {lang === 'ku' ? (
             <div className="flex flex-col gap-2">
-              <span className="italic text-amber">یوسف</span>
-              <span>گروپ</span>
+              <span 
+                className="italic text-amber animate-fade-in-up opacity-0"
+                style={{
+                  fontFamily: 'Georgia',
+                  fontWeight: 'normal',
+                  fontStyle: 'normal',
+                  marginLeft: '9px',
+                  textAlign: 'right',
+                  lineHeight: '125px',
+                  fontSize: '105px'
+                }}
+              >
+                یوسف
+              </span>
+              <span className="animate-fade-in-up opacity-0 [animation-delay:150ms]">گروپ</span>
             </div>
           ) : (
             <>

@@ -87,42 +87,42 @@ const OwnerContext = createContext<OwnerContextType | undefined>(undefined);
 const initialServicesData: ServiceDetail[] = [
   {
     id: '01',
-    titleEn: 'Cooling Systems',
-    titleKu: 'سیستەمی ساردی',
-    titleAr: 'سیستەمی ساردی',
-    cardDescEn: 'Supply and installation of central air conditioning, split units, and ducted cooling systems optimised for the harsh summer heat.',
-    cardDescKu: 'دابینکردن و دانانی سپلیت و سیستەمی ساردی مەرکەزی بۆ بەرگەگرتنی گەرمای هاوین.',
-    subEn: 'Central VRF, Ducted Splits, & High-efficiency cooling grids.',
-    subKu: 'سیستەمی فێنککەرەوەی ناوەندی، دەکتی سپلیت و یەکەکانی فێنککردنەوە.',
-    descEn: 'We deliver comprehensive thermal load engineering. Yousif Company installs state-of-the-art Variable Refrigerant Flow (VRF) and inverter systems customized specifically for the Iraqi summer temperatures exceed 50°C.',
-    descKu: 'ئێمە لێکۆڵینەوەی تێرماڵی چڕ ئەنجام دەدەین. یوسف کۆمپانی هەڵدەستێت بە بەستنی سیستمە سەرەکی و مۆدێرنەکانی مارکەی جیهانی و تەکنەلۆجیای (VRF) کە گونجاوە بۆ هاوینی گەرمی عێراق و کوردستان کە پلەی گەرمی دەگاتە زیاتر لە ٥٠ پلەی سەدی.',
+    titleEn: 'Heat Pump Systems',
+    titleKu: 'سیستەمی هیت پەمپ',
+    titleAr: 'مضخات حرارية (Heat Pump)',
+    cardDescEn: 'Supply and installation of high-efficiency electric Air-to-Water heat pumps for heating water inside underfloor and radiator networks.',
+    cardDescKu: 'دابینکردن و بەستنی سیستەمی پەمپی گەرمی (Heat Pump) بۆ گەرمکردنی کارەبایی ئاوی ناو شۆفاژ و ژێرزەوی بە کەمترین وزە.',
+    subEn: 'Inverter Air-to-Water Heat Pumps & energy-smart hydronic loops.',
+    subKu: 'سیستەمی هیت پەمپی گەرمی پێشکەوتوو بۆ گەرمکردنی ئاوی تۆڕی شۆفاژ.',
+    descEn: 'We supply and install advanced inverter Air-to-Water heat pump systems. A heat pump extracts clean thermal energy from the ambient outdoor air and uses it via an electric compressor cycle to heat the water circulating in your underfloor and radiator / chauffage system, reaching over 400% efficiency and reducing dependencies on diesel or gas.',
+    descKu: 'ئێمە سیستەمەکانی پەمپی گەرمی (Heat Pump) لە جۆری هەوا بۆ ئاو بە تەکنەلۆجیای ئینڤێرتەر بۆ پڕۆژە دابین دەکەین. ئەم ئامێرە گەرمی لە هەوای دەرەوە هەڵدەمژێت و لە ڕێگەی لۆپی کارەباییەوە ئاوی گەرم بۆ شۆفاژ و تۆڕی ژێرزەوی دابین دەکات بە لێهاتوویی ٤٠٠٪ بێ بەکارهێنانی سوتەمەنی و غاز.',
     steps: [
       {
-        titleEn: 'Thermal Load Calculation',
-        titleKu: 'حیسابکردنی بڕی گەرمی',
-        descEn: 'We measure exact space volume, window directions, insulation efficiency, and roof exposure using professional software.',
-        descKu: 'ئەندازە گرتنی ووردی رووبەر، ئاڕاستەی تیشکی خۆر، کاریگەری دەرگا و پەنجەرەکان بۆ دیاریکردنی هێزی مەکینەی فێنککەرەوە.'
+        titleEn: 'Source & Load Calculation',
+        titleKu: 'دیاریکردنی بار و قەبارەی ئامێر',
+        descEn: 'We measure exact insulation levels, underfloor pipe density, and total water volume to calculate the precise heat pump kW capacity.',
+        descKu: 'ئەندازەگرتنی بڕی ئاوی خولاو، عەزلکردنی زەوی و دیوارەکان بۆ دیاریکردنی هێز و کیلۆواتی گونجاوی ئامێری هیت پەمپەکە.'
       },
       {
-        titleEn: 'Continuous Duct Engineering',
-        titleKu: 'ڕاکێشان و سازدانی دەکتی هەوا',
-        descEn: 'Design of custom insulated galvanized ducts ensures zero moisture leakage and quiet, uniform air dispersion.',
-        descKu: 'دیزاین کردنی دەکتی مەتاتی جۆراوجۆر بە دژە تەڕبوون کە فێنکییەکە بە بێدەنگی و یەکسانی بڵاودەکاتەوە.'
+        titleEn: 'Hydronic Buffer Tank Integration',
+        titleKu: 'بەستن و دانانی Buffer Tank',
+        descEn: 'We integrate thermal storage buffer tanks to stabilize hydronic flow rate, preventing compressor short-cycling and optimizing overall performance.',
+        descKu: 'دانانی تانکی عەمباری گەرمی (Buffer) بۆ ڕێکخستنی جولەی ئاو و ڕێگریکردن لە زۆر کوژانەوە و داگیرسانی کۆمپڕێسەر کە دەبێتە هۆی کەمکردنەوەی خەرجی کارەبا.'
       },
       {
-        titleEn: 'Intelligent VRF Modulation',
-        titleKu: 'بەستن و بەگەڕخستنی سیستەمی VRF',
-        descEn: 'Advanced electronic expansion valves modulate cool gas flow in real-time, reducing electrical energy waste up to 45%.',
-        descKu: 'کۆنتڕۆڵکردنی ڕێڕەوی غازی فێنککەرەوە بە شێوەی کاتی بە تەکنەلۆجیای نوێ کە تێچووی کارەبا کەم دەکاتەوە زیاتر لە ٤٥٪.'
+        titleEn: 'Smart Inverter Control Wiring',
+        titleKu: 'کۆنتڕۆڵ کایە و تێرمۆستاتی زیرەک',
+        descEn: 'We configure external ambient sensor wires and smart indoor thermostats to dynamically scale the heat pump speed based on real-time weather demand.',
+        descKu: 'بەستن و ڕێکخستنی سیستەمی حەساسی دەرەکی و تێرمۆستاتی مۆدێرنی ناوەکی بۆ ڕێکخستنی خێرایی ئامێرەکە بەپێی پلەی گەرمی کەشوهەوا.'
       }
     ]
   },
   {
     id: '02',
-    titleEn: 'Heating Systems',
-    titleKu: 'سیستەمی گەرمی',
-    titleAr: 'سیستەمی گەرمی',
-    cardDescEn: 'Expert design and fitting of underfloor, radiator, and central heating solutions keeping homes warm through cold winters.',
+    titleEn: 'Under-floor Heating System',
+    titleKu: 'سیستەمی گەرمی ژێرزەوی',
+    titleAr: 'تدفئة تحت الأرض (Underfloor Heating)',
+    cardDescEn: 'Expert design and fitting of modern in-slab hydronic underfloor heating solutions keeping homes evenly warm through cold winters.',
     cardDescKu: 'نەخشەسازی و دانانی سیستەمی گەرمکەرەوە بۆ هێشتنەوەی ماڵەکان بە گەرمی لە زستاندا.',
     subEn: 'In-slab Hydronic Underfloor Heating & complete thermal envelopes.',
     subKu: 'گەرمکەرەوەی ژێرزەوی پێشکەوتوو بە تۆڕی ئاوی و پەیلی و چیمەنتۆ.',
@@ -344,6 +344,27 @@ export function OwnerProvider({ children }: { children: ReactNode }) {
         const rawData = snapshotDoc.data() as ServiceDetail;
         
         if (ALLOWED_CORE_IDS.includes(docId)) {
+          // It's a valid core service document.
+          // Auto-migrate in db if the service 01 is still labeled "Cooling Systems"
+          if (docId === '01' && (rawData.titleEn === 'Cooling Systems' || !rawData.titleEn?.includes('Heat Pump'))) {
+            const hpSvc = initialServicesData.find(s => s.id === '01');
+            if (hpSvc) {
+              setDoc(doc(db, 'services', '01'), hpSvc).catch(err => {
+                console.info("Auto-migrating service 01 doc in Firestore failed:", err);
+              });
+            }
+          }
+
+          // Auto-migrate in db if the service 02 is still labeled "Heating Systems"
+          if (docId === '02' && (rawData.titleEn === 'Heating Systems' || !rawData.titleEn?.includes('Under-floor'))) {
+            const ufSvc = initialServicesData.find(s => s.id === '02');
+            if (ufSvc) {
+              setDoc(doc(db, 'services', '02'), ufSvc).catch(err => {
+                console.info("Auto-migrating service 02 doc in Firestore failed:", err);
+              });
+            }
+          }
+
           // It's a valid core service document. Merge it!
           mergedMap.set(docId, {
             ...mergedMap.get(docId)!,

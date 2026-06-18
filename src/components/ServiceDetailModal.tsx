@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
-  X, Snowflake, Flame, Heater, Zap, Leaf, FireExtinguisher, 
+  X, Thermometer, Flame, Heater, Zap, Leaf, FireExtinguisher, 
   Plus, Trash2, Camera, MapPin, Calendar, CheckCircle2, Upload,
   FolderClosed, FolderOpen, Pencil, ChevronLeft, ChevronRight, ChevronDown
 } from 'lucide-react';
@@ -17,13 +17,13 @@ interface ServiceDetailModalProps {
 // Icon mapping helper
 const getServiceIcon = (id: string, className: string = "w-6 h-6") => {
   switch (id) {
-    case '01': return <Snowflake className={`${className} text-blue-400`} />;
+    case '01': return <Thermometer className={`${className} text-amber-500`} />;
     case '02': return <Flame className={`${className} text-orange-500`} />;
     case '03': return <Heater className={`${className} text-neutral-300`} />;
     case '04': return <Zap className={`${className} text-yellow-500`} />;
     case '05': return <Leaf className={`${className} text-emerald-400`} />;
     case '06': return <FireExtinguisher className={`${className} text-red-500`} />;
-    default: return <Snowflake className={className} />;
+    default: return <Thermometer className={className} />;
   }
 };
 
@@ -775,7 +775,7 @@ export default function ServiceDetailModal({ isOpen, onClose, initialServiceId }
                               <div>
                                 <label className="block text-[10px] uppercase text-muted tracking-widest mb-1.5 font-mono">Detailed Description (English)</label>
                                 <textarea
-                                  placeholder="Describe what was installed, system design, capacity, cooling load, piping, materials etc."
+                                  placeholder="Describe what was installed, system design, capacity, heating/cooling load, piping, materials etc."
                                   className="w-full bg-navy border border-white/10 text-sm text-white px-4 py-3 rounded-2xl focus:border-amber outline-none"
                                   rows={3}
                                   value={projDescEn}
@@ -785,7 +785,7 @@ export default function ServiceDetailModal({ isOpen, onClose, initialServiceId }
                               <div>
                                 <label className="block text-[10px] uppercase text-muted tracking-widest mb-1.5 font-mono">Detailed Description (Kurdish)</label>
                                 <textarea
-                                  placeholder="سیستەمی فێنککەرەوە و هێڵەکان چۆن دانراون..."
+                                  placeholder="سیستەمەکە و هێڵەکان چۆن دانراون..."
                                   className="w-full bg-navy border border-white/10 text-sm text-white px-4 py-3 rounded-2xl focus:border-amber outline-none text-end"
                                   rows={3}
                                   value={projDescKu}
@@ -1037,43 +1037,7 @@ export default function ServiceDetailModal({ isOpen, onClose, initialServiceId }
                               )}
                             </div>
 
-                            {/* Project Description Block */}
-                            <div 
-                              className="mb-6 bg-navy/60 p-6 rounded-3xl border border-white/10 shadow-inner text-start"
-                              dir={lang === 'ku' ? 'rtl' : 'ltr'}
-                            >
-                              {isEditingThisFolder ? (
-                                <div className="flex flex-col gap-4">
-                                  <div>
-                                    <label className="block text-[9px] uppercase tracking-wider text-amber mb-1 font-mono">Detailed Description (English)</label>
-                                    <textarea
-                                      className="w-full bg-navy border border-white/10 text-sm p-3 rounded-xl focus:border-amber outline-none"
-                                      rows={3}
-                                      value={editDescEn}
-                                      onChange={(e) => setEditDescEn(e.target.value)}
-                                      placeholder="Detailed English description..."
-                                    />
-                                  </div>
-                                  <div>
-                                    <label className="block text-[9px] uppercase tracking-wider text-amber mb-1 font-mono">Detailed Description (Kurdish)</label>
-                                    <textarea
-                                      className="w-full bg-navy border border-white/10 text-sm p-3 rounded-xl focus:border-amber outline-none text-end"
-                                      rows={3}
-                                      value={editDescKu}
-                                      onChange={(e) => setEditDescKu(e.target.value)}
-                                      placeholder="ڕوونکردنەوەی پڕۆژەکە بە کوردی"
-                                      dir="rtl"
-                                    />
-                                  </div>
-                                </div>
-                              ) : (
-                                <div>
-                                  <p className="text-base md:text-lg font-normal text-slate-100 leading-relaxed">
-                                    {lang === 'ku' ? folder.descKu : folder.descEn}
-                                  </p>
-                                </div>
-                              )}
-                            </div>
+
 
                             {/* Photos Grid inside folder */}
                             {folder.photos.length === 0 ? (

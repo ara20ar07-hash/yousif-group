@@ -137,8 +137,8 @@ export default function Contact() {
               {lang === 'ku' ? (
                 <>
                   <option value="">خزمەتگوزارییەک هەڵبژێرە...</option>
-                  <option>سیستەمی ساردی</option>
-                  <option>سیستەمی گەرمی</option>
+                  <option>سیستەمی هیت پەمپ</option>
+                  <option>سیستەمی گەرمی ژێرزەوی</option>
                   <option>شۆفاژ</option>
                   <option>تۆڕی غاز</option>
                   <option>سۆلار</option>
@@ -148,8 +148,8 @@ export default function Contact() {
               ) : (
                 <>
                   <option value="">Select a service...</option>
-                  <option>Cooling System</option>
-                  <option>Heating System</option>
+                  <option>Heat Pump System</option>
+                  <option>Under-floor Heating System</option>
                   <option>Radiator Heating</option>
                   <option>Gas Network</option>
                   <option>Solar System</option>

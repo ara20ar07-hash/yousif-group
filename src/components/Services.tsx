@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Snowflake, Flame, Heater, Zap, Leaf, FireExtinguisher, ArrowUpRight } from 'lucide-react';
+import { Thermometer, Flame, Heater, Zap, Leaf, FireExtinguisher, ArrowUpRight } from 'lucide-react';
 import { useLanguage } from './LanguageContext';
 import { useOwner } from './OwnerContext';
 import ServiceDetailModal from './ServiceDetailModal';
@@ -12,13 +12,13 @@ export default function Services() {
 
   const getServiceIcon = (id: string) => {
     switch (id) {
-      case '01': return <Snowflake className="w-8 h-8 mb-4 text-blue-400" />;
+      case '01': return <Thermometer className="w-8 h-8 mb-4 text-amber-500" />;
       case '02': return <Flame className="w-8 h-8 mb-4 text-orange-500" />;
       case '03': return <Heater className="w-8 h-8 mb-4 text-neutral-300" />;
       case '04': return <Zap className="w-8 h-8 mb-4 text-yellow-400" />;
       case '05': return <Leaf className="w-8 h-8 mb-4 text-emerald-400" />;
       case '06': return <FireExtinguisher className="w-8 h-8 mb-4 text-red-500" />;
-      default: return <Snowflake className="w-8 h-8 mb-4 text-blue-400" />;
+      default: return <Thermometer className="w-8 h-8 mb-4 text-amber-500" />;
     }
   };
 
