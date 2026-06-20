@@ -2,7 +2,7 @@ import express from "express";
 import path from "path";
 import fs from "fs";
 import { createServer as createViteServer } from "vite";
-import { GoogleGenAI, Type } from "@google/genai";
+import Groq from "groq-sdk";
 
 async function startServer() {
   const app = express();
@@ -53,27 +53,66 @@ async function startServer() {
       }
 
       // Remove prefix if exists
-      const cleanBase64 = imageBase64.replace(/^data:image\/\w+;base64,/, "");
+   const groq = new Groq({ apiKey });
 
-      const ai = new GoogleGenAI({
-        apiKey,
-        httpOptions: {
-          headers: {
-            'User-Agent': 'aistudio-build',
-          }
-        }
-      });
+const response = await groq.chat.completions.create({
+  model: "llama-3.2-90b-vision-preview",
+  messages: [{
+    role: "user",
+    content: [
+      {
+        type: "image_url",
+        image_url: { url: `data:image/jpeg;base64,${cleanBase64}` }
+      },
+      {
+        type: "text",
+        text: `Analyze this architectural floor plan or house blueprint image with extreme precision. 
+This image represents a real residential or commercial blueprint layout. Please examine it carefully, identifying all written text, markers, dimensions, stamps, and room boundaries.
 
-      const response = await ai.models.generateContent({
-        model: "gemini-2.0-flash",
-        contents: [
-          {
-            inlineData: {
-              mimeType: "image/jpeg",
-              data: cleanBase64
-            }
-          },
-          {
+Particularly identify and parse:
+1. Kurdish and Arabic room labels written directly in the rooms, such as:
+   - "نوستن" / "ژووری نووستن" (Bedrooms / Sleeping Rooms)
+   - "مەتبەخ" / "مه تبه خ" (Kitchen)
+   - "مساعد مەتبەخ" / "چێشتخانەی یاریدەدەر" (Auxiliary / Wet Kitchen)
+   - "هۆڵ" / "هۆڵی دانیشتن" (Living Hall / Salon)
+   - "کراوە" (Open Shaft / Lightwell / Balcony / Courtyard)
+   - "توالیت" (Toilet)
+   - "حەمام" / "حەمام و توالیت" (Bathroom / Shower room)
+   - "گراج" / "گەراج" (Garage)
+   - "کۆگا" (Storage)
+   - "مەمەڕ" / "ڕێڕەو" (Corridor / Hallway)
+
+2. Read the written metrics, dimension strings and measurements shown with arrows or boundaries for each room (e.g. "3.2m", "4.2m", "3m", "2.95m", "1.7m", "1.3m", "4.6m", "10.2").
+3. Use those measurements to calculate the exact or highly accurate area in square meters (sqm) for each space (Area = width * length). For example:
+   - "نوستن" with dimensions "3.2m" by "4.2m" is exactly 13.44 sqm.
+   - "نوستن" with dimensions "4.2m" by "3.0m" is exactly 12.60 sqm.
+   - "مساعد مەتبەخ" with "2.95m" by "2.0m" is exactly 5.90 sqm.
+   - "حەمام" with "1.6m" by "1.7m" is exactly 2.72 sqm.
+   - "توالیت" with "1.3m" by "1.7m" is exactly 2.21 sqm.
+   - "کراوە" with "3.55m" by "1.2m" is exactly 4.26 sqm.
+   - "هۆڵ" has width "4.6m" and length approximately "4.8m" to "6m" (approx. 22-28 sqm).
+   - "مەتبەخ" has width "4.6m" and length "4.6m" (approx. 21 sqm).
+
+4. Carefully calculate underfloor heating metrics for each room zone:
+   - loopCount: A standard hydronic underfloor heating circuit loop covers approximately 15 to 20 sqm of flooring. For small rooms < 15 sqm (like bedroom 12.6 sqm), configure 1 loop. For spaces 15 - 30 sqm (like living hall), configure 2 loops. For bathroom/toilets, configure 1 small dedicated loop or combine with nearby hallway loop (if very small, specify 1 loop).
+   - heatingOutputRequiredKw: Approximate required thermal capacity for the room in kW (approx. areaSqm * 0.1 kW or more for cold days).
+
+Then output the calculated blueprint analytics strictly matching the following JSON response schema:
+1. "rooms": array of identified rooms with fields: "nameEn", "nameKu", "areaSqm", "heatingOutputRequiredKw", "loopCount"
+2. "totalAreaSqm": sum of all room areas (number)
+3. "recommendedBoilerKw": calculated total boiler capacity in kW (sum of heating output + 20% safety margin, minimum 12kW)
+4. "recommendedManifoldPorts": total number of manifold ports (equal to the sum of all rooms loop counts)
+5. "estimatedPipeSpacingCm": typical spacing distance recommended in cm (usually 15cm for living spaces, 10cm for bathrooms to increase comfort).
+6. "calculatedSummaryEn": an explanatory, highly detailed engineering summary of the design, manifold location recommendations, and layout instructions in English based on the exact rooms detected.
+7. "calculatedSummaryKu": an explanatory, highly detailed engineering summary of the design, manifold location recommendations, and layout instructions in Kurdish based on the exact rooms detected.
+ Respond only with valid raw JSON.`
+      }
+    ]
+  }],
+  response_format: { type: "json_object" },
+  max_tokens: 2000
+});
+
             text: `Analyze this architectural floor plan or house blueprint image with extreme precision. 
 This image represents a real residential or commercial blueprint layout. Please examine it carefully, identifying all written text, markers, dimensions, stamps, and room boundaries.
 
