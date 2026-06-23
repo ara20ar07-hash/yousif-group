@@ -58,7 +58,7 @@ async function startServer() {
       const groq = new Groq({ apiKey });
 
       const response = await groq.chat.completions.create({
-        model: "llama-3.2-90b-vision-preview",
+        model: "meta-llama/llama-4-scout-17b-16e-instruct",
         messages: [{
           role: "user",
           content: [
@@ -68,45 +68,68 @@ async function startServer() {
             },
             {
               type: "text",
-              text: `Analyze this architectural floor plan or house blueprint image with extreme precision. 
+              text: `Analyze this architectural floor plan or house blueprint image with extreme precision and calculate the underfloor heating layout.
 This image represents a real residential or commercial blueprint layout. Please examine it carefully, identifying all written text, markers, dimensions, stamps, and room boundaries.
 
 Particularly identify and parse:
 1. Kurdish and Arabic room labels written directly in the rooms, such as:
    - "نوستن" / "ژووری نووستن" (Bedrooms / Sleeping Rooms)
    - "مەتبەخ" / "مه تبه خ" (Kitchen)
-   - "مساعد مەتبەخ" / "چێشتخانەی یاریدەدەر" (Auxiliary / Wet Kitchen)
    - "هۆڵ" / "هۆڵی دانیشتن" (Living Hall / Salon)
    - "کراوە" (Open Shaft / Lightwell / Balcony / Courtyard)
-   - "توالیت" (Toilet)
-   - "حەمام" / "حەمام و توالیت" (Bathroom / Shower room)
-   - "گراج" / "گەراج" (Garage)
    - "کۆگا" (Storage)
    - "مەمەڕ" / "ڕێڕەو" (Corridor / Hallway)
 
-2. Read the written metrics, dimension strings and measurements shown with arrows or boundaries for each room (e.g. "3.2m", "4.2m", "3m", "2.95m", "1.7m", "1.3m", "4.6m", "10.2").
-3. Use those measurements to calculate the exact or highly accurate area in square meters (sqm) for each space (Area = width * length). For example:
-   - "نوستن" with dimensions "3.2m" by "4.2m" is exactly 13.44 sqm.
-   - "نوستن" with dimensions "4.2m" by "3.0m" is exactly 12.60 sqm.
-   - "مساعد مەتبەخ" with "2.95m" by "2.0m" is exactly 5.90 sqm.
-   - "حەمام" with "1.6m" by "1.7m" is exactly 2.72 sqm.
-   - "توالیت" with "1.3m" by "1.7m" is exactly 2.21 sqm.
-   - "کراوە" with "3.55m" by "1.2m" is exactly 4.26 sqm.
-   - "هۆڵ" has width "4.6m" and length approximately "4.8m" to "6m" (approx. 22-28 sqm).
-   - "مەتبەخ" has width "4.6m" and length "4.6m" (approx. 21 sqm).
+CRITICAL EXCLUSIONS (Do NOT calculate or place under-floor heating in these rooms):
+You MUST completely EXCLUDE the following spaces from having underfloor heating placed or counted as heated under any circumstances:
+- "مساعد مەتبەخ" / "چێشتخانەی یاریدەدەر" (Auxiliary / Wet Kitchen)
+- "توالیت" (Toilet)
+- "حەمام" / "حەمام و توالیت" (Bathroom / Shower room)
+- "گراج" / "گەراج" (Garage)
+- "کراوە" (Open Shaft / Lightwell / Balcony / Courtyard / Balconies / Shafts)
 
-4. Carefully calculate underfloor heating metrics for each room zone:
-   - loopCount: A standard hydronic underfloor heating circuit loop covers approximately 15 to 20 sqm of flooring. For small rooms < 15 sqm (like bedroom 12.6 sqm), configure 1 loop. For spaces 15 - 30 sqm (like living hall), configure 2 loops. For bathroom/toilets, configure 1 small dedicated loop or combine with nearby hallway loop (if very small, specify 1 loop).
-   - heatingOutputRequiredKw: Approximate required thermal capacity for the room in kW (approx. areaSqm * 0.1 kW or more for cold days).
+We do NOT place underfloor heating in these rooms. They MUST have "isHeated": false in the JSON, and their "loopCount" and "heatingOutputRequiredKw" must be set to 0.
 
+2. Read the written metrics, dimension strings, and measurements with extreme accuracy using the following strict rules:
+   - CRITICAL ROOM CLASSIFICATION (BATHROOM vs BEDROOM): Look extremely carefully at the icons and plumbing layout inside each room. Bathrooms have distinctive fixtures such as toilets, washbasins (sinks), bathtubs, or walk-in showers. Under no circumstances should you classify or mix up a bathroom/toilet/shower room as a Bedroom. Bedrooms usually feature bed shapes, wardrobes, or clear sleep-related markings.
+   - You MUST read numbers printed INSIDE the room boundary first to identify dimensions.
+   - If there is no number printed inside, read the dimension lines and measurements on the boundary/wall edges.
+   - Specify and distinguish similar rooms (such as multiple bedrooms, e.g. Bedroom (Back Left, 13.44 m²) vs Bedroom (Back Right, 12.60 m²)) by including their precise sizes and positions directly within their English and Kurdish names (e.g. "Bedroom (Back Left, 13.44 m²)" or "ژووری نووستن (دواوە دەستەچەپ، ١٣.٤٤ م²)").
+   - Read the length and width with extreme care for each room to make sure you have the exact measurements. Double-check all measurements to avoid any incorrect matching.
+   - Never invent or hallucinate a dimension that isn't visible/legible in the image.
+   - If a dimension is missing or unreadable, explicitly state so in your detailed engineering summary and estimate conservatively (bias towards smaller dimensions, not larger).
+ 
+3. Use those measurements to calculate the exact area in square meters (sqm) for each space using the strict formula: Area = width * length.
+   - You MUST show your working calculation in the format "width x length = area" for every single room (set this in the "formula" field of the room object, and ensure that all output areas "areaSqm" match the shown working calculation exactly). For example, "3.2m x 4.2m = 13.44 sqm".
+ 
 Then output the calculated blueprint analytics strictly matching the following JSON response schema:
-1. "rooms": array of identified rooms with fields: "nameEn", "nameKu", "areaSqm", "heatingOutputRequiredKw", "loopCount"
-2. "totalAreaSqm": sum of all room areas (number)
-3. "recommendedBoilerKw": calculated total boiler capacity in kW (sum of heating output + 20% safety margin, minimum 12kW)
-4. "recommendedManifoldPorts": total number of manifold ports (equal to the sum of all rooms loop counts)
-5. "estimatedPipeSpacingCm": typical spacing distance recommended in cm (usually 15cm for living spaces, 10cm for bathrooms to increase comfort).
-6. "calculatedSummaryEn": an explanatory, highly detailed engineering summary of the design, manifold location recommendations, and layout instructions in English based on the exact rooms detected.
-7. "calculatedSummaryKu": an explanatory, highly detailed engineering summary of the design, manifold location recommendations, and layout instructions in Kurdish based on the exact rooms detected.
+{
+  "rooms": [
+    {
+      "nameEn": "Room name with distinct location/size detail (e.g. 'Bedroom 1 (Back Left - 13.44m²)')",
+      "nameKu": "Room name in Kurdish with distinct location/size detail (e.g. 'ژووری نووستن (دواوە دەستەچەپ - ١٣.٤٤ م²)')",
+      "isHeated": true, // set to false for auxiliary kitchens, bathrooms, toilets, garages, and open shafts
+      "widthMeters": 4.6, // number, null if missing
+      "lengthMeters": 6.0, // number, null if missing
+      "formula": "4.6m x 6.0m = 27.60 sqm", // exactly showing width x length = area
+      "areaSqm": 27.6, // number
+      "heatingOutputRequiredKw": 2.8, // number, 0 if isHeated is false (approx areaSqm * 0.1 for heated room)
+      "loopCount": 2, // number of loops (standard loop covers 15-20 sqm. <15 sqm is 1 loop. 15-30 sqm is 2 loops. 0 if isHeated is false)
+      "box": {
+        "x": 35, // integer percentage (0-100) representing left position of this room overlay on the blueprint image
+        "y": 35, // integer percentage (0-100) representing top position of this room overlay
+        "width": 30, // integer percentage (0-100) representing width of this room overlay
+        "height": 40 // integer percentage (0-100) representing height of this room overlay
+      }
+    }
+  ],
+  "totalAreaSqm": sum of all HEATED room areas only (number),
+  "recommendedBoilerKw": calculated total boiler capacity in kW (sum of heated room outputs + 20% safety margin, minimum 12kW),
+  "recommendedManifoldPorts": total number of manifold ports (equal to the sum of all heated rooms' loop counts),
+  "estimatedPipeSpacingCm": typical spacing distance recommended in cm (usually 15cm for living spaces, and never place or estimate any spacing for excluded spaces),
+  "calculatedSummaryEn": "An explanatory, highly detailed engineering summary of the design, manifold location recommendations, and layout instructions in English based strictly on the heated rooms. Mention explicitly that bathrooms, toilets, auxiliary kitchens, garages, and open shafts are completely excluded as they do not get underfloor heating.",
+  "calculatedSummaryKu": "An explanatory, highly detailed engineering summary of the design, manifold location recommendations, and layout instructions in Kurdish. Mention explicitly that bathrooms, toilets, auxiliary kitchens, garages, and open shafts are completely excluded as they do not get underfloor heating."
+}
 
 Respond only with the valid raw JSON matching this structure.`
             }
