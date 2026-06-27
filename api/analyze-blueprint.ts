@@ -16,36 +16,45 @@ Identify every room by its label written inside the room boundary. Labels may be
 - "مەمەڕ" / "ڕێڕەو" = Corridor
 
 STEP 2 - READ DIMENSIONS:
-For each room, find the dimension numbers printed on or inside its boundary walls. These are usually in meters (e.g. 3.20, 4.60, 2.95). Read both width AND length for every room.
+For each room, find the dimension numbers printed on or inside its boundary walls. These are usually in meters (e.g. 3.20, 4.60, 2.95). Read both width AND length for every room. If a dimension is unclear or missing, state "unreadable" and estimate conservatively (use a smaller value, not larger).
 
 STEP 3 - CALCULATE AREA:
-areaSqm = width x length
+For every room calculate: areaSqm = width x length
+Show the formula explicitly, e.g. "3.20m x 4.60m = 14.72 sqm"
+Never guess an area without showing the dimensional working.
 
 STEP 4 - DETERMINE HEATING:
-Heated rooms (isHeated = true): Bedrooms, Living rooms, Kitchens, Corridors
-Excluded (isHeated = false, loopCount = 0, heatingOutputRequiredKw = 0): Bathrooms, Toilets, Open shafts, Garages, Storage, Auxiliary kitchens
+Rooms that get underfloor heating (isHeated = true):
+- Bedrooms, Living rooms, Kitchens, Corridors
+
+Rooms excluded from underfloor heating (isHeated = false, loopCount = 0, heatingOutputRequiredKw = 0):
+- Bathrooms, Toilets, Open shafts, Garages, Storage rooms, Auxiliary kitchens
 
 STEP 5 - CALCULATE LOOPS:
-loopCount = ceil(areaSqm / 12), minimum 1 per heated room
+For heated rooms only:
+- loopCount = ceil(areaSqm / 12)
+- Examples: 10 sqm = 1 loop, 12 sqm = 1 loop, 13 sqm = 2 loops, 24 sqm = 2 loops, 25 sqm = 3 loops
+- Minimum 1 loop per heated room
 
 STEP 6 - CALCULATE kW:
-heatingOutputRequiredKw = areaSqm x 0.10 (heated rooms only)
+- heatingOutputRequiredKw = areaSqm x 0.10 (for heated rooms only)
+- Round to 1 decimal place
 
 OUTPUT RULES:
-- recommendedBoilerKw = sum of heatingOutputRequiredKw x 1.20, minimum 12kW
-- recommendedManifoldPorts = sum of all loopCounts
+- recommendedBoilerKw = (sum of all heatingOutputRequiredKw) x 1.20, minimum 12kW, round up to nearest whole number
+- recommendedManifoldPorts = sum of all loopCount values
 - estimatedPipeSpacingCm = 15
-- totalAreaSqm = sum of ALL rooms
+- totalAreaSqm = sum of ALL room areas including unheated
 
-Respond ONLY with valid raw JSON:
+Respond ONLY with valid raw JSON in this exact structure:
 {
   "rooms": [
     {
-      "nameEn": "string",
-      "nameKu": "string",
-      "areaSqm": 0,
-      "heatingOutputRequiredKw": 0,
-      "loopCount": 0,
+      "nameEn": "room name in English",
+      "nameKu": "room name in Kurdish",
+      "areaSqm": 14.72,
+      "heatingOutputRequiredKw": 1.5,
+      "loopCount": 2,
       "isHeated": true,
       "formula": "3.20m x 4.60m = 14.72 sqm"
     }
@@ -54,9 +63,10 @@ Respond ONLY with valid raw JSON:
   "recommendedBoilerKw": 0,
   "recommendedManifoldPorts": 0,
   "estimatedPipeSpacingCm": 15,
-  "calculatedSummaryEn": "string",
-  "calculatedSummaryKu": "string"
+  "calculatedSummaryEn": "detailed engineering summary",
+  "calculatedSummaryKu": "پوختەی ئەندازیاری"
 }`;
+
 
 export default async function handler(req: Request): Promise<Response> {
   if (req.method !== "POST") {
