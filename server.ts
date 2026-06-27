@@ -78,7 +78,7 @@ OUTPUT RULES:
 - recommendedBoilerKw = (sum of all heatingOutputRequiredKw) x 1.20, minimum 12kW, round up to nearest whole number
 - recommendedManifoldPorts = sum of all loopCount values
 - estimatedPipeSpacingCm = 15
-- totalAreaSqm = sum of ALL room areas including unheated
+- totalAreaSqm = sum of ALL heated room areas (where isHeated is true)
 
 Respond ONLY with valid raw JSON in this exact structure:
 {

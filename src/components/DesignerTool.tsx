@@ -59,6 +59,15 @@ export default function DesignerTool() {
 
   const canvasRef = useRef<HTMLDivElement>(null);
 
+  const totalHeatedArea = analysisResult
+    ? Number(
+        analysisResult.rooms
+          .filter(r => r.isHeated !== false)
+          .reduce((sum, r) => sum + r.areaSqm, 0)
+          .toFixed(1)
+      )
+    : 0;
+
   const handleFileUpload = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -618,8 +627,8 @@ export default function DesignerTool() {
                   : `*AI Under-floor Heating Design Sheet*\n\n`;
                 
                 text += lang === 'ku'
-                  ? `ڕووبەری گشتی: ${analysisResult.totalAreaSqm} m²\nبۆیلەری ڕێنماییکراو: ${analysisResult.recommendedBoilerKw} kW\nکۆی دەرچەکانی مانیفۆڵد: ${analysisResult.recommendedManifoldPorts}\nدووری نێوان ملوولەکان: ${analysisResult.estimatedPipeSpacingCm} cm\n\n*لیستی ژوورەکان:*\n`
-                  : `Total Area: ${analysisResult.totalAreaSqm} m²\nRecommended Boiler: ${analysisResult.recommendedBoilerKw} kW\nManifold Ports: ${analysisResult.recommendedManifoldPorts}\nPipe Spacing: ${analysisResult.estimatedPipeSpacingCm} cm\n\n*Calculated Rooms:*\n`;
+                  ? `ڕووبەری گشتی: ${totalHeatedArea} m²\nبۆیلەری ڕێنماییکراو: ${analysisResult.recommendedBoilerKw} kW\nکۆی دەرچەکانی مانیفۆڵد: ${analysisResult.recommendedManifoldPorts}\nدووری نێوان ملوولەکان: ${analysisResult.estimatedPipeSpacingCm} cm\n\n*لیستی ژوورەکان:*\n`
+                  : `Total Area: ${totalHeatedArea} m²\nRecommended Boiler: ${analysisResult.recommendedBoilerKw} kW\nManifold Ports: ${analysisResult.recommendedManifoldPorts}\nPipe Spacing: ${analysisResult.estimatedPipeSpacingCm} cm\n\n*Calculated Rooms:*\n`;
 
                 analysisResult.rooms.forEach(r => {
                   const roomName = lang === 'ku' ? r.nameKu : r.nameEn;
@@ -643,12 +652,16 @@ export default function DesignerTool() {
           {/* Quick Metrics Grid */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 mb-10">
             <div className="bg-navy p-6 rounded-3xl border border-white/5 relative overflow-hidden group hover:border-amber/20 transition-all">
-              <div className="text-[10px] uppercase tracking-widest text-muted font-mono mb-2">Total Heated Area</div>
+              <div className="text-[10px] uppercase tracking-widest text-muted font-mono mb-2">
+                {lang === 'ku' ? 'ڕووبەری گشتی گەرمکراو' : 'Total Heated Area'}
+              </div>
               <div className="text-3xl font-display font-bold text-text-main flex items-baseline gap-1">
-                {analysisResult.totalAreaSqm}
+                {totalHeatedArea}
                 <span className="text-sm font-light text-muted">m²</span>
               </div>
-              <div className="text-[11px] text-muted mt-2">Sum of room areas</div>
+              <div className="text-[11px] text-muted mt-2">
+                {lang === 'ku' ? 'کۆی ڕووبەری ژوورە گەرمکراوەکان' : 'Sum of heated room areas'}
+              </div>
             </div>
 
             <div className="bg-navy p-6 rounded-3xl border border-white/5 relative overflow-hidden group hover:border-amber/20 transition-all">
