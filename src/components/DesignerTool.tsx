@@ -89,7 +89,7 @@ export default function DesignerTool() {
     setAnalysisResult(null);
     setIsPermissionDenied(false);
     try {
-      const response = await fetch('https://yousif-blueprint-api.workers.dev/api/analyze-blueprint', {
+      const response = await fetch('https://soft-cloud-829dyousif-blueprint-api.ara-account.workers.dev/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
