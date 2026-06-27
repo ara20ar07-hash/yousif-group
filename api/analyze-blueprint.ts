@@ -28,7 +28,7 @@ Rooms that get underfloor heating (isHeated = true):
 - Bedrooms, Living rooms, Kitchens, Corridors
 
 Rooms excluded from underfloor heating (isHeated = false, loopCount = 0, heatingOutputRequiredKw = 0):
-- Bathrooms, Toilets, Open shafts, Garages, Storage rooms, Auxiliary kitchens
+- Bathrooms, Toilets, Bathroom Lobbies, Toilet Lobbies, Lobbies adjacent to toilets/bathrooms, Open shafts, Garages, Storage rooms, Auxiliary kitchens
 
 STEP 5 - CALCULATE LOOPS:
 For heated rooms only:

@@ -1,5 +1,5 @@
 import React, { useState, useRef, MouseEvent, ChangeEvent } from 'react';
-import { MousePointer2, Flame, Wrench, CircleDot, RefreshCw, Minus, Upload, X, ClipboardList, Heater, Send } from 'lucide-react';
+import { MousePointer2, Flame, Wrench, CircleDot, RefreshCw, Minus, Upload, X, ClipboardList, Heater, Send, Pencil, Trash2, Plus } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useLanguage } from './LanguageContext';
 
@@ -33,6 +33,7 @@ export default function DesignerTool() {
   const [isPermissionDenied, setIsPermissionDenied] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisError, setAnalysisError] = useState<string | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<{
     rooms: Array<{
       nameEn: string;
@@ -67,6 +68,97 @@ export default function DesignerTool() {
           .toFixed(1)
       )
     : 0;
+
+  const updateRoomProperty = (index: number, key: string, value: any) => {
+    if (!analysisResult) return;
+    const updatedRooms = [...analysisResult.rooms];
+    
+    updatedRooms[index] = {
+      ...updatedRooms[index],
+      [key]: value
+    };
+
+    if (key === 'areaSqm') {
+      const isHeated = updatedRooms[index].isHeated !== false;
+      updatedRooms[index].heatingOutputRequiredKw = isHeated ? Number((value * 0.1).toFixed(1)) : 0;
+      if (isHeated) {
+        updatedRooms[index].loopCount = Math.max(1, Math.ceil(value / 12));
+      } else {
+        updatedRooms[index].loopCount = 0;
+      }
+    }
+
+    if (key === 'isHeated') {
+      if (value === false) {
+        updatedRooms[index].heatingOutputRequiredKw = 0;
+        updatedRooms[index].loopCount = 0;
+      } else {
+        updatedRooms[index].heatingOutputRequiredKw = Number((updatedRooms[index].areaSqm * 0.1).toFixed(1));
+        updatedRooms[index].loopCount = Math.max(1, Math.ceil(updatedRooms[index].areaSqm / 12));
+      }
+    }
+
+    const heatedRooms = updatedRooms.filter(r => r.isHeated !== false);
+    const sumKw = heatedRooms.reduce((sum, r) => sum + r.heatingOutputRequiredKw, 0);
+    const recommendedBoilerKw = Math.max(12, Math.ceil(sumKw * 1.20));
+    const recommendedManifoldPorts = updatedRooms.reduce((sum, r) => sum + r.loopCount, 0);
+    const totalAreaSqm = Number(heatedRooms.reduce((sum, r) => sum + r.areaSqm, 0).toFixed(1));
+
+    setAnalysisResult({
+      ...analysisResult,
+      rooms: updatedRooms,
+      totalAreaSqm,
+      recommendedBoilerKw,
+      recommendedManifoldPorts
+    });
+  };
+
+  const removeRoom = (index: number) => {
+    if (!analysisResult) return;
+    const updatedRooms = analysisResult.rooms.filter((_, i) => i !== index);
+    
+    const heatedRooms = updatedRooms.filter(r => r.isHeated !== false);
+    const sumKw = heatedRooms.reduce((sum, r) => sum + r.heatingOutputRequiredKw, 0);
+    const recommendedBoilerKw = Math.max(12, Math.ceil(sumKw * 1.20));
+    const recommendedManifoldPorts = updatedRooms.reduce((sum, r) => sum + r.loopCount, 0);
+    const totalAreaSqm = Number(heatedRooms.reduce((sum, r) => sum + r.areaSqm, 0).toFixed(1));
+
+    setAnalysisResult({
+      ...analysisResult,
+      rooms: updatedRooms,
+      totalAreaSqm,
+      recommendedBoilerKw,
+      recommendedManifoldPorts
+    });
+  };
+
+  const addNewRoom = () => {
+    if (!analysisResult) return;
+    const newRoom = {
+      nameEn: "New Room",
+      nameKu: "ژووری نوێ",
+      areaSqm: 12,
+      heatingOutputRequiredKw: 1.2,
+      loopCount: 1,
+      isHeated: true,
+      formula: "3.00m x 4.00m = 12.00 sqm"
+    };
+    const updatedRooms = [...analysisResult.rooms, newRoom];
+    
+    const heatedRooms = updatedRooms.filter(r => r.isHeated !== false);
+    const sumKw = heatedRooms.reduce((sum, r) => sum + r.heatingOutputRequiredKw, 0);
+    const recommendedBoilerKw = Math.max(12, Math.ceil(sumKw * 1.20));
+    const recommendedManifoldPorts = updatedRooms.reduce((sum, r) => sum + r.loopCount, 0);
+    const totalAreaSqm = Number(heatedRooms.reduce((sum, r) => sum + r.areaSqm, 0).toFixed(1));
+
+    setAnalysisResult({
+      ...analysisResult,
+      rooms: updatedRooms,
+      totalAreaSqm,
+      recommendedBoilerKw,
+      recommendedManifoldPorts
+    });
+  };
 
   const handleFileUpload = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -620,33 +712,50 @@ export default function DesignerTool() {
               </h3>
             </div>
             
-            <button 
-              onClick={() => {
-                let text = lang === 'ku' 
-                  ? `*پشکنینی گەرمی ژێرزەوی لەلایەن ژیری دەستکردەوە*\n\n`
-                  : `*AI Under-floor Heating Design Sheet*\n\n`;
-                
-                text += lang === 'ku'
-                  ? `ڕووبەری گشتی: ${totalHeatedArea} m²\nبۆیلەری ڕێنماییکراو: ${analysisResult.recommendedBoilerKw} kW\nکۆی دەرچەکانی مانیفۆڵد: ${analysisResult.recommendedManifoldPorts}\nدووری نێوان ملوولەکان: ${analysisResult.estimatedPipeSpacingCm} cm\n\n*لیستی ژوورەکان:*\n`
-                  : `Total Area: ${totalHeatedArea} m²\nRecommended Boiler: ${analysisResult.recommendedBoilerKw} kW\nManifold Ports: ${analysisResult.recommendedManifoldPorts}\nPipe Spacing: ${analysisResult.estimatedPipeSpacingCm} cm\n\n*Calculated Rooms:*\n`;
+            <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+              <button
+                onClick={() => setIsEditing(!isEditing)}
+                className={`font-bold text-xs py-3.5 px-6 rounded-full uppercase tracking-wider transition-all flex items-center justify-center gap-2 shadow-lg cursor-pointer ${
+                  isEditing 
+                    ? "bg-amber text-navy hover:bg-amber/90" 
+                    : "bg-white/10 hover:bg-white/20 text-text-main border border-white/10"
+                }`}
+              >
+                <Pencil className="w-4 h-4" />
+                {isEditing 
+                  ? (lang === 'ku' ? 'تەواو (پاشەکەوت بەکارە)' : 'Done (Saving)') 
+                  : (lang === 'ku' ? 'دەستکاری حسابات' : 'Edit Calculations')
+                }
+              </button>
 
-                analysisResult.rooms.forEach(r => {
-                  const roomName = lang === 'ku' ? r.nameKu : r.nameEn;
-                  text += `- ${roomName}: ${r.areaSqm} m² | ${r.heatingOutputRequiredKw.toFixed(1)} kW | ${r.loopCount} loops\n`;
-                });
+              <button 
+                onClick={() => {
+                  let text = lang === 'ku' 
+                    ? `*پشکنینی گەرمی ژێرزەوی لەلایەن ژیری دەستکردەوە*\n\n`
+                    : `*AI Under-floor Heating Design Sheet*\n\n`;
+                  
+                  text += lang === 'ku'
+                    ? `ڕووبەری گشتی: ${totalHeatedArea} m²\nبۆیلەری ڕێنماییکراو: ${analysisResult.recommendedBoilerKw} kW\nکۆی دەرچەکانی مانیفۆڵد: ${analysisResult.recommendedManifoldPorts}\nدووری نێوان ملوولەکان: ${analysisResult.estimatedPipeSpacingCm} cm\n\n*لیستی ژوورەکان:*\n`
+                    : `Total Area: ${totalHeatedArea} m²\nRecommended Boiler: ${analysisResult.recommendedBoilerKw} kW\nManifold Ports: ${analysisResult.recommendedManifoldPorts}\nPipe Spacing: ${analysisResult.estimatedPipeSpacingCm} cm\n\n*Calculated Rooms:*\n`;
 
-                text += lang === 'ku'
-                  ? `\n*ڕوونکردنەوەی ئەندازیاری:*\n${analysisResult.calculatedSummaryKu}`
-                  : `\n*Engineering Notes:*\n${analysisResult.calculatedSummaryEn}`;
+                  analysisResult.rooms.forEach(r => {
+                    const roomName = lang === 'ku' ? r.nameKu : r.nameEn;
+                    text += `- ${roomName}: ${r.areaSqm} m² | ${r.heatingOutputRequiredKw.toFixed(1)} kW | ${r.loopCount} loops\n`;
+                  });
 
-                const encoded = encodeURIComponent(text);
-                window.open(`https://wa.me/9647709700306?text=${encoded}`, '_blank');
-              }}
-              className="bg-[#25D366] hover:bg-[#25D366]/90 text-navy font-bold text-xs py-3.5 px-6 rounded-full uppercase tracking-wider transition-all flex items-center justify-center gap-2 shadow-lg cursor-pointer"
-            >
-              <Send className="w-4 h-4" /> 
-              {lang === 'ku' ? 'پلانەکە بنێرە بۆ ئەندازیار لە واتسئاپ' : 'Submit Floorplan to Engineering'}
-            </button>
+                  text += lang === 'ku'
+                    ? `\n*ڕوونکردنەوەی ئەندازیاری:*\n${analysisResult.calculatedSummaryKu}`
+                    : `\n*Engineering Notes:*\n${analysisResult.calculatedSummaryEn}`;
+
+                  const encoded = encodeURIComponent(text);
+                  window.open(`https://wa.me/9647709700306?text=${encoded}`, '_blank');
+                }}
+                className="bg-[#25D366] hover:bg-[#25D366]/90 text-navy font-bold text-xs py-3.5 px-6 rounded-full uppercase tracking-wider transition-all flex items-center justify-center gap-2 shadow-lg cursor-pointer"
+              >
+                <Send className="w-4 h-4" /> 
+                {lang === 'ku' ? 'پلانەکە بنێرە بۆ ئەندازیار لە واتسئاپ' : 'Submit Floorplan to Engineering'}
+              </button>
+            </div>
           </div>
 
           {/* Quick Metrics Grid */}
@@ -695,50 +804,144 @@ export default function DesignerTool() {
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-8">
             {/* Rooms calculation table */}
             <div className="bg-navy border border-white/5 rounded-3xl p-6 lg:p-8 overflow-hidden">
-              <h4 className="text-lg font-semibold text-text-main mb-6 font-display">
-                {lang === 'ku' ? 'شەن و کەو کردنی گەرمی ژوورەکان' : 'Estimated Room Heating Details'}
-              </h4>
+              <div className="flex justify-between items-center mb-6">
+                <h4 className="text-lg font-semibold text-text-main font-display">
+                  {lang === 'ku' ? 'شەن و کەو کردنی گەرمی ژوورەکان' : 'Estimated Room Heating Details'}
+                </h4>
+                {isEditing && (
+                  <button
+                    onClick={addNewRoom}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-amber/15 hover:bg-amber/25 text-amber text-xs rounded-lg border border-amber/30 transition-all font-mono"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    {lang === 'ku' ? 'زیادکردنی ژوور' : 'Add Room'}
+                  </button>
+                )}
+              </div>
               
               <div className="overflow-x-auto">
                 <table className="w-full text-sm font-light text-white/85">
                   <thead>
                     <tr className="border-b border-white/10 text-xs font-mono uppercase text-muted text-start">
                       <th className="py-3 text-start font-medium">{lang === 'ku' ? 'ناو' : 'Room Name'}</th>
-                      <th className="py-3 text-center font-medium">{lang === 'ku' ? 'ڕووپەر' : 'Area'}</th>
-                      <th className="py-3 text-center font-medium">{lang === 'ku' ? 'بڕی kW پێویست' : 'Required load'}</th>
+                      <th className="py-3 text-center font-medium">{lang === 'ku' ? 'ڕووپەر (m²)' : 'Area (sqm)'}</th>
+                      <th className="py-3 text-center font-medium">{lang === 'ku' ? 'گەرمکردن؟' : 'Heated?'}</th>
                       <th className="py-3 text-center font-medium">{lang === 'ku' ? 'هێڵەکان (Loops)' : 'Loops'}</th>
+                      {isEditing && <th className="py-3 text-center font-medium w-12">{lang === 'ku' ? 'سڕینەوە' : 'Delete'}</th>}
                     </tr>
                   </thead>
                   <tbody>
-                    {analysisResult.rooms.filter(r => r.isHeated !== false).map((r, i) => {
-                      const isHeated = r.isHeated !== false;
-                      return (
-                        <tr key={i} className={`border-b border-white/5 hover:bg-white/5 transition-all text-[13px] ${!isHeated ? 'opacity-65' : ''}`}>
-                          <td className="py-4 text-start font-medium text-white">
-                            <div className="flex flex-col">
-                              <span className="flex items-center gap-2">
-                                {lang === 'ku' ? r.nameKu : r.nameEn}
-                                <span className={`text-[9px] px-1.5 py-0.5 rounded font-bold uppercase ${isHeated ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/12' : 'bg-red-500/10 text-red-400 border border-red-500/12'}`}>
-                                  {isHeated ? (lang === 'ku' ? 'ئەژمارکراوە' : 'Measured') : (lang === 'ku' ? 'دوورخراوەتەوە' : 'Excluded')}
+                    {analysisResult.rooms
+                      .filter(r => isEditing || r.isHeated !== false)
+                      .map((r, idx) => {
+                        // find original index in raw rooms array
+                        const originalIndex = analysisResult.rooms.findIndex(orig => orig === r);
+                        const isHeated = r.isHeated !== false;
+                        
+                        if (isEditing) {
+                          return (
+                            <tr key={originalIndex} className="border-b border-white/5 hover:bg-white/5 transition-all text-[13px]">
+                              {/* Room Names */}
+                              <td className="py-3 text-start">
+                                <div className="flex flex-col gap-1 max-w-[180px] md:max-w-xs">
+                                  <input
+                                    type="text"
+                                    value={r.nameEn}
+                                    onChange={(e) => updateRoomProperty(originalIndex, 'nameEn', e.target.value)}
+                                    placeholder="English Name"
+                                    className="bg-navy-mid border border-white/10 rounded px-2 py-1 text-xs text-text-main focus:outline-none focus:border-amber/50 w-full"
+                                  />
+                                  <input
+                                    type="text"
+                                    value={r.nameKu}
+                                    onChange={(e) => updateRoomProperty(originalIndex, 'nameKu', e.target.value)}
+                                    placeholder="Kurdish Name"
+                                    className="bg-navy-mid border border-white/10 rounded px-2 py-1 text-xs text-text-main focus:outline-none focus:border-amber/50 w-full text-right"
+                                  />
+                                </div>
+                              </td>
+
+                              {/* Area Sqm Input */}
+                              <td className="py-3 text-center">
+                                <div className="inline-flex items-center gap-1">
+                                  <input
+                                    type="number"
+                                    step="0.1"
+                                    min="0.1"
+                                    value={r.areaSqm}
+                                    onChange={(e) => updateRoomProperty(originalIndex, 'areaSqm', Number(e.target.value))}
+                                    className="bg-navy-mid border border-white/10 rounded px-1.5 py-1 text-xs text-text-main focus:outline-none focus:border-amber/50 w-16 text-center font-mono"
+                                  />
+                                  <span className="text-[11px] text-muted font-mono">m²</span>
+                                </div>
+                              </td>
+
+                              {/* isHeated Checkbox */}
+                              <td className="py-3 text-center">
+                                <input
+                                  type="checkbox"
+                                  checked={isHeated}
+                                  onChange={(e) => updateRoomProperty(originalIndex, 'isHeated', e.target.checked)}
+                                  className="w-4 h-4 rounded border-white/10 text-amber focus:ring-amber focus:ring-opacity-20 cursor-pointer accent-amber"
+                                />
+                              </td>
+
+                              {/* Loop Count Input */}
+                              <td className="py-3 text-center">
+                                <input
+                                  type="number"
+                                  min="0"
+                                  disabled={!isHeated}
+                                  value={r.loopCount}
+                                  onChange={(e) => updateRoomProperty(originalIndex, 'loopCount', Number(e.target.value))}
+                                  className={`bg-navy-mid border border-white/10 rounded px-1.5 py-1 text-xs text-text-main focus:outline-none focus:border-amber/50 w-12 text-center font-mono font-bold ${
+                                    isHeated ? 'text-emerald-400' : 'text-muted opacity-50'
+                                  }`}
+                                />
+                              </td>
+
+                              {/* Delete Action */}
+                              <td className="py-3 text-center">
+                                <button
+                                  onClick={() => removeRoom(originalIndex)}
+                                  className="p-1.5 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded transition-all cursor-pointer"
+                                  title="Delete area"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </td>
+                            </tr>
+                          );
+                        }
+
+                        // Normal view row
+                        return (
+                          <tr key={originalIndex} className={`border-b border-white/5 hover:bg-white/5 transition-all text-[13px] ${!isHeated ? 'opacity-65' : ''}`}>
+                            <td className="py-4 text-start font-medium text-white">
+                              <div className="flex flex-col">
+                                <span className="flex items-center gap-2">
+                                  {lang === 'ku' ? r.nameKu : r.nameEn}
+                                  <span className={`text-[9px] px-1.5 py-0.5 rounded font-bold uppercase ${isHeated ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/12' : 'bg-red-500/10 text-red-400 border border-red-500/12'}`}>
+                                    {isHeated ? (lang === 'ku' ? 'ئەژمارکراوە' : 'Measured') : (lang === 'ku' ? 'دوورخراوەتەوە' : 'Excluded')}
+                                  </span>
                                 </span>
-                              </span>
-                              {r.formula && (
-                                <span className="text-[11px] text-muted mt-1 font-mono">
-                                  {lang === 'ku' ? `کات و لێکدانەوە: ${r.formula}` : `Calculation: ${r.formula}`}
-                                </span>
-                              )}
-                            </div>
-                          </td>
-                          <td className="py-4 text-center font-mono font-medium">{r.areaSqm} m²</td>
-                          <td className="py-4 text-center font-mono text-amber">
-                            {isHeated ? `${r.heatingOutputRequiredKw.toFixed(1)} kW` : '—'}
-                          </td>
-                          <td className="py-4 text-center font-mono font-bold text-emerald-400">
-                            {isHeated ? r.loopCount : '—'}
-                          </td>
-                        </tr>
-                      );
-                    })}
+                                {r.formula && (
+                                  <span className="text-[11px] text-muted mt-1 font-mono">
+                                    {lang === 'ku' ? `کات و لێکدانەوە: ${r.formula}` : `Calculation: ${r.formula}`}
+                                  </span>
+                                )}
+                              </div>
+                            </td>
+                            <td className="py-4 text-center font-mono font-medium">{r.areaSqm} m²</td>
+                            <td className="py-4 text-center">
+                              <span className={`inline-block w-2.5 h-2.5 rounded-full ${isHeated ? 'bg-emerald-500' : 'bg-red-500'}`} />
+                            </td>
+                            <td className="py-4 text-center font-mono font-bold text-emerald-400">
+                              {isHeated ? r.loopCount : '—'}
+                            </td>
+                          </tr>
+                        );
+                      })}
                   </tbody>
                 </table>
               </div>
