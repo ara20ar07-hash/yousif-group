@@ -9,11 +9,11 @@ type ComponentData = { id: string; type: Exclude<Tool, 'select' | 'pipe'>; x: nu
 type PipeData = { id: string; x1: number; y1: number; x2: number; y2: number };
 
 const componentSpecs: Record<Exclude<Tool, 'select' | 'pipe'>, { name: { en: string; ku: string }; icon: React.ReactNode; borderColor: string }> = {
-  boiler: { name: { en: 'Boiler / Furnace', ku: 'بۆیلەر / گەرمکەرەوە' }, icon: <Flame className="w-5 h-5 text-red-500" />, borderColor: '#ef4444' },
-  radiator: { name: { en: 'Radiator Panel', ku: 'شۆفاژ' }, icon: <Heater className="w-5 h-5 text-neutral-300" />, borderColor: '#d4d4d4' },
-  manifold: { name: { en: 'Pipe Manifold', ku: 'مانیفۆڵد' }, icon: <Wrench className="w-5 h-5 text-emerald-500" />, borderColor: '#10b981' },
-  valve: { name: { en: 'Safety Valve', ku: 'قفڵی سەلامەتی' }, icon: <CircleDot className="w-5 h-5 text-amber-500" />, borderColor: '#f59e0b' },
-  pump: { name: { en: 'Circulation Pump', ku: 'پەمپ' }, icon: <RefreshCw className="w-5 h-5 text-purple-500" />, borderColor: '#8b5cf6' }
+  boiler: { name: { en: 'Boiler / Furnace', ku: 'بۆیلەر / گەرمکەرەوە' }, icon: <Flame className="w-4 h-4 text-red-500" />, borderColor: '#ef4444' },
+  radiator: { name: { en: 'Radiator Panel', ku: 'شۆفاژ' }, icon: <Heater className="w-4 h-4 text-neutral-300" />, borderColor: '#d4d4d4' },
+  manifold: { name: { en: 'Pipe Manifold', ku: 'مانیفۆڵد' }, icon: <Wrench className="w-4 h-4 text-emerald-500" />, borderColor: '#10b981' },
+  valve: { name: { en: 'Safety Valve', ku: 'قفڵی سەلامەتی' }, icon: <CircleDot className="w-4 h-4 text-amber-500" />, borderColor: '#f59e0b' },
+  pump: { name: { en: 'Circulation Pump', ku: 'پەمپ' }, icon: <RefreshCw className="w-4 h-4 text-purple-500" />, borderColor: '#8b5cf6' }
 };
 
 export default function DesignerTool() {
@@ -207,12 +207,8 @@ export default function DesignerTool() {
       setAnalysisResult(data);
       setIsPermissionDenied(false);
     } catch (err: any) {
-      console.error(err);
-      setAnalysisError(err.message || (
-        lang === 'ku'
-          ? 'شکست لە خوێندنەوە و پشکنینی نەخشەکە لەلایەن ژیری دەستکردەوە.'
-          : 'Failed to analyze blueprint. Please ensure the file is a clear blueprint floorplan.'
-      ));
+      console.warn('Analysis API failed, loading standard engineering fallback:', err);
+      handleLoadFallbackScan();
     } finally {
       setIsAnalyzing(false);
     }
@@ -439,13 +435,13 @@ export default function DesignerTool() {
           : 'Upload your structural blueprint to sketch custom pipelines and position heating arrays, boilers, and manifold nodes directly onto your floor plan layouts.'}
       </p>
 
-      <div className="grid grid-cols-1 lg:grid-cols-[300px_1fr] bg-navy-mid border border-white/5 rounded-[40px] overflow-hidden min-h-[650px]">
+      <div className="grid grid-cols-1 lg:grid-cols-[230px_1fr] bg-navy-mid border border-white/5 rounded-[40px] overflow-hidden min-h-[600px]">
         
         {/* Sidebar Tools */}
-        <div className="bg-navy-mid border-b lg:border-b-0 lg:border-r border-white/5 p-8 flex flex-col gap-8">
-          <div className="flex flex-col gap-4">
-            <label className="bg-white/5 border border-white/10 text-text-main font-semibold text-[11px] py-4 px-5 rounded-full text-center uppercase tracking-[0.2em] cursor-pointer hover:bg-white/10 transition-colors">
-              <Upload className="w-4 h-4 inline-block me-2 -mt-0.5" /> {lang === 'ku' ? 'نەخشە' : 'Blueprint'}
+        <div className="bg-navy-mid border-b lg:border-b-0 lg:border-r border-white/5 p-4 flex flex-col gap-4">
+          <div className="flex flex-col gap-2">
+            <label className="bg-white/5 border border-white/10 text-text-main font-semibold text-[10px] py-2.5 px-3 rounded-xl text-center uppercase tracking-wider cursor-pointer hover:bg-white/10 transition-colors">
+              <Upload className="w-3.5 h-3.5 inline-block me-1.5 -mt-0.5" /> {lang === 'ku' ? 'نەخشە' : 'Blueprint'}
               <input type="file" accept="image/*" className="hidden" onChange={handleFileUpload} />
             </label>
             {blueprint && (
@@ -453,50 +449,50 @@ export default function DesignerTool() {
                 <button 
                   onClick={handleAIAnalyze}
                   disabled={isAnalyzing}
-                  className="bg-amber text-navy font-bold text-[11px] py-4 px-5 rounded-full uppercase tracking-[0.2em] hover:bg-amber-light transition-all w-full flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                  className="bg-amber text-navy font-bold text-[10px] py-2.5 px-3 rounded-xl uppercase tracking-wider hover:bg-amber-light transition-all w-full flex items-center justify-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                 >
-                  <RefreshCw className={`w-4 h-4 ${isAnalyzing ? 'animate-spin' : ''}`} /> 
+                  <RefreshCw className={`w-3.5 h-3.5 ${isAnalyzing ? 'animate-spin' : ''}`} /> 
                   {isAnalyzing 
-                    ? (lang === 'ku' ? 'شیکردنەوەی AI...' : 'AI Scanning...') 
-                    : (lang === 'ku' ? 'پشکنینی نەخشە بە AI' : 'AI Read Blueprint')}
+                    ? (lang === 'ku' ? 'شیکردنەوەی...' : 'Scanning...') 
+                    : (lang === 'ku' ? 'پشکنینی نەخشە' : 'AI Read Plan')}
                 </button>
                 <button 
                   onClick={handleSendToWhatsApp}
                   disabled={isAnalyzing}
-                  className="bg-[#25D366]/10 border border-[#25D366]/30 text-[#25D366] font-semibold text-[11px] py-3.5 px-5 rounded-full uppercase tracking-[0.2em] hover:bg-[#25D366]/20 transition-colors w-full flex items-center justify-center gap-2"
+                  className="bg-[#25D366]/10 border border-[#25D366]/30 text-[#25D366] font-semibold text-[10px] py-2.5 px-3 rounded-xl uppercase tracking-wider hover:bg-[#25D366]/20 transition-colors w-full flex items-center justify-center gap-1.5"
                 >
-                  <Send className="w-4 h-4" /> {lang === 'ku' ? 'ناردن بۆ واتسئاپ' : 'Send via WhatsApp'}
+                  <Send className="w-3.5 h-3.5" /> {lang === 'ku' ? 'واتسئاپ' : 'WhatsApp'}
                 </button>
                 <button 
                   onClick={handleClear}
                   disabled={isAnalyzing}
-                  className="bg-red-500/10 border border-red-500/30 text-red-400 font-semibold text-[11px] py-3.5 px-5 rounded-full uppercase tracking-[0.2em] hover:bg-red-500/20 transition-colors w-full flex items-center justify-center gap-2"
+                  className="bg-red-500/10 border border-red-500/30 text-red-400 font-semibold text-[10px] py-2.5 px-3 rounded-xl uppercase tracking-wider hover:bg-red-500/20 transition-colors w-full flex items-center justify-center gap-1.5"
                 >
-                  <X className="w-4 h-4" /> {lang === 'ku' ? 'پاککردنەوە' : 'Reset'}
+                  <X className="w-3.5 h-3.5" /> {lang === 'ku' ? 'سڕینەوە' : 'Reset'}
                 </button>
               </>
             )}
           </div>
 
-          <div className="flex flex-col gap-2">
-            <div className="text-[10px] tracking-widest uppercase text-muted font-semibold mb-3">
+          <div className="flex flex-col gap-1.5">
+            <div className="text-[9px] tracking-widest uppercase text-muted font-semibold mb-1">
               {lang === 'ku' ? 'ئامرازەکان' : 'Toolsets'}
             </div>
             
             <button 
               onClick={() => { setTool('select'); setIsDrawing(false); }}
-              className={`flex items-center gap-4 text-sm font-light px-5 py-3.5 rounded-2xl transition-all border w-full text-start
-                ${tool === 'select' ? 'bg-navy-light border-amber text-text-main shadow-[inset_4px_0_0_#FFD600]' : 'bg-transparent border-transparent text-muted hover:bg-white/5'}`}
+              className={`flex items-center gap-2.5 text-xs font-light px-3.5 py-2 rounded-xl transition-all border w-full text-start
+                ${tool === 'select' ? 'bg-navy-light border-amber text-text-main shadow-[inset_3px_0_0_#FFD600]' : 'bg-transparent border-transparent text-muted hover:bg-white/5'}`}
             >
-              <MousePointer2 className="w-[18px] h-[18px]" /> {lang === 'ku' ? 'گواستنەوە' : 'Reposition'}
+              <MousePointer2 className="w-4 h-4" /> {lang === 'ku' ? 'گواستنەوە' : 'Reposition'}
             </button>
             
             {(Object.keys(componentSpecs) as Exclude<Tool, 'select' | 'pipe'>[]).map(compType => (
                <button 
                 key={compType}
                 onClick={() => { setTool(compType); setIsDrawing(false); }}
-                className={`flex items-center gap-4 text-sm font-light px-5 py-3.5 rounded-2xl transition-all border w-full text-start
-                  ${tool === compType ? 'bg-navy-light border-amber text-text-main shadow-[inset_4px_0_0_#FFD600]' : 'bg-transparent border-transparent text-muted hover:bg-white/5'}`}
+                className={`flex items-center gap-2.5 text-xs font-light px-3.5 py-2 rounded-xl transition-all border w-full text-start
+                  ${tool === compType ? 'bg-navy-light border-amber text-text-main shadow-[inset_3px_0_0_#FFD600]' : 'bg-transparent border-transparent text-muted hover:bg-white/5'}`}
               >
                 {componentSpecs[compType].icon} {lang === 'ku' ? componentSpecs[compType].name.ku : componentSpecs[compType].name.en}
               </button>
@@ -504,17 +500,17 @@ export default function DesignerTool() {
 
             <button 
               onClick={() => setTool('pipe')}
-              className={`flex items-center gap-4 text-sm font-light px-5 py-3.5 rounded-2xl transition-all border w-full text-start
-                ${tool === 'pipe' ? 'bg-navy-light border-amber text-text-main shadow-[inset_4px_0_0_#FFD600]' : 'bg-transparent border-transparent text-muted hover:bg-white/5'}`}
+              className={`flex items-center gap-2.5 text-xs font-light px-3.5 py-2 rounded-xl transition-all border w-full text-start
+                ${tool === 'pipe' ? 'bg-navy-light border-amber text-text-main shadow-[inset_3px_0_0_#FFD600]' : 'bg-transparent border-transparent text-muted hover:bg-white/5'}`}
             >
-              <Minus strokeWidth={4} className="w-[18px] h-[18px] text-amber" /> {lang === 'ku' ? 'بەستنەوەی بۆری' : 'Connect Pipe'}
+              <Minus strokeWidth={4} className="w-4 h-4 text-amber" /> {lang === 'ku' ? 'بەستنەوەی بۆری' : 'Connect Pipe'}
             </button>
           </div>
 
-          <div className="bg-navy-light border border-white/5 p-5 rounded-2xl text-xs text-muted leading-relaxed mt-auto font-light">
-             <p className="mb-2"><strong className="text-amber font-medium">Place:</strong> Select tool, tap canvas.</p>
-             <p className="mb-2"><strong className="text-amber font-medium">Route:</strong> Pipe tool ➔ draw points.</p>
-             <p className="mb-0"><strong className="text-amber font-medium">Modify:</strong> Reposition ➔ drag/delete.</p>
+          <div className="bg-navy-light border border-white/5 p-3.5 rounded-xl text-[11px] text-muted leading-relaxed mt-auto font-light">
+             <p className="mb-1"><strong className="text-amber font-medium">Place:</strong> Tap canvas.</p>
+             <p className="mb-1"><strong className="text-amber font-medium">Route:</strong> Pipe tool.</p>
+             <p className="mb-0"><strong className="text-amber font-medium">Modify:</strong> Drag/Delete.</p>
           </div>
         </div>
 
@@ -524,9 +520,8 @@ export default function DesignerTool() {
           {isAnalyzing && (
             <div className="absolute inset-0 bg-navy/95 backdrop-blur-md z-50 flex flex-col items-center justify-center p-8 text-center">
               <div className="relative w-20 h-20 mb-6">
-                <div className="absolute inset-0 rounded-full border-4 border-amber/10"></div>
+                <div className="absolute inset-0 rounded-full border-4 border-amber/10 animate-pulse"></div>
                 <div className="absolute inset-0 rounded-full border-4 border-t-amber animate-spin"></div>
-                <div className="absolute inset-2 rounded-full border-4 border-b-amber-light animate-spin" style={{ animationDirection: 'reverse', animationDuration: '1.5s' }}></div>
               </div>
               <h3 className="text-xl font-bold text-text-main mb-2 tracking-wide font-display">
                 {lang === 'ku' ? 'ژیری دەستکرد پشکنینی نەخشەکە دەکات...' : 'AI Floorplan Scan in Progress...'}
@@ -540,37 +535,22 @@ export default function DesignerTool() {
           )}
 
           {analysisError && (
-            <div className="absolute inset-x-4 top-4 bg-red-950/95 border border-red-500/30 text-white p-6 rounded-3xl flex flex-col gap-4 z-50 shadow-2xl backdrop-blur-md max-w-[650px] mx-auto text-start">
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex gap-3">
-                  <div className="w-8 h-8 rounded-full bg-red-500/20 flex items-center justify-center text-red-100 flex-shrink-0 font-bold font-mono">!</div>
+            <div className="absolute inset-x-4 top-4 bg-navy-mid/95 border border-amber/30 text-white p-4 rounded-xl flex flex-col gap-3 z-50 shadow-2xl backdrop-blur-md max-w-[600px] mx-auto text-start">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex gap-2.5">
+                  <div className="w-6 h-6 rounded-full bg-amber/20 flex items-center justify-center text-amber flex-shrink-0 font-bold font-mono text-xs">!</div>
                   <div>
-                    <h4 className="font-bold text-sm text-red-400 font-display">
-                      {isPermissionDenied 
-                        ? (lang === 'ku' ? 'کێشەی دەسەڵاتی سویچی ژیری دەستکرد (403)' : 'AI Key Permission Alert (403)')
-                        : (lang === 'ku' ? 'پشکنینی نەخشە' : 'Blueprint Scan Notice')}
+                    <h4 className="font-bold text-xs text-amber font-display">
+                      {lang === 'ku' ? 'ئاگاداری بارکردنی حساباتی نموونەیی' : 'Notice: Fallback Calculations Loaded'}
                     </h4>
-                    <p className="text-xs text-slate-300 mt-1 leading-relaxed">
+                    <p className="text-xs text-slate-300 mt-0.5 leading-relaxed">
                       {analysisError}
                     </p>
                   </div>
                 </div>
-                <button onClick={() => setAnalysisError(null)} className="text-white/40 hover:text-white flex-shrink-0">
+                <button onClick={() => setAnalysisError(null)} className="text-white/40 hover:text-white flex-shrink-0 cursor-pointer">
                   <X className="w-4 h-4" />
                 </button>
-              </div>
-
-              <div className="border-t border-white/5 pt-4 flex flex-col sm:flex-row gap-3 items-center justify-between">
-                <button 
-                  onClick={handleLoadFallbackScan}
-                  className="bg-amber text-navy hover:bg-amber-light font-bold text-[11px] py-3 px-5 rounded-full uppercase tracking-wider transition-all w-full sm:w-auto flex items-center justify-center gap-2 cursor-pointer shadow-md"
-                >
-                  <RefreshCw className="w-3.5 h-3.5 animate-pulse" />
-                  {lang === 'ku' ? 'لێکدانەوەی زیرەکی نەخشەکە باربکە' : 'Load Fallback Calculations'}
-                </button>
-                <span className="text-[10px] text-slate-400 italic">
-                  {lang === 'ku' ? '★ ڕاستەوخۆ حساباتی ئەندازیاری ئەم نەخشەیە باردەکات.' : '★ Instantly structures calculations for the uploaded plan.'}
-                </span>
               </div>
             </div>
           )}
@@ -615,7 +595,7 @@ export default function DesignerTool() {
                      <div 
                        key={comp.id}
                        onMouseDown={() => { if (tool === 'select') setDraggingId(comp.id); }}
-                       className={`absolute -translate-x-1/2 -translate-y-1/2 w-10 h-10 rounded bg-navy-mid border-2 flex items-center justify-center shadow-lg group pointer-events-auto
+                       className={`absolute -translate-x-1/2 -translate-y-1/2 w-8 h-8 rounded bg-navy-mid border-2 flex items-center justify-center shadow-lg group pointer-events-auto
                          ${tool === 'select' ? 'cursor-grab active:cursor-grabbing' : 'cursor-crosshair'}`}
                        style={{ left: comp.x, top: comp.y, borderColor: spec.borderColor }}
                      >
@@ -628,9 +608,9 @@ export default function DesignerTool() {
                        {tool === 'select' && (
                          <button 
                            onClick={(e) => removeComponent(comp.id, e)}
-                           className="absolute -top-2.5 -right-2.5 bg-red-500 text-white w-5 h-5 rounded-full flex items-center justify-center text-[10px] opacity-0 group-hover:opacity-100 shadow-md transition-opacity hover:bg-red-600"
+                           className="absolute -top-1.5 -right-1.5 bg-red-500 text-white w-4 h-4 rounded-full flex items-center justify-center text-[9px] opacity-0 group-hover:opacity-100 shadow-md transition-opacity hover:bg-red-600 cursor-pointer"
                          >
-                           <X className="w-3 h-3" />
+                           <X className="w-2.5 h-2.5" />
                          </button>
                        )}
                      </div>
