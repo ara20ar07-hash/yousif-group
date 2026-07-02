@@ -92,12 +92,12 @@ export default function Hero() {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.5 }}
-          className="flex gap-4 flex-wrap"
+          className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto"
         >
-          <a href="#services" className="bg-amber text-navy font-semibold text-[11px] px-8 py-3 rounded-full tracking-[0.2em] uppercase hover:bg-amber-light hover:-translate-y-px transition-all">
+          <a href="#services" className="bg-amber text-navy font-semibold text-[11px] px-8 py-3 rounded-full tracking-[0.2em] uppercase hover:bg-amber-light hover:-translate-y-px transition-all w-full sm:w-auto text-center flex items-center justify-center">
             {lang === 'ku' ? 'خزمەتگوزارییەکانمان' : 'Our Services'}
           </a>
-          <a href="#contact" className="border border-white/20 text-text-main text-[11px] px-8 py-3 rounded-full tracking-[0.2em] uppercase hover:bg-white/10 transition-colors">
+          <a href="#contact" className="bg-white/10 border border-white/15 text-text-main text-[11px] px-8 py-3 rounded-full tracking-[0.2em] uppercase hover:bg-white/20 transition-all w-full sm:w-auto text-center flex items-center justify-center">
             {lang === 'ku' ? 'پەیوەندیمان پێوە بکە' : 'Contact Us'}
           </a>
         </motion.div>
