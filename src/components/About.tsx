@@ -1,5 +1,6 @@
 import { Check } from 'lucide-react';
 import { useLanguage } from './LanguageContext';
+import { motion } from 'motion/react';
 
 export default function About() {
   const { lang } = useLanguage();
@@ -18,11 +19,54 @@ export default function About() {
     'Modern solar and sustainable energy solutions',
   ];
 
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.15,
+        delayChildren: 0.1
+      }
+    }
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 30 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: {
+        duration: 0.8,
+        ease: [0.16, 1, 0.3, 1]
+      }
+    }
+  };
+
+  const cardVariants = {
+    hidden: { opacity: 0, y: 40, scale: 0.98 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      scale: 1,
+      transition: {
+        duration: 1,
+        ease: [0.16, 1, 0.3, 1],
+        delay: 0.3
+      }
+    }
+  };
+
   return (
-    <section id="about" className="px-6 md:px-12 py-24 bg-navy-mid border-y border-border-main">
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center">
+    <section id="about" className="px-6 md:px-12 py-24 bg-navy-mid border-y border-border-main overflow-hidden">
+      <motion.div 
+        className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center"
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true, margin: "-120px" }}
+        variants={containerVariants}
+      >
         
-        <div>
+        <motion.div variants={itemVariants}>
           <span className="block text-[11px] tracking-[0.4em] uppercase text-amber font-semibold mb-4">
             {lang === 'ku' ? 'دەربارەی کۆمپانیا' : 'About The Company'}
           </span>
@@ -41,16 +85,23 @@ export default function About() {
           
           <ul className="mt-8 flex flex-col gap-4">
             {points.map((point, idx) => (
-              <li key={idx} className="flex items-start gap-4 text-sm font-light text-muted">
+              <motion.li 
+                key={idx} 
+                className="flex items-start gap-4 text-sm font-light text-muted"
+                variants={itemVariants}
+              >
                 <span className="text-amber mt-0.5 shrink-0 text-xs">✦</span>
                 {point}
-              </li>
+              </motion.li>
             ))}
           </ul>
-        </div>
+        </motion.div>
 
-        <div className="relative">
-          <div className="relative bg-navy-mid border border-white/5 p-10 rounded-3xl overflow-hidden">
+        <motion.div 
+          className="relative"
+          variants={cardVariants}
+        >
+          <div className="relative bg-navy-mid border border-white/5 p-10 rounded-3xl overflow-hidden shadow-2xl">
             <div className="absolute top-0 left-0 w-[3px] h-full bg-gradient-to-b from-amber to-amber/10" />
             
             <div className="inline-flex items-center gap-2 bg-white/5 border border-white/10 text-text-main text-[10px] tracking-widest uppercase px-4 py-2 rounded-full mb-8">
@@ -71,9 +122,9 @@ export default function About() {
                 : 'Every project begins with a careful site assessment, a transparent proposal, and ends with a system that performs reliably for years. We take pride in our craftsmanship and stand behind every installation we deliver.'}
             </p>
           </div>
-        </div>
+        </motion.div>
 
-      </div>
+      </motion.div>
     </section>
   );
 }

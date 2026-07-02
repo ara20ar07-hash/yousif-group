@@ -6,6 +6,18 @@
   --font-display: "Playfair Display", ui-serif, Georgia, serif;
   --font-arabic: "Noto Sans Arabic", ui-sans-serif, system-ui, sans-serif;
 
+  --color-navy: var(--color-navy);
+  --color-navy-mid: var(--color-navy-mid);
+  --color-navy-light: var(--color-navy-light);
+  --color-amber: var(--color-amber);
+  --color-amber-light: var(--color-amber-light);
+  --color-amber-dim: var(--color-amber-dim);
+  --color-text-main: var(--color-text-main);
+  --color-muted: var(--color-muted);
+  --color-border-main: var(--color-border-main);
+}
+
+:root {
   --color-navy: #000000;
   --color-navy-mid: #111111;
   --color-navy-light: #222222;
@@ -15,6 +27,80 @@
   --color-text-main: #FFFFFF;
   --color-muted: color-mix(in srgb, #FFFFFF 60%, transparent);
   --color-border-main: color-mix(in srgb, #FFFFFF 15%, transparent);
+}
+
+:root.light {
+  --color-navy: #f8fafc;
+  --color-navy-mid: #ffffff;
+  --color-navy-light: #f1f5f9;
+  --color-amber: #ca8a04;
+  --color-amber-light: #fef08a;
+  --color-amber-dim: #a16207;
+  --color-text-main: #0f172a;
+  --color-muted: #475569;
+  --color-border-main: color-mix(in srgb, #000000 8%, transparent);
+}
+
+/* Light Mode Adaptations */
+:root.light .border-white\/5 {
+  border-color: rgba(15, 23, 42, 0.08);
+}
+:root.light .border-white\/10 {
+  border-color: rgba(15, 23, 42, 0.15);
+}
+:root.light .bg-white\/5 {
+  background-color: rgba(15, 23, 42, 0.04);
+}
+:root.light .bg-white\/10 {
+  background-color: rgba(15, 23, 42, 0.08);
+}
+:root.light .bg-white\/20 {
+  background-color: rgba(15, 23, 42, 0.12);
+}
+:root.light .hover\:bg-white\/5:hover {
+  background-color: rgba(15, 23, 42, 0.04);
+}
+:root.light .hover\:bg-white\/10:hover {
+  background-color: rgba(15, 23, 42, 0.08);
+}
+:root.light .hover\:bg-white\/20:hover {
+  background-color: rgba(15, 23, 42, 0.12);
+}
+:root.light .text-white\/70 {
+  color: rgba(15, 23, 42, 0.7);
+}
+:root.light .text-white\/85 {
+  color: rgba(15, 23, 42, 0.85);
+}
+:root.light .text-white\/40 {
+  color: rgba(15, 23, 42, 0.4);
+}
+:root.light .text-white\/30 {
+  color: rgba(15, 23, 42, 0.3);
+}
+:root.light .text-white\/5 {
+  color: rgba(15, 23, 42, 0.03);
+}
+:root.light .text-\[\#E0D8D0\] {
+  color: #475569;
+}
+:root.light .hover\:text-white:hover {
+  color: #0f172a;
+}
+:root.light .text-slate-300 {
+  color: #334155;
+}
+:root.light .text-slate-400 {
+  color: #475569;
+}
+:root.light .group-hover\:text-amber\/5:hover,
+:root.light .group:hover .group-hover\:text-amber\/5 {
+  color: rgba(202, 138, 4, 0.08);
+}
+:root.light .designer-workspace-grid {
+  background-image:
+    linear-gradient(color-mix(in srgb, var(--color-amber) 8%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--color-amber) 8%, transparent) 1px, transparent 1px);
 }
 
 html {

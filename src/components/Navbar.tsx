@@ -1,7 +1,8 @@
+import { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { useLanguage } from './LanguageContext';
 import { useOwner } from './OwnerContext';
-import { Lock } from 'lucide-react';
+import { Lock, Sun, Moon } from 'lucide-react';
 
 interface NavbarProps {
   onOpenOwnerModal: () => void;
@@ -10,6 +11,27 @@ interface NavbarProps {
 export default function Navbar({ onOpenOwnerModal }: NavbarProps) {
   const { lang, toggleLanguage } = useLanguage();
   const { isOwnerLoggedIn } = useOwner();
+
+  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('theme');
+      if (saved === 'light' || saved === 'dark') return saved;
+    }
+    return 'dark';
+  });
+
+  useEffect(() => {
+    if (theme === 'light') {
+      document.documentElement.classList.add('light');
+    } else {
+      document.documentElement.classList.remove('light');
+    }
+    localStorage.setItem('theme', theme);
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme(prev => prev === 'light' ? 'dark' : 'light');
+  };
 
   const navItems = [
     { en: 'Services', ku: 'خزمەتگوزارییەکان', id: 'services' },
@@ -64,6 +86,18 @@ export default function Navbar({ onOpenOwnerModal }: NavbarProps) {
               <Lock className="w-3 h-3 text-muted/80 group-hover:text-amber" />
               <span className="hidden sm:inline">{lang === 'ku' ? 'خاوەن کار' : 'Owner'}</span>
             </>
+          )}
+        </button>
+
+        <button
+          onClick={toggleTheme}
+          className="flex items-center justify-center border border-white/10 rounded-full w-8 h-8 sm:w-10 sm:h-10 text-[#E0D8D0] hover:text-amber hover:border-amber/50 transition-all duration-200 cursor-pointer shrink-0"
+          title={theme === 'light' ? 'Switch to Dark Mode' : 'Switch to Light Mode'}
+        >
+          {theme === 'light' ? (
+            <Moon className="w-4 h-4" />
+          ) : (
+            <Sun className="w-4 h-4" />
           )}
         </button>
 

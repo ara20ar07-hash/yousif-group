@@ -11,7 +11,7 @@ export default function WhatsAppButton() {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6, delay: 0.8 }}
     >
-      <div className="hidden md:flex bg-navy-mid border border-white/10 text-white/80 text-[10px] tracking-widest uppercase px-4 py-2.5 rounded-full shadow-2xl backdrop-blur-sm items-center pointer-events-none">
+      <div className="hidden md:flex bg-navy-mid border border-white/10 text-text-main text-[10px] tracking-widest uppercase px-4 py-2.5 rounded-full shadow-2xl backdrop-blur-sm items-center pointer-events-none">
         {lang === 'ku' ? 'نامەمان بۆ بنێرە' : 'Chat with us'}
       </div>
       

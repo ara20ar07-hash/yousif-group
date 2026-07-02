@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Phone, Mail, MapPin, Instagram } from 'lucide-react';
 import { useLanguage } from './LanguageContext';
+import { motion } from 'motion/react';
 
 export default function Contact() {
   const { lang } = useLanguage();
@@ -43,12 +44,35 @@ export default function Contact() {
     }, 3000);
   };
 
+  const infoVariants = {
+    hidden: { opacity: 0, x: -30 },
+    visible: {
+      opacity: 1,
+      x: 0,
+      transition: { duration: 0.8, ease: [0.16, 1, 0.3, 1] }
+    }
+  };
+
+  const formVariants = {
+    hidden: { opacity: 0, y: 40 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: { duration: 1, ease: [0.16, 1, 0.3, 1], delay: 0.15 }
+    }
+  };
+
   return (
-    <section id="contact" className="px-6 md:px-12 py-24 bg-navy">
+    <section id="contact" className="px-6 md:px-12 py-24 bg-navy overflow-hidden">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-start">
         
         {/* Left Side: Info */}
-        <div>
+        <motion.div
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, margin: "-120px" }}
+          variants={infoVariants}
+        >
           <span className="block text-[11px] tracking-[0.4em] uppercase text-amber font-semibold mb-4">
             {lang === 'ku' ? 'پەیوەندیمان پێوە بکە' : 'Get in Touch'}
           </span>
@@ -91,10 +115,16 @@ export default function Contact() {
               </div>
             ))}
           </div>
-        </div>
+        </motion.div>
 
         {/* Right Side: Form */}
-        <div className="bg-navy-mid border border-white/5 p-8 md:p-10 rounded-[40px]">
+        <motion.div 
+          className="bg-navy-mid border border-white/5 p-8 md:p-10 rounded-[40px] shadow-2xl"
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, margin: "-120px" }}
+          variants={formVariants}
+        >
           <div className="font-serif text-3xl tracking-tight text-text-main mb-8">
             {lang === 'ku' ? 'ناردنی پرسیار' : 'Send an Inquiry'}
           </div>
@@ -179,7 +209,7 @@ export default function Contact() {
           >
             {btnText}
           </button>
-        </div>
+        </motion.div>
 
       </div>
     </section>

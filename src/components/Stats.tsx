@@ -1,4 +1,5 @@
 import { useLanguage } from './LanguageContext';
+import { motion } from 'motion/react';
 
 export default function Stats() {
   const { lang } = useLanguage();
@@ -10,11 +11,37 @@ export default function Stats() {
     { num: '24/7', label: lang === 'ku' ? 'پاڵپشتی بەردەست' : 'Support Available' },
   ];
 
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1,
+      }
+    }
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: { duration: 0.6, ease: [0.16, 1, 0.3, 1] }
+    }
+  };
+
   return (
-    <div className="flex flex-wrap lg:flex-nowrap justify-center bg-navy border-b border-border-main">
+    <motion.div 
+      className="flex flex-wrap lg:flex-nowrap justify-center bg-navy border-b border-border-main"
+      initial="hidden"
+      whileInView="visible"
+      viewport={{ once: true, margin: "-50px" }}
+      variants={containerVariants}
+    >
       {stats.map((stat, i) => (
-        <div 
+        <motion.div 
           key={i} 
+          variants={itemVariants}
           className={`flex-1 min-w-[50%] lg:min-w-0 max-w-[260px] p-8 lg:px-14 text-center border-b lg:border-b-0 border-border-main ${
             i !== stats.length - 1 ? 'lg:border-r' : ''
           } ${i % 2 === 0 ? 'border-r lg:border-r' : ''}`}
@@ -25,8 +52,8 @@ export default function Stats() {
           <div className="text-[10px] uppercase tracking-widest text-white/40">
             {stat.label}
           </div>
-        </div>
+        </motion.div>
       ))}
-    </div>
+    </motion.div>
   );
 }

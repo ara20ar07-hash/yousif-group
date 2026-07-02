@@ -13,7 +13,7 @@ export default function Hero() {
           background: `
             radial-gradient(ellipse 60% 55% at 70% 50%, rgba(255,214,0,0.1) 0%, transparent 65%),
             radial-gradient(ellipse 40% 60% at 80% 30%, rgba(255,214,0,0.07) 0%, transparent 55%),
-            linear-gradient(160deg, #000000 0%, #111111 100%)
+            linear-gradient(160deg, var(--color-navy) 0%, var(--color-navy-mid) 100%)
           `
         }}
       />

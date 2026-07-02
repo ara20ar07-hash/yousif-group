@@ -3,6 +3,7 @@ import { Thermometer, Flame, Heater, Zap, Leaf, FireExtinguisher, ArrowUpRight }
 import { useLanguage } from './LanguageContext';
 import { useOwner } from './OwnerContext';
 import ServiceDetailModal from './ServiceDetailModal';
+import { motion } from 'motion/react';
 
 export default function Services() {
   const { lang } = useLanguage();
@@ -30,9 +31,44 @@ export default function Services() {
     desc: lang === 'ku' ? svc.cardDescKu : svc.cardDescEn,
   }));
 
+  const headerVariants = {
+    hidden: { opacity: 0, y: 35 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: { duration: 0.8, ease: [0.16, 1, 0.3, 1] }
+    }
+  };
+
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1,
+        delayChildren: 0.05
+      }
+    }
+  };
+
+  const cardVariants = {
+    hidden: { opacity: 0, y: 35 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: { duration: 0.8, ease: [0.16, 1, 0.3, 1] }
+    }
+  };
+
   return (
-    <section id="services" className="px-6 md:px-12 py-24 bg-navy">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-end mb-14">
+    <section id="services" className="px-6 md:px-12 py-24 bg-navy overflow-hidden">
+      <motion.div 
+        className="grid grid-cols-1 md:grid-cols-2 gap-8 items-end mb-14"
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true, margin: "-120px" }}
+        variants={headerVariants}
+      >
         <div>
           <span className="block text-[11px] tracking-[0.4em] uppercase text-amber font-semibold mb-4">
             {lang === 'ku' ? 'خستنەڕووی تایبەتمەندی' : 'Feature Presentation'}
@@ -50,16 +86,23 @@ export default function Services() {
             ? 'لە نەخشەسازییەوە تا دانان و چاککردنەوە، هەموو قۆناغەکان ئەنجام دەدەین — دابینکردنی سیستەمێکی متمانەپێکراو کە گونجاوە لەگەڵ کەشوهەوا و پێوەرەکانی بیناسازی لە عێراق.' 
             : "From design to installation and maintenance, we handle every stage — delivering reliable systems built for Iraq's climate and construction standards."}
         </p>
-      </div>
+      </motion.div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      <motion.div 
+        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true, margin: "-120px" }}
+        variants={containerVariants}
+      >
         {services.map((svc) => (
-          <div 
+          <motion.div 
             key={svc.num} 
             onClick={() => {
               setSelectedId(svc.num);
               setIsOpen(true);
             }}
+            variants={cardVariants}
             className="group relative bg-navy-mid rounded-[32px] p-8 border border-white/5 flex flex-col justify-between overflow-hidden hover:bg-navy-light hover:border-amber/20 transition-all duration-300 cursor-pointer shadow-lg hover:shadow-2xl"
           >
             <span className="absolute top-6 end-7 font-serif text-5xl text-white/5 group-hover:text-amber/5 leading-none transition-colors duration-300 pointer-events-none">
@@ -91,9 +134,9 @@ export default function Services() {
                 <span className="group-hover:translate-x-1.5 transition-transform duration-200">→</span>
               </div>
             </div>
-          </div>
+          </motion.div>
         ))}
-      </div>
+      </motion.div>
 
       {selectedId && (
         <ServiceDetailModal

@@ -3,6 +3,31 @@ import { MousePointer2, Flame, Wrench, CircleDot, RefreshCw, Minus, Upload, X, C
 import { motion } from 'motion/react';
 import { useLanguage } from './LanguageContext';
 
+const evaluateCalculation = (input: string): number => {
+  if (!input) return 0;
+  // Convert any Kurdish/Arabic digits to Western Arabic digits
+  let cleaned = input.replace(/[٠-٩]/g, d => (d.charCodeAt(0) - 1632).toString())
+                     .replace(/[۰-۹]/g, d => (d.charCodeAt(0) - 1776).toString());
+  
+  cleaned = cleaned.toLowerCase().replace(/x|×/g, '*');
+  const safeExpression = cleaned.replace(/[^0-9.+\-*/() ]/g, '');
+  try {
+    if (!safeExpression.trim()) return 0;
+    const res = new Function(`return (${safeExpression})`)();
+    return typeof res === 'number' && !isNaN(res) ? Number(res.toFixed(2)) : 0;
+  } catch {
+    return 0;
+  }
+};
+
+const getEditableFormula = (room: any) => {
+  if (!room.formula) return room.areaSqm.toString();
+  if (room.formula.includes('=')) {
+    return room.formula.split('=')[0].replace(/m|sqm| /g, '').trim();
+  }
+  return room.formula;
+};
+
 type Tool = 'select' | 'boiler' | 'radiator' | 'manifold' | 'valve' | 'pump' | 'pipe';
 
 type ComponentData = { id: string; type: Exclude<Tool, 'select' | 'pipe'>; x: number; y: number };
@@ -77,6 +102,19 @@ export default function DesignerTool() {
       ...updatedRooms[index],
       [key]: value
     };
+
+    if (key === 'formula') {
+      const evaluatedArea = evaluateCalculation(value);
+      updatedRooms[index].areaSqm = evaluatedArea;
+      
+      const isHeated = updatedRooms[index].isHeated !== false;
+      updatedRooms[index].heatingOutputRequiredKw = isHeated ? Number((evaluatedArea * 0.1).toFixed(1)) : 0;
+      if (isHeated) {
+        updatedRooms[index].loopCount = Math.max(1, Math.ceil(evaluatedArea / 12));
+      } else {
+        updatedRooms[index].loopCount = 0;
+      }
+    }
 
     if (key === 'areaSqm') {
       const isHeated = updatedRooms[index].isHeated !== false;
@@ -418,22 +456,29 @@ export default function DesignerTool() {
   };
 
   return (
-    <section id="designer" className="px-6 md:px-12 py-24 bg-navy border-t border-border-main">
-      <span className="block text-[11px] tracking-[0.4em] uppercase text-amber font-semibold mb-4">
-        {lang === 'ku' ? 'وێستگەی کاری کارلێککار' : 'Interactive Workspace'}
-      </span>
-      <h2 className="font-display text-[60px] md:text-[80px] leading-[0.85] tracking-tight text-text-main mb-6">
-        {lang === 'ku' ? (
-          <>نەخشەسازی دانانی <br /><span className="italic text-amber">سیستەم</span></>
-        ) : (
-          <>Heating Layout <br /><span className="italic text-amber">Planner</span></>
-        )}
-      </h2>
-      <p className="text-lg leading-relaxed font-light text-white/70 max-w-[600px] mb-12">
-        {lang === 'ku' 
-          ? 'نەخشەی بیناکەت بەرزبکەرەوە بۆ کێشانی بۆرییەکان و دانانی بۆیلەر و ئامێرەکانی تری سیستەمەکە.' 
-          : 'Upload your structural blueprint to sketch custom pipelines and position heating arrays, boilers, and manifold nodes directly onto your floor plan layouts.'}
-      </p>
+    <section id="designer" className="px-6 md:px-12 py-24 bg-navy border-t border-border-main overflow-hidden">
+      <motion.div
+        initial={{ opacity: 0, y: 30 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: "-120px" }}
+        transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+      >
+        <span className="block text-[11px] tracking-[0.4em] uppercase text-amber font-semibold mb-4">
+          {lang === 'ku' ? 'وێستگەی کاری کارلێککار' : 'Interactive Workspace'}
+        </span>
+        <h2 className="font-display text-[60px] md:text-[80px] leading-[0.85] tracking-tight text-text-main mb-6">
+          {lang === 'ku' ? (
+            <>نەخشەسازی دانانی <br /><span className="italic text-amber">سیستەم</span></>
+          ) : (
+            <>Heating Layout <br /><span className="italic text-amber">Planner</span></>
+          )}
+        </h2>
+        <p className="text-lg leading-relaxed font-light text-white/70 max-w-[600px] mb-12">
+          {lang === 'ku' 
+            ? 'نەخشەی بیناکەت بەرزبکەرەوە بۆ کێشانی بۆرییەکان و دانانی بۆیلەر و ئامێرەکانی تری سیستەمەکە.' 
+            : 'Upload your structural blueprint to sketch custom pipelines and position heating arrays, boilers, and manifold nodes directly onto your floor plan layouts.'}
+        </p>
+      </motion.div>
 
       <div className="grid grid-cols-1 lg:grid-cols-[230px_1fr] bg-navy-mid border border-white/5 rounded-[40px] overflow-hidden min-h-[600px]">
         
@@ -641,7 +686,7 @@ export default function DesignerTool() {
                       >
                         <div className="flex flex-col h-full justify-between">
                           <div className="flex justify-between items-start gap-1">
-                            <span className="text-[10px] font-bold text-white bg-navy-mid/95 px-2 py-1 rounded shadow-sm border border-white/10 truncate max-w-[80%]">
+                            <span className="text-[10px] font-bold text-black bg-white/95 px-2 py-1 rounded shadow-sm border border-black/15 truncate max-w-[80%]">
                               {lang === 'ku' ? room.nameKu : room.nameEn}
                             </span>
                             <span className="text-[8px] font-mono font-bold px-1.5 py-0.5 rounded shadow-sm uppercase tracking-wider bg-red-600 text-white">
@@ -800,11 +845,11 @@ export default function DesignerTool() {
               </div>
               
               <div className="overflow-x-auto">
-                <table className="w-full text-sm font-light text-white/85">
+                <table className="w-full text-sm font-light text-text-main">
                   <thead>
                     <tr className="border-b border-white/10 text-xs font-mono uppercase text-muted text-start">
                       <th className="py-3 text-start font-medium">{lang === 'ku' ? 'ناو' : 'Room Name'}</th>
-                      <th className="py-3 text-center font-medium">{lang === 'ku' ? 'ڕووپەر (m²)' : 'Area (sqm)'}</th>
+                      <th className="py-3 text-center font-medium">{lang === 'ku' ? 'حسابات / ڕووپەر (m²)' : 'Calculation / Area (sqm)'}</th>
                       <th className="py-3 text-center font-medium">{lang === 'ku' ? 'گەرمکردن؟' : 'Heated?'}</th>
                       <th className="py-3 text-center font-medium">{lang === 'ku' ? 'هێڵەکان (Loops)' : 'Loops'}</th>
                       {isEditing && <th className="py-3 text-center font-medium w-12">{lang === 'ku' ? 'سڕینەوە' : 'Delete'}</th>}
@@ -841,18 +886,19 @@ export default function DesignerTool() {
                                 </div>
                               </td>
 
-                              {/* Area Sqm Input */}
+                              {/* Area Sqm Input (Calculation Input) */}
                               <td className="py-3 text-center">
-                                <div className="inline-flex items-center gap-1">
+                                <div className="inline-flex flex-col items-center gap-1">
                                   <input
-                                    type="number"
-                                    step="0.1"
-                                    min="0.1"
-                                    value={r.areaSqm}
-                                    onChange={(e) => updateRoomProperty(originalIndex, 'areaSqm', Number(e.target.value))}
-                                    className="bg-navy-mid border border-white/10 rounded px-1.5 py-1 text-xs text-text-main focus:outline-none focus:border-amber/50 w-16 text-center font-mono"
+                                    type="text"
+                                    value={getEditableFormula(r)}
+                                    onChange={(e) => updateRoomProperty(originalIndex, 'formula', e.target.value)}
+                                    className="bg-navy-mid border border-white/10 rounded px-1.5 py-1 text-xs text-text-main focus:outline-none focus:border-amber/50 w-28 text-center font-mono"
+                                    placeholder="e.g. 4.6 * 6.0"
                                   />
-                                  <span className="text-[11px] text-muted font-mono">m²</span>
+                                  <span className="text-[10px] text-muted font-mono whitespace-nowrap">
+                                    {lang === 'ku' ? 'ئەنجام: ' : 'Result: '}<strong className="text-text-main font-bold">{r.areaSqm}</strong> m²
+                                  </span>
                                 </div>
                               </td>
 
@@ -875,7 +921,7 @@ export default function DesignerTool() {
                                   value={r.loopCount}
                                   onChange={(e) => updateRoomProperty(originalIndex, 'loopCount', Number(e.target.value))}
                                   className={`bg-navy-mid border border-white/10 rounded px-1.5 py-1 text-xs text-text-main focus:outline-none focus:border-amber/50 w-12 text-center font-mono font-bold ${
-                                    isHeated ? 'text-emerald-400' : 'text-muted opacity-50'
+                                    isHeated ? 'text-emerald-500' : 'text-muted opacity-50'
                                   }`}
                                 />
                               </td>
@@ -897,7 +943,7 @@ export default function DesignerTool() {
                         // Normal view row
                         return (
                           <tr key={originalIndex} className={`border-b border-white/5 hover:bg-white/5 transition-all text-[13px] ${!isHeated ? 'opacity-65' : ''}`}>
-                            <td className="py-4 text-start font-medium text-white">
+                            <td className="py-4 text-start font-medium text-text-main">
                               <div className="flex flex-col">
                                 <span className="flex items-center gap-2">
                                   {lang === 'ku' ? r.nameKu : r.nameEn}
@@ -907,7 +953,10 @@ export default function DesignerTool() {
                                 </span>
                                 {r.formula && (
                                   <span className="text-[11px] text-muted mt-1 font-mono">
-                                    {lang === 'ku' ? `کات و لێکدانەوە: ${r.formula}` : `Calculation: ${r.formula}`}
+                                    {lang === 'ku' 
+                                      ? `کات و لێکدانەوە: ${r.formula.includes('=') ? r.formula : `${r.formula} = ${r.areaSqm} m²`}` 
+                                      : `Calculation: ${r.formula.includes('=') ? r.formula : `${r.formula} = ${r.areaSqm} m²`}`
+                                    }
                                   </span>
                                 )}
                               </div>
