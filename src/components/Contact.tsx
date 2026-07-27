@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Phone, Mail, MapPin, Instagram } from 'lucide-react';
+import { Phone, Mail, MapPin, Instagram, Navigation, ExternalLink } from 'lucide-react';
 import { useLanguage } from './LanguageContext';
 import { motion } from 'motion/react';
 
@@ -11,6 +11,8 @@ export default function Contact() {
   const [btnText, setBtnText] = useState(defaultBtnText);
   const [btnStyle, setBtnStyle] = useState<React.CSSProperties>({});
   const [formData, setFormData] = useState({ name: '', phone: '', service: '', message: '' });
+
+  const mapUrl = "https://maps.app.goo.gl/Wwk32kn7dHM1N4h37";
 
   useEffect(() => {
     if (btnText !== sentBtnText && btnText !== defaultBtnText) {
@@ -64,7 +66,7 @@ export default function Contact() {
 
   return (
     <section id="contact" className="px-6 md:px-12 py-24 bg-navy overflow-hidden">
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-start mb-16">
         
         {/* Left Side: Info */}
         <motion.div
@@ -93,19 +95,28 @@ export default function Contact() {
             {[
               { icon: <Phone className="w-5 h-5" />, label: lang === 'ku' ? 'تەلەفۆن' : 'Phone', value: '+964 770 970 0306', link: 'tel:+9647709700306' },
               { icon: <Mail className="w-5 h-5" />, label: lang === 'ku' ? 'ئیمەیڵ' : 'Email', value: 'Yusf.hawramy27@gmail.com', link: 'mailto:Yusf.hawramy27@gmail.com' },
-              { icon: <MapPin className="w-5 h-5" />, label: lang === 'ku' ? 'ناونیشان' : 'Location', value: lang === 'ku' ? 'سلێمانی، ئیبراهیم ئەحمەد' : 'Sulaymaniyah, Ebrahim Ahmad', link: null },
-              { icon: <Instagram className="w-5 h-5" />, label: lang === 'ku' ? 'ئینستاگرام' : 'Instagram', value: '@Yousif.group', link: 'https://instagram.com/Yousif.group' }
+              { icon: <MapPin className="w-5 h-5 text-amber" />, label: lang === 'ku' ? 'ناونیشان (کراوە لە نەخشە)' : 'Location (Tap for Maps)', value: lang === 'ku' ? 'سلێمانی، سەر شەستی خوارەوە، بەرامبەر بەنزینخانەی بامۆک ٣' : 'Sulaymaniyah, Lower 60m Street, Opposite Bamok 3 Fuel Station', link: mapUrl, external: true },
+              { icon: <Instagram className="w-5 h-5" />, label: lang === 'ku' ? 'ئینستاگرام' : 'Instagram', value: '@Yousif.group', link: 'https://instagram.com/Yousif.group', external: true }
             ].map((item, idx) => (
               <div key={idx} className="flex items-start gap-6 pb-6 border-b border-border-main last:border-b-0">
                 <div className="w-12 h-12 rounded-full border border-white/10 flex items-center justify-center shrink-0 hover:bg-white/5 transition-colors">
                   {item.icon}
                 </div>
-                <div>
-                  <div className="text-[10px] tracking-widest uppercase text-muted mb-1">{item.label}</div>
+                <div className="flex-1">
+                  <div className="text-[10px] tracking-widest uppercase text-muted mb-1 flex items-center gap-1.5">
+                    {item.label}
+                    {item.external && <ExternalLink className="w-3 h-3 text-amber opacity-80" />}
+                  </div>
                   <div className="text-sm font-medium">
                     {item.link ? (
-                      <a href={item.link} target={item.label === 'Instagram' || item.label === 'ئینستاگرام' ? "_blank" : undefined} rel="noreferrer" className="text-text-main hover:text-amber transition-colors">
-                        {item.value}
+                      <a 
+                        href={item.link} 
+                        target={item.external ? "_blank" : undefined} 
+                        rel={item.external ? "noreferrer" : undefined} 
+                        className="text-text-main hover:text-amber transition-colors inline-flex items-center gap-2 group"
+                      >
+                        <span className="group-hover:underline underline-offset-4">{item.value}</span>
+                        {item.external && <span className="text-xs text-amber font-mono opacity-80 group-hover:translate-x-0.5 transition-transform">↗</span>}
                       </a>
                     ) : (
                       <span className="text-text-main">{item.value}</span>
@@ -212,6 +223,61 @@ export default function Contact() {
         </motion.div>
 
       </div>
+
+      {/* Interactive Map Card Section */}
+      <motion.div
+        initial={{ opacity: 0, y: 30 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        transition={{ duration: 0.8 }}
+        className="w-full bg-navy-mid border border-white/10 rounded-[32px] overflow-hidden relative shadow-2xl group"
+      >
+        <a 
+          href={mapUrl}
+          target="_blank"
+          rel="noreferrer"
+          className="block relative w-full h-[340px] md:h-[400px]"
+        >
+          {/* Embedded Google Map iframe with Sulaymaniyah, Ebrahim Ahmad query */}
+          <iframe 
+            title="Yousif Group Location Map"
+            src="https://maps.google.com/maps?q=Ebrahim+Ahmad,+Sulaymaniyah,+Iraq&t=&z=15&ie=UTF8&iwloc=&output=embed" 
+            className="w-full h-full border-0 grayscale invert opacity-70 group-hover:opacity-90 group-hover:grayscale-0 transition-all duration-500 pointer-events-none"
+            loading="lazy"
+          ></iframe>
+
+          {/* Dark Overlay Gradient */}
+          <div className="absolute inset-0 bg-gradient-to-t from-navy via-navy/40 to-transparent pointer-events-none"></div>
+
+          {/* Floating Location Badge */}
+          <div className="absolute bottom-6 left-6 right-6 md:left-8 md:right-auto md:max-w-md bg-navy-mid/90 backdrop-blur-md border border-white/15 p-6 rounded-2xl shadow-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-transform group-hover:scale-[1.02] duration-300">
+            <div className="flex items-start gap-3.5">
+              <div className="w-10 h-10 rounded-full bg-amber/10 border border-amber/30 flex items-center justify-center shrink-0 text-amber mt-0.5">
+                <Navigation className="w-5 h-5 animate-pulse" />
+              </div>
+              <div>
+                <div className="text-xs font-mono uppercase tracking-widest text-amber font-semibold mb-0.5">
+                  {lang === 'ku' ? 'شوێنی ئێمە لە نەخشەدا' : 'Our Map Location'}
+                </div>
+                <div className="text-base font-bold text-text-main">
+                  {lang === 'ku' ? 'سلێمانی، سەر شەستی خوارەوە، بەرامبەر بەنزینخانەی بامۆک ٣' : 'Sulaymaniyah, Lower 60m Street, Opposite Bamok 3 Fuel Station'}
+                </div>
+                <div className="text-xs text-muted mt-0.5">
+                  {lang === 'ku' ? 'داگرە بۆ کردنەوەی ڕاستەوخۆ لە نەخشە' : 'Tap to open directly in your maps app'}
+                </div>
+              </div>
+            </div>
+
+            <div className="shrink-0">
+              <span className="inline-flex items-center gap-2 bg-amber text-navy font-bold text-xs px-4 py-2.5 rounded-full shadow-lg group-hover:bg-amber-light transition-colors whitespace-nowrap">
+                <span>{lang === 'ku' ? 'کردنەوە لە نەخشە' : 'Open in Maps'}</span>
+                <ExternalLink className="w-3.5 h-3.5" />
+              </span>
+            </div>
+          </div>
+        </a>
+      </motion.div>
     </section>
   );
 }
+
