@@ -228,144 +228,53 @@ export default function DesignerTool() {
     setAnalysisResult(null);
     setIsPermissionDenied(false);
     try {
-      const response = await fetch('https://soft-cloud-829dyousif-blueprint-api.ara-account.workers.dev/', {
+      let response = await fetch('/api/analyze-blueprint', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ imageBase64: blueprint }),
       });
+
+      if (!response.ok) {
+        try {
+          const workerRes = await fetch('https://soft-cloud-829dyousif-blueprint-api.ara-account.workers.dev/', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ imageBase64: blueprint }),
+          });
+          if (workerRes.ok) {
+            response = workerRes;
+          }
+        } catch {
+          // ignore fallback worker network error
+        }
+      }
+
       const data = await response.json();
       if (!response.ok) {
         if (data.isPermissionDenied) {
           setIsPermissionDenied(true);
         }
-        throw new Error(data.error || 'Analysis failed');
+        throw new Error(data.error || (lang === 'ku' ? 'شیکردنەوەی نەخشەکە سەرکەوتوو نەبوو.' : 'Blueprint analysis failed.'));
       }
+
+      if (!data || !Array.isArray(data.rooms) || data.rooms.length === 0) {
+        throw new Error(lang === 'ku' ? 'هیچ ژوورێک یان قەبارەیەک لەم نەخشەیەدا نەدۆزرایەوە.' : 'No rooms or dimensions could be read from this blueprint.');
+      }
+
       setAnalysisResult(data);
       setIsPermissionDenied(false);
     } catch (err: any) {
-      console.warn('Analysis API failed, loading standard engineering fallback:', err);
-      handleLoadFallbackScan();
+      console.error('Analysis API failed:', err);
+      const errMsg = err.message || (lang === 'ku' ? 'خوێندنەوەی نەخشەکە سەرکەوتوو نەبوو. تکایە وێنەیەکی ڕوونتر دابنێ.' : 'Failed to read blueprint. Please upload a clearer image with visible dimensions.');
+      setAnalysisError(errMsg);
+      setAnalysisResult(null);
     } finally {
       setIsAnalyzing(false);
     }
-  };
-
-  const handleLoadFallbackScan = () => {
-    const fallbackData = {
-      rooms: [
-        {
-          nameEn: "Living Room (Hall - 4.6m x 6.0m = 27.60m²)",
-          nameKu: "هۆڵی دانیشتن (٤.٦م x ٦.٠م = ٢٧.٦٠ م²)",
-          areaSqm: 27.6,
-          heatingOutputRequiredKw: 2.8,
-          loopCount: 2,
-          isHeated: true,
-          formula: "4.6m x 6.0m = 27.60 sqm",
-          box: { x: 32, y: 35, width: 32, height: 40 }
-        },
-        {
-          nameEn: "Bedroom (Back Left - 3.2m x 4.2m = 13.44m²)",
-          nameKu: "ژووری نووستن (دواوە دەستەچەپ - ٣.٢م x ٤.٢م = ١٣.٤٤ م²)",
-          areaSqm: 13.4,
-          heatingOutputRequiredKw: 1.3,
-          loopCount: 1,
-          isHeated: true,
-          formula: "3.2m x 4.2m = 13.44 sqm",
-          box: { x: 5, y: 5, width: 25, height: 35 }
-        },
-        {
-          nameEn: "Bedroom (Back Right - 4.2m x 3.0m = 12.60m²)",
-          nameKu: "ژووری نووستن (دواوە دەستەڕاست - ٤.٢م x ٣.٠م = ١٢.٦٠ م²)",
-          areaSqm: 12.6,
-          heatingOutputRequiredKw: 1.3,
-          loopCount: 1,
-          isHeated: true,
-          formula: "4.2m x 3.0m = 12.60 sqm",
-          box: { x: 70, y: 5, width: 25, height: 35 }
-        },
-        {
-          nameEn: "Bedroom (Middle - 4.2m x 3.0m = 12.60m²)",
-          nameKu: "ژووری نووستن (ناوەڕاست - ٤.٢م x ٣.٠م = ١٢.٦٠ م²)",
-          areaSqm: 12.6,
-          heatingOutputRequiredKw: 1.3,
-          loopCount: 1,
-          isHeated: true,
-          formula: "4.2m x 3.0m = 12.60 sqm",
-          box: { x: 32, y: 5, width: 35, height: 25 }
-        },
-        {
-          nameEn: "Main Kitchen (4.6m x 4.6m = 21.16m²)",
-          nameKu: "مەتبەخی سەرەکی (٤.٦م x ٤.٦م = ٢١.١٦ م²)",
-          areaSqm: 21.2,
-          heatingOutputRequiredKw: 2.1,
-          loopCount: 2,
-          isHeated: true,
-          formula: "4.6m x 4.6m = 21.16 sqm",
-          box: { x: 5, y: 45, width: 25, height: 40 }
-        },
-        {
-          nameEn: "Auxiliary Kitchen (2.95m x 2.0m = 5.90m²)",
-          nameKu: "مساعد مەتبەخ (٢.٩٥م x ٢.٠م = ٥.٩٠ م²)",
-          areaSqm: 5.9,
-          heatingOutputRequiredKw: 0,
-          loopCount: 0,
-          isHeated: false,
-          formula: "2.95m x 2.0m = 5.90 sqm",
-          box: { x: 5, y: 88, width: 25, height: 10 }
-        },
-        {
-          nameEn: "Bathroom & Shower (1.6m x 1.7m = 2.72m²)",
-          nameKu: "حەمام (١.٦م x ١.٧م = ٢.٧٢ م²)",
-          areaSqm: 2.7,
-          heatingOutputRequiredKw: 0,
-          loopCount: 0,
-          isHeated: false,
-          formula: "1.6m x 1.7m = 2.72 sqm",
-          box: { x: 70, y: 43, width: 12, height: 16 }
-        },
-        {
-          nameEn: "Toilet (1.3m x 1.7m = 2.21m²)",
-          nameKu: "توالیت (١.٣م x ١.٧م = ٢.٢١ م²)",
-          areaSqm: 2.2,
-          heatingOutputRequiredKw: 0,
-          loopCount: 0,
-          isHeated: false,
-          formula: "1.3m x 1.7m = 2.21 sqm",
-          box: { x: 84, y: 43, width: 11, height: 16 }
-        },
-        {
-          nameEn: "Open Shaft (3.55m x 1.2m = 4.26m²)",
-          nameKu: "کراوە (٣.٥٥م x ١.٢م = ٤.٢٦ م²)",
-          areaSqm: 4.3,
-          heatingOutputRequiredKw: 0,
-          loopCount: 0,
-          isHeated: false,
-          formula: "3.55m x 1.2m = 4.26 sqm",
-          box: { x: 70, y: 62, width: 25, height: 12 }
-        },
-        {
-          nameEn: "Garage (3.6m x 5.0m = 18.00m²)",
-          nameKu: "گەراج (٣.٦م x ٥.٠م = ١٨.٠٠ م²)",
-          areaSqm: 18.0,
-          heatingOutputRequiredKw: 0,
-          loopCount: 0,
-          isHeated: false,
-          formula: "3.6m x 5.0m = 18.00 sqm",
-          box: { x: 70, y: 77, width: 25, height: 21 }
-        }
-      ],
-      totalAreaSqm: 87.4,
-      recommendedBoilerKw: 12,
-      recommendedManifoldPorts: 7,
-      estimatedPipeSpacingCm: 15,
-      calculatedSummaryEn: "Complete in-slab Hydronic Underfloor Heating thermal layout calculated for standard regional concrete/cement slab insulation layers. The system recommends a 12 kW boiler connected to a 7-port manifold, maintaining maximum 80m loop lengths at 15cm pipe spacings for optimum protection. Bathrooms, toilets, auxiliary kitchens, open shafts, and garages are completely excluded from underfloor heating layout.",
-      calculatedSummaryKu: "سیستەمی گەرمی ژێرزەوی گونجاو بۆ ئەم نەخشەیە دیزاین کراوە. سیستمەکە پێشنیاری بۆیلەرێکی گەرمکەرەوەی سەرەکی دەکات بە قەبارەی ١٢ کیلۆوات لەگەڵ مانیفۆڵدێکی ٧ دەرچەیی پێکەوەبەستراو. هەر ملوولەیەکی بۆری لە ١٥سم نێوانی پێکبەستراوە. حەمام، توالیت، مساعد مەتبەخ، کراوە، و گەراجەکان بە تەواوی دوورخرانەتەوە چونکە گەرمی ژێرزەوییان بۆ دابین ناکرێت."
-    };
-    setAnalysisResult(fallbackData);
-    setAnalysisError(null);
-    setIsPermissionDenied(false);
   };
 
   const getCanvasCoords = (e: MouseEvent<HTMLDivElement | SVGSVGElement>) => {
@@ -580,13 +489,13 @@ export default function DesignerTool() {
           )}
 
           {analysisError && (
-            <div className="absolute inset-x-4 top-4 bg-navy-mid/95 border border-amber/30 text-white p-4 rounded-xl flex flex-col gap-3 z-50 shadow-2xl backdrop-blur-md max-w-[600px] mx-auto text-start">
+            <div className="absolute inset-x-4 top-4 bg-navy-mid/95 border border-red-500/30 text-white p-4 rounded-xl flex flex-col gap-3 z-50 shadow-2xl backdrop-blur-md max-w-[600px] mx-auto text-start">
               <div className="flex items-start justify-between gap-3">
                 <div className="flex gap-2.5">
-                  <div className="w-6 h-6 rounded-full bg-amber/20 flex items-center justify-center text-amber flex-shrink-0 font-bold font-mono text-xs">!</div>
+                  <div className="w-6 h-6 rounded-full bg-red-500/20 flex items-center justify-center text-red-400 flex-shrink-0 font-bold font-mono text-xs">!</div>
                   <div>
-                    <h4 className="font-bold text-xs text-amber font-display">
-                      {lang === 'ku' ? 'ئاگاداری بارکردنی حساباتی نموونەیی' : 'Notice: Fallback Calculations Loaded'}
+                    <h4 className="font-bold text-xs text-red-400 font-display">
+                      {lang === 'ku' ? 'هەڵە لە خوێندنەوەی نەخشەدا' : 'Blueprint Scan Error'}
                     </h4>
                     <p className="text-xs text-slate-300 mt-0.5 leading-relaxed">
                       {analysisError}
@@ -663,48 +572,7 @@ export default function DesignerTool() {
                  })}
               </div>
 
-              {/* Room Highlight Overlays */}
-              {analysisResult && (
-                <div className="absolute inset-0 w-full h-full pointer-events-none z-20">
-                  {analysisResult.rooms.map((room, index) => {
-                    if (!room.box) return null;
-                    const isHeated = room.isHeated !== false;
-                    
-                    // Nothing for the none-heated rooms as requested
-                    if (!isHeated) return null;
 
-                    return (
-                      <div
-                        key={index}
-                        className="absolute room-border-highlight rounded-xl p-2.5 flex flex-col justify-between transition-all duration-300 pointer-events-auto select-none overflow-hidden"
-                        style={{
-                          left: `${room.box.x}%`,
-                          top: `${room.box.y}%`,
-                          width: `${room.box.width}%`,
-                          height: `${room.box.height}%`,
-                        }}
-                      >
-                        <div className="flex flex-col h-full justify-between">
-                          <div className="flex justify-between items-start gap-1">
-                            <span className="text-[10px] font-bold text-black bg-white/95 px-2 py-1 rounded shadow-sm border border-black/15 truncate max-w-[80%]">
-                              {lang === 'ku' ? room.nameKu : room.nameEn}
-                            </span>
-                            <span className="text-[8px] font-mono font-bold px-1.5 py-0.5 rounded shadow-sm uppercase tracking-wider bg-red-600 text-white">
-                              {lang === 'ku' ? 'ئەژمارکراوە' : 'HEATED'}
-                            </span>
-                          </div>
-
-                          {room.formula && (
-                            <div className="text-[9px] font-mono text-white bg-red-800/90 px-1.5 py-0.5 rounded shadow-sm border border-white/10 self-start mt-1 max-w-full truncate font-bold">
-                              {room.formula}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
             </div>
           ) : (
             <div className="w-full max-w-[750px] h-[480px] bg-navy-light/40 flex items-center justify-center border border-dashed border-amber/30 rounded">
