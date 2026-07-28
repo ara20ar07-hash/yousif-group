@@ -108,7 +108,7 @@ export default function DesignerTool() {
       updatedRooms[index].areaSqm = evaluatedArea;
       
       const isHeated = updatedRooms[index].isHeated !== false;
-      updatedRooms[index].heatingOutputRequiredKw = isHeated ? Number((evaluatedArea * 0.1).toFixed(1)) : 0;
+      updatedRooms[index].heatingOutputRequiredKw = isHeated ? Number((evaluatedArea * 0.17).toFixed(1)) : 0;
       if (isHeated) {
         updatedRooms[index].loopCount = Math.max(1, Math.ceil(evaluatedArea / 12));
       } else {
@@ -118,7 +118,7 @@ export default function DesignerTool() {
 
     if (key === 'areaSqm') {
       const isHeated = updatedRooms[index].isHeated !== false;
-      updatedRooms[index].heatingOutputRequiredKw = isHeated ? Number((value * 0.1).toFixed(1)) : 0;
+      updatedRooms[index].heatingOutputRequiredKw = isHeated ? Number((value * 0.17).toFixed(1)) : 0;
       if (isHeated) {
         updatedRooms[index].loopCount = Math.max(1, Math.ceil(value / 12));
       } else {
@@ -131,7 +131,7 @@ export default function DesignerTool() {
         updatedRooms[index].heatingOutputRequiredKw = 0;
         updatedRooms[index].loopCount = 0;
       } else {
-        updatedRooms[index].heatingOutputRequiredKw = Number((updatedRooms[index].areaSqm * 0.1).toFixed(1));
+        updatedRooms[index].heatingOutputRequiredKw = Number((updatedRooms[index].areaSqm * 0.17).toFixed(1));
         updatedRooms[index].loopCount = Math.max(1, Math.ceil(updatedRooms[index].areaSqm / 12));
       }
     }
@@ -176,7 +176,7 @@ export default function DesignerTool() {
       nameEn: "New Room",
       nameKu: "ژووری نوێ",
       areaSqm: 12,
-      heatingOutputRequiredKw: 1.2,
+      heatingOutputRequiredKw: 2.0,
       loopCount: 1,
       isHeated: true,
       formula: "3.00m x 4.00m = 12.00 sqm"
@@ -672,7 +672,9 @@ export default function DesignerTool() {
                 {analysisResult.recommendedBoilerKw}
                 <span className="text-sm font-light text-muted">kW</span>
               </div>
-              <div className="text-[11px] text-muted mt-2">Required power load</div>
+              <div className="text-[11px] text-muted mt-2">
+                {lang === 'ku' ? 'تەوانای پێویست (١٧٠ وات / م²)' : 'Required power load (170 W/m²)'}
+              </div>
             </div>
 
             <div className="bg-navy p-6 rounded-3xl border border-white/5 relative overflow-hidden group hover:border-amber/20 transition-all">

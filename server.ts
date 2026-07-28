@@ -71,7 +71,7 @@ For heated rooms only:
 - Minimum 1 loop per heated room
 
 STEP 6 - CALCULATE kW:
-- heatingOutputRequiredKw = areaSqm x 0.10 (for heated rooms only)
+- heatingOutputRequiredKw = areaSqm x 0.17 (for heated rooms only, 170 Watts per heated square meter)
 - Round to 1 decimal place
 
 OUTPUT RULES:
