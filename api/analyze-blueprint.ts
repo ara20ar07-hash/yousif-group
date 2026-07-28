@@ -89,7 +89,7 @@ export default async function handler(req: Request): Promise<Response> {
 
     const ai = new GoogleGenAI({ apiKey });
     const response = await ai.models.generateContent({
-      model: "gemini-3.5-flash",
+      model: "gemini-3.6-flash",
       contents: [{
         role: "user",
         parts: [
