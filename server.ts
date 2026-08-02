@@ -36,21 +36,27 @@ async function startServer() {
 
   const BLUEPRINT_PROMPT = `You are an expert architectural engineer analyzing a floor plan blueprint. Your job is to read room dimensions and calculate underfloor heating requirements with extreme precision.
 
+CRITICAL MANDATE - STRICT ROOM SEPARATION:
+- Every single room shown on the floor plan MUST be extracted as an INDIVIDUAL, SEPARATE room object in the "rooms" array.
+- NEVER combine or merge multiple rooms together (e.g. if there are 3 bedrooms, return 3 distinct objects: "Bedroom 1", "Bedroom 2", "Bedroom 3" with their own specific width, length, and areaSqm).
+- Distinct spaces like "Main Kitchen", "Auxiliary Kitchen", "Guest Room", "Living Room", "Dining Room", "Corridor / Hallway" MUST be separate objects.
+
 STEP 1 - READ ROOM LABELS:
 Identify every room by its label written inside the room boundary. Labels may be in Kurdish (Sorani), Arabic, or English. Common labels:
-- "نوستن" / "ژووری نووستن" = Bedroom
+- "نوستن" / "ژووری نووستن" = Bedroom (e.g. Bedroom 1, Bedroom 2, etc.)
 - "مەتبەخ" = Main Kitchen
 - "مساعد مەتبەخ" = Auxiliary Kitchen
 - "هۆڵ" / "هۆڵی دانیشتن" = Living Room / Hall
+- "میوان" / "ژووری میوان" = Guest Room
 - "کراوە" = Open Shaft / Courtyard
 - "توالیت" = Toilet
 - "حەمام" = Bathroom
 - "گراج" / "گەراج" = Garage
 - "کۆگا" = Storage
-- "مەمەڕ" / "ڕێڕەو" = Corridor
+- "مەمەڕ" / "ڕێڕەو" = Corridor / Hallway
 
 STEP 2 - READ DIMENSIONS:
-For each room, find the dimension numbers printed on or inside its boundary walls. These are usually in meters (e.g. 3.20, 4.60, 2.95). Read both width AND length for every room. If a dimension is unclear or missing, state "unreadable" and estimate conservatively (use a smaller value, not larger).
+For each individual room, find the dimension numbers printed on or inside its boundary walls. These are usually in meters (e.g. 3.20, 4.60, 2.95). Read both width AND length for every room. If a dimension is unreadable, estimate conservatively based on adjacent rooms.
 
 STEP 3 - CALCULATE AREA:
 For every room calculate: areaSqm = width x length
@@ -59,10 +65,10 @@ Never guess an area without showing the dimensional working.
 
 STEP 4 - DETERMINE HEATING:
 Rooms that get underfloor heating (isHeated = true):
-- Bedrooms, Living rooms, Kitchens, Corridors
+- Bedrooms, Living rooms, Guest rooms, Main Kitchens, Corridors/Hallways, Dining rooms
 
 Rooms excluded from underfloor heating (isHeated = false, loopCount = 0, heatingOutputRequiredKw = 0):
-- Bathrooms, Toilets, Bathroom Lobbies, Toilet Lobbies, Lobbies adjacent to toilets/bathrooms, Open shafts, Garages, Storage rooms, Auxiliary kitchens
+- Bathrooms, Toilets, Bathroom Lobbies, Toilet Lobbies, Open shafts, Garages, Storage rooms, Auxiliary kitchens
 
 STEP 5 - CALCULATE LOOPS:
 For heated rooms only:
@@ -74,23 +80,31 @@ STEP 6 - CALCULATE kW:
 - heatingOutputRequiredKw = areaSqm x 0.17 (for heated rooms only, 170 Watts per heated square meter)
 - Round to 1 decimal place
 
+STEP 7 - ESTIMATE ROOM LOCATION (BOX):
+For each room, estimate its approximate bounding box percentages (0-100 scale) on the floor plan image:
+- x: percentage from left edge (0-100)
+- y: percentage from top edge (0-100)
+- width: room width percentage relative to image (0-100)
+- height: room height percentage relative to image (0-100)
+
 OUTPUT RULES:
-- recommendedBoilerKw = (sum of all heatingOutputRequiredKw) x 1.20, minimum 12kW, round up to nearest whole number
+- totalAreaSqm = sum of ALL heated room areas (where isHeated is true)
+- recommendedBoilerKw = (totalAreaSqm x 0.17) x 1.20, minimum 12kW, round up to nearest whole number
 - recommendedManifoldPorts = sum of all loopCount values
 - estimatedPipeSpacingCm = 15
-- totalAreaSqm = sum of ALL heated room areas (where isHeated is true)
 
 Respond ONLY with valid raw JSON in this exact structure:
 {
   "rooms": [
     {
-      "nameEn": "room name in English",
-      "nameKu": "room name in Kurdish",
+      "nameEn": "Bedroom 1",
+      "nameKu": "ژووری نووستنی ١",
       "areaSqm": 14.72,
-      "heatingOutputRequiredKw": 1.5,
+      "heatingOutputRequiredKw": 2.5,
       "loopCount": 2,
       "isHeated": true,
-      "formula": "3.20m x 4.60m = 14.72 sqm"
+      "formula": "3.20m x 4.60m = 14.72 sqm",
+      "box": { "x": 15, "y": 20, "width": 30, "height": 25 }
     }
   ],
   "totalAreaSqm": 0,
@@ -109,26 +123,46 @@ Respond ONLY with valid raw JSON in this exact structure:
       }
     });
 
-    const response = await ai.models.generateContent({
-      model: "gemini-3.5-flash",
-      contents: [
-        {
-          role: "user",
-          parts: [
-            {
-              inlineData: {
-                mimeType: "image/jpeg",
-                data: cleanBase64
-              }
-            },
-            { text: BLUEPRINT_PROMPT }
-          ]
-        }
-      ]
-    });
-
-    const contentText = response.candidates?.[0]?.content?.parts?.[0]?.text || "";
-    return contentText;
+    try {
+      const response = await ai.models.generateContent({
+        model: "gemini-2.5-flash",
+        contents: [
+          {
+            role: "user",
+            parts: [
+              {
+                inlineData: {
+                  mimeType: "image/jpeg",
+                  data: cleanBase64
+                }
+              },
+              { text: BLUEPRINT_PROMPT }
+            ]
+          }
+        ]
+      });
+      return response.candidates?.[0]?.content?.parts?.[0]?.text || "";
+    } catch (primaryErr: any) {
+      console.warn("gemini-2.5-flash failed, retrying with gemini-1.5-flash...", primaryErr?.message || primaryErr);
+      const response = await ai.models.generateContent({
+        model: "gemini-1.5-flash",
+        contents: [
+          {
+            role: "user",
+            parts: [
+              {
+                inlineData: {
+                  mimeType: "image/jpeg",
+                  data: cleanBase64
+                }
+              },
+              { text: BLUEPRINT_PROMPT }
+            ]
+          }
+        ]
+      });
+      return response.candidates?.[0]?.content?.parts?.[0]?.text || "";
+    }
   };
 
   const analyzeWithGroq = async (cleanBase64: string, apiKey: string) => {
@@ -172,11 +206,11 @@ Respond ONLY with valid raw JSON in this exact structure:
 
   app.post("/api/analyze-blueprint", async (req, res) => {
     try {
-      const geminiKey = process.env.GEMINI_API_KEY2 || process.env.GEMINI_API_KEY;
+      const geminiKey = process.env.GEMINI_API_KEY || process.env.GEMINI_API_KEY2;
       const groqKey = process.env.GROQ_API_KEY;
 
       if (!geminiKey && !groqKey) {
-        throw new Error("No API key found. Please add GEMINI_API_KEY2 or GROQ_API_KEY in Settings > Secrets.");
+        throw new Error("No API key found. Please ensure GEMINI_API_KEY is configured.");
       }
 
       const { imageBase64 } = req.body;
@@ -192,15 +226,21 @@ Respond ONLY with valid raw JSON in this exact structure:
       // Try Gemini first
       if (geminiKey) {
         try {
-          console.log("Attempting blueprint analysis with Gemini 3.5 Flash...");
+          console.log("Attempting blueprint analysis with Gemini 2.5 Flash...");
           rawText = await analyzeWithGemini(cleanBase64, geminiKey);
           console.log("Gemini analysis succeeded.");
         } catch (geminiErr: any) {
-          console.warn("Gemini failed, trying Groq fallback:", geminiErr.message);
+          console.warn("Gemini analysis failed:", geminiErr?.message || geminiErr);
           if (groqKey) {
-            rawText = await analyzeWithGroq(cleanBase64, groqKey);
-            usedFallback = true;
-            console.log("Groq fallback succeeded.");
+            try {
+              console.log("Trying Groq fallback...");
+              rawText = await analyzeWithGroq(cleanBase64, groqKey);
+              usedFallback = true;
+              console.log("Groq fallback succeeded.");
+            } catch (groqErr: any) {
+              console.warn("Groq fallback also failed:", groqErr?.message || groqErr);
+              throw geminiErr;
+            }
           } else {
             throw geminiErr;
           }

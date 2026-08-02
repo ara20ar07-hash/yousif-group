@@ -41,7 +41,8 @@ STEP 6 - CALCULATE kW:
 - Round to 1 decimal place
 
 OUTPUT RULES:
-- recommendedBoilerKw = (sum of all heatingOutputRequiredKw) x 1.20, minimum 12kW, round up to nearest whole number
+- totalAreaSqm = sum of ALL heated room areas (where isHeated is true)
+- recommendedBoilerKw = (totalAreaSqm x 0.17) x 1.20, minimum 12kW, round up to nearest whole number
 - recommendedManifoldPorts = sum of all loopCount values
 - estimatedPipeSpacingCm = 15
 - totalAreaSqm = sum of ALL heated room areas 
@@ -89,7 +90,7 @@ export default async function handler(req: Request): Promise<Response> {
 
     const ai = new GoogleGenAI({ apiKey });
     const response = await ai.models.generateContent({
-      model: "gemini-3.6-flash",
+      model: "gemini-3.5-flash",
       contents: [{
         role: "user",
         parts: [
