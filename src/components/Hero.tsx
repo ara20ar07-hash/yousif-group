@@ -17,7 +17,6 @@ export default function Hero() {
           `
         }}
       />
-      <div className="absolute inset-0 z-0 hero-grid-overlay pointer-events-none" />
 
       {/* Decorative Logo Background */}
       <div className={`absolute ${lang === 'ku' ? 'left-[6%]' : 'right-[6%]'} top-1/2 -translate-y-1/2 w-[380px] opacity-75 mix-blend-screen pointer-events-none hidden lg:flex justify-center items-center drop-shadow-[0_0_60px_rgba(255,214,0,0.25)]`}>

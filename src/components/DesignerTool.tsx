@@ -50,16 +50,16 @@ export type RadiatorRecommendation = {
   explanationKu: string;
 };
 
-// Intelligent Radiator Recommendation calculation (100 cm radiator per ~10 m² heated area)
+// Intelligent Radiator Recommendation calculation (100 cm radiator per 10 m² for 1 rad, 100 cm per ~13 m² for >1 rads)
 export const getRadiatorRecommendation = (areaSqm: number): RadiatorRecommendation => {
   const safeArea = Math.max(1, areaSqm);
-  const targetCm = safeArea * 10;
+  const singleTargetCm = safeArea * 10;
 
-  if (targetCm <= 180) {
+  if (singleTargetCm <= 180) {
     let bestSize = RADIATOR_SIZES[0];
     let minDiff = Infinity;
     for (const s of RADIATOR_SIZES) {
-      const diff = s >= targetCm ? (s - targetCm) : (targetCm - s) * 1.5;
+      const diff = s >= singleTargetCm ? (s - singleTargetCm) : (singleTargetCm - s) * 1.5;
       if (diff < minDiff) {
         minDiff = diff;
         bestSize = s;
@@ -74,6 +74,8 @@ export const getRadiatorRecommendation = (areaSqm: number): RadiatorRecommendati
       explanationKu: `١ شۆفاژ (${bestSize} سـم)`
     };
   } else {
+    // When >1 radiators needed, rule changes to 1m (100cm) per 12-14m² (average 13m²)!
+    const multiTargetCm = (safeArea / 13) * 100;
     let bestPair: [number, number] = [100, 100];
     let minDiff = Infinity;
 
@@ -82,9 +84,9 @@ export const getRadiatorRecommendation = (areaSqm: number): RadiatorRecommendati
         const s1 = RADIATOR_SIZES[i];
         const s2 = RADIATOR_SIZES[j];
         const sum = s1 + s2;
-        const diff = sum >= targetCm 
-          ? (sum - targetCm) + (s1 - s2) * 0.1 
-          : (targetCm - sum) * 1.5 + (s1 - s2) * 0.1;
+        const diff = sum >= multiTargetCm 
+          ? (sum - multiTargetCm) + (s1 - s2) * 0.1 
+          : (multiTargetCm - sum) * 1.5 + (s1 - s2) * 0.1;
 
         if (diff < minDiff) {
           minDiff = diff;
@@ -93,11 +95,12 @@ export const getRadiatorRecommendation = (areaSqm: number): RadiatorRecommendati
       }
     }
 
+    const totalCm = bestPair[0] + bestPair[1];
     return {
       count: 2,
       sizes: bestPair,
-      totalCm: bestPair[0] + bestPair[1],
-      coverageArea: (bestPair[0] + bestPair[1]) / 10,
+      totalCm: totalCm,
+      coverageArea: (totalCm / 100) * 13,
       explanationEn: `2 Radiators (${bestPair[0]} cm + ${bestPair[1]} cm)`,
       explanationKu: `٢ شۆفاژ (${bestPair[0]} سـم + ${bestPair[1]} سـم)`
     };
@@ -246,13 +249,15 @@ export const autoRecalculateComponents = (
     const room = rooms[rIdx];
     if (!room) return;
 
-    const targetCm = Math.max(80, room.areaSqm * 10);
+    const targetCm = rads.length > 1 
+      ? Math.max(80, Math.round((room.areaSqm / 13) * 100))
+      : Math.max(80, Math.round(room.areaSqm * 10));
 
     let customSum = 0;
     const autoRads: ComponentData[] = [];
 
     rads.forEach(r => {
-      if ((r.isCustomOverride || r.sizeCm) && r.sizeCm) {
+      if (r.isCustomOverride && r.sizeCm) {
         customSum += r.sizeCm;
       } else {
         autoRads.push(r);
@@ -328,7 +333,7 @@ export const autoRecalculateComponents = (
     autoRads.forEach((rad, idx) => {
       const item = updatedComps.find(uc => uc.id === rad.id);
       if (item) {
-        item.sizeCm = rad.sizeCm || computedSizes[idx] || RADIATOR_SIZES[0];
+        item.sizeCm = computedSizes[idx] || RADIATOR_SIZES[0];
         item.assignedRoomIndex = rIdx;
       }
     });
@@ -374,8 +379,10 @@ export default function DesignerTool() {
   const [mousePos, setMousePos] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [draggingId, setDraggingId] = useState<string | null>(null);
   
-  // Radiator visibility control & status
+  // Radiator & Room names visibility control & status
   const [showRadiators, setShowRadiators] = useState<boolean>(true);
+  const [showRoomNames, setShowRoomNames] = useState<boolean>(true);
+  const [hiddenRoomIndices, setHiddenRoomIndices] = useState<number[]>([]);
   const [whatsappStatusMsg, setWhatsappStatusMsg] = useState<string | null>(null);
 
   // AI Blueprint analysis states
@@ -735,9 +742,9 @@ export default function DesignerTool() {
         });
 
         // Draw Room Badges (if show/hide toggle is active)
-        if (showRadiators && analysisResult?.rooms) {
+        if (showRoomNames && analysisResult?.rooms) {
           analysisResult.rooms.forEach((room, rIdx) => {
-            if (room.isHeated === false) return;
+            if (room.isHeated === false || hiddenRoomIndices.includes(rIdx)) return;
             let cx = 160;
             let cy = 160;
             if (room.box && typeof room.box.x === 'number' && typeof room.box.y === 'number') {
@@ -1068,8 +1075,31 @@ export default function DesignerTool() {
               className={`relative bg-navy border border-white/5 shadow-2xl max-w-full bg-contain bg-no-repeat bg-center ${tool === 'select' ? 'cursor-default' : 'cursor-crosshair'}`}
               style={{ backgroundImage: `url(${blueprint})`, width: '800px', height: '550px' }}
             >
-              {/* Top Canvas Controls: Show/Hide Radiators toggle */}
+              {/* Top Canvas Controls: Show/Hide Room Names & Show/Hide Radiators toggles */}
               <div className="absolute top-3 right-3 z-30 flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowRoomNames(prev => {
+                      if (!prev) setHiddenRoomIndices([]);
+                      return !prev;
+                    });
+                  }}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold shadow-lg backdrop-blur-md transition-all cursor-pointer border ${
+                    showRoomNames && hiddenRoomIndices.length === 0
+                      ? 'bg-amber text-navy border-amber hover:bg-amber-light shadow-amber/20' 
+                      : showRoomNames
+                      ? 'bg-amber/80 text-navy border-amber hover:bg-amber shadow-amber/20'
+                      : 'bg-navy-mid/90 text-white/70 border-white/20 hover:bg-white/10'
+                  }`}
+                >
+                  {showRoomNames ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+                  {showRoomNames 
+                    ? (lang === 'ku' ? 'ناوی ژوورەکان: چالاکە' : 'Room Names: ON') 
+                    : (lang === 'ku' ? 'ناوی ژوورەکان: نادیارە' : 'Room Names: OFF')}
+                </button>
+
                 <button
                   type="button"
                   onClick={(e) => {
@@ -1112,10 +1142,10 @@ export default function DesignerTool() {
               </svg>
 
               {/* Room Markers Layer */}
-              {showRadiators && (
+              {showRoomNames && (
                 <div className="absolute inset-0 w-full h-full pointer-events-none z-5">
                   {analysisResult?.rooms?.map((room, rIdx) => {
-                    if (room.isHeated === false) return null;
+                    if (room.isHeated === false || hiddenRoomIndices.includes(rIdx)) return null;
                     let cx = 160;
                     let cy = 160;
 
@@ -1139,11 +1169,22 @@ export default function DesignerTool() {
                     return (
                       <div 
                         key={`room_marker_${rIdx}`}
-                        className="absolute -translate-x-1/2 -translate-y-1/2 bg-navy-mid/90 border border-amber/50 text-amber text-[10px] font-bold font-mono px-2 py-0.5 rounded-full shadow-md pointer-events-none z-5 flex items-center gap-1 backdrop-blur-xs whitespace-nowrap"
+                        className="absolute -translate-x-1/2 -translate-y-1/2 bg-navy-mid/90 border border-amber/50 text-amber text-[10px] font-bold font-mono px-2 py-0.5 rounded-full shadow-md pointer-events-auto z-5 flex items-center gap-1.5 backdrop-blur-xs whitespace-nowrap group"
                         style={{ left: cx, top: cy - 25 }}
                       >
-                        <span className="w-1.5 h-1.5 rounded-full bg-amber animate-pulse" />
-                        {lang === 'ku' ? room.nameKu : room.nameEn} ({room.areaSqm} m²)
+                        <span className="w-1.5 h-1.5 rounded-full bg-amber animate-pulse flex-shrink-0" />
+                        <span>{lang === 'ku' ? room.nameKu : room.nameEn} ({room.areaSqm} m²)</span>
+                        <button
+                          type="button"
+                          title={lang === 'ku' ? 'لادانی ناوی ژوور' : 'Remove Room Name'}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setHiddenRoomIndices(prev => [...prev, rIdx]);
+                          }}
+                          className="w-3.5 h-3.5 rounded-full bg-white/10 hover:bg-red-500 hover:text-white text-amber/80 flex items-center justify-center transition-colors cursor-pointer ml-0.5"
+                        >
+                          <X className="w-2.5 h-2.5" />
+                        </button>
                       </div>
                     );
                   })}
@@ -1244,10 +1285,14 @@ export default function DesignerTool() {
         });
 
         const roomRadCount = roomRadiators.length;
-        const targetCm = currentRoom ? Math.max(80, currentRoom.areaSqm * 10) : 100;
+        const targetCm = currentRoom 
+          ? (roomRadCount > 1 
+              ? Math.max(80, Math.round((currentRoom.areaSqm / 13) * 100)) 
+              : Math.max(80, Math.round(currentRoom.areaSqm * 10))) 
+          : 100;
         const totalRoomRadCm = roomRadiators.reduce((sum, r) => sum + (r.sizeCm || 100), 0);
         const targetArea = currentRoom ? currentRoom.areaSqm : 0;
-        const providedCoverageArea = totalRoomRadCm / 10;
+        const providedCoverageArea = roomRadCount > 1 ? (totalRoomRadCm / 100) * 13 : totalRoomRadCm / 10;
         const coveragePercent = targetArea > 0 ? Math.round((providedCoverageArea / targetArea) * 100) : 100;
 
         return (
