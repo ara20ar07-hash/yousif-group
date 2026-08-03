@@ -1,14 +1,88 @@
+import { useState, useEffect, useRef } from 'react';
 import { useLanguage } from './LanguageContext';
-import { motion } from 'motion/react';
+import { motion, useInView } from 'motion/react';
+
+function CountUpNumber({ 
+  target, 
+  suffix = '', 
+  startVal = 1,
+  duration = 5000, 
+  isInView 
+}: { 
+  target: number; 
+  suffix?: string; 
+  startVal?: number;
+  duration?: number; 
+  isInView: boolean; 
+}) {
+  const [count, setCount] = useState(startVal);
+
+  useEffect(() => {
+    if (!isInView) return;
+
+    let startTime: number | null = null;
+    let animationFrameId: number;
+
+    const step = (timestamp: number) => {
+      if (!startTime) startTime = timestamp;
+      const elapsed = timestamp - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      
+      // Divide duration equally across all steps (linear progress)
+      const steps = target - startVal + 1;
+      const current = progress >= 1 ? target : Math.min(target, startVal + Math.floor(steps * progress));
+
+      setCount(current);
+
+      if (progress < 1) {
+        animationFrameId = requestAnimationFrame(step);
+      } else {
+        setCount(target);
+      }
+    };
+
+    animationFrameId = requestAnimationFrame(step);
+
+    return () => {
+      if (animationFrameId) cancelAnimationFrame(animationFrameId);
+    };
+  }, [isInView, target, startVal, duration]);
+
+  return (
+    <span>
+      {count}{suffix}
+    </span>
+  );
+}
 
 export default function Stats() {
   const { lang } = useLanguage();
+  const containerRef = useRef<HTMLDivElement>(null);
+  const isInView = useInView(containerRef, { once: true, margin: '-50px' });
 
   const stats = [
-    { num: '6+', label: lang === 'ku' ? 'ساڵ لە کارکردن' : 'Years in Business' },
-    { num: '6', label: lang === 'ku' ? 'خزمەتگوزارییە سەرەکییەکان' : 'Core Services' },
-    { num: '1.8K+', label: lang === 'ku' ? 'کڕیاری ڕازی' : 'Satisfied Clients' },
-    { num: '24/7', label: lang === 'ku' ? 'پاڵپشتی بەردەست' : 'Support Available' },
+    { 
+      type: 'countUp',
+      target: 10,
+      suffix: '+',
+      label: lang === 'ku' ? 'ساڵ لە کارکردن' : 'Years in Business' 
+    },
+    { 
+      type: 'countUp',
+      target: 6,
+      suffix: '',
+      label: lang === 'ku' ? 'خزمەتگوزارییە سەرەکییەکان' : 'Core Services' 
+    },
+    { 
+      type: 'static',
+      num: '1.8K+', 
+      label: lang === 'ku' ? 'کڕیاری ڕازی' : 'Satisfied Clients' 
+    },
+    { 
+      type: 'static',
+      num: '24/7', 
+      label: lang === 'ku' ? 'پاڵپشتی بەردەست' : 'Support Available' 
+    },
   ];
 
   const containerVariants = {
@@ -32,6 +106,7 @@ export default function Stats() {
 
   return (
     <motion.div 
+      ref={containerRef}
       className="flex flex-wrap lg:flex-nowrap justify-center bg-navy border-b border-border-main"
       initial="hidden"
       whileInView="visible"
@@ -47,7 +122,17 @@ export default function Stats() {
           } ${i % 2 === 0 ? 'border-r lg:border-r' : ''}`}
         >
           <div className="font-serif text-[40px] text-text-main tracking-tight leading-none mb-3">
-            {stat.num}
+            {stat.type === 'countUp' ? (
+              <CountUpNumber 
+                target={stat.target} 
+                suffix={stat.suffix} 
+                startVal={1} 
+                duration={5000} 
+                isInView={isInView} 
+              />
+            ) : (
+              stat.num
+            )}
           </div>
           <div className="text-[10px] uppercase tracking-widest text-white/40">
             {stat.label}

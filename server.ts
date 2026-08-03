@@ -123,7 +123,40 @@ Respond ONLY with valid raw JSON in this exact structure:
       }
     });
 
+    const geminiErrors: string[] = [];
+
+    // 1. Try Gemini 3.6 Flash first
     try {
+      console.log("Attempting blueprint analysis with primary model Gemini 3.6 Flash...");
+      const response = await ai.models.generateContent({
+        model: "gemini-3.6-flash",
+        contents: [
+          {
+            role: "user",
+            parts: [
+              {
+                inlineData: {
+                  mimeType: "image/jpeg",
+                  data: cleanBase64
+                }
+              },
+              { text: BLUEPRINT_PROMPT }
+            ]
+          }
+        ]
+      });
+      const text = response.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (text && text.trim().length > 0) return text;
+      geminiErrors.push("gemini-3.6-flash: Returned empty or candidate-less response");
+    } catch (err1: any) {
+      const errDetail1 = `[gemini-3.6-flash] Code: ${err1?.status || err1?.code || 'N/A'}, Message: ${err1?.message || String(err1)}`;
+      console.warn("Primary Gemini model failed:", errDetail1);
+      geminiErrors.push(errDetail1);
+    }
+
+    // 2. Try Gemini 2.5 Flash as secondary Gemini model
+    try {
+      console.log("Gemini 3.6 Flash failed/unavailable. Retrying with secondary model Gemini 2.5 Flash...");
       const response = await ai.models.generateContent({
         model: "gemini-2.5-flash",
         contents: [
@@ -141,9 +174,18 @@ Respond ONLY with valid raw JSON in this exact structure:
           }
         ]
       });
-      return response.candidates?.[0]?.content?.parts?.[0]?.text || "";
-    } catch (primaryErr: any) {
-      console.warn("gemini-2.5-flash failed, retrying with gemini-1.5-flash...", primaryErr?.message || primaryErr);
+      const text = response.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (text && text.trim().length > 0) return text;
+      geminiErrors.push("gemini-2.5-flash: Returned empty response");
+    } catch (err2: any) {
+      const errDetail2 = `[gemini-2.5-flash] Code: ${err2?.status || err2?.code || 'N/A'}, Message: ${err2?.message || String(err2)}`;
+      console.warn("Secondary Gemini model failed:", errDetail2);
+      geminiErrors.push(errDetail2);
+    }
+
+    // 3. Try Gemini 1.5 Flash as final Gemini fallback
+    try {
+      console.log("Retrying with Gemini 1.5 Flash...");
       const response = await ai.models.generateContent({
         model: "gemini-1.5-flash",
         contents: [
@@ -161,8 +203,19 @@ Respond ONLY with valid raw JSON in this exact structure:
           }
         ]
       });
-      return response.candidates?.[0]?.content?.parts?.[0]?.text || "";
+      const text = response.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (text && text.trim().length > 0) return text;
+      geminiErrors.push("gemini-1.5-flash: Returned empty response");
+    } catch (err3: any) {
+      const errDetail3 = `[gemini-1.5-flash] Code: ${err3?.status || err3?.code || 'N/A'}, Message: ${err3?.message || String(err3)}`;
+      console.warn("Final Gemini model failed:", errDetail3);
+      geminiErrors.push(errDetail3);
     }
+
+    const detailedErrStr = `All Gemini models failed:\n- ${geminiErrors.join("\n- ")}`;
+    const failureErr = new Error(detailedErrStr);
+    (failureErr as any).details = geminiErrors;
+    throw failureErr;
   };
 
   const analyzeWithGroq = async (cleanBase64: string, apiKey: string) => {
@@ -226,7 +279,7 @@ Respond ONLY with valid raw JSON in this exact structure:
       // Try Gemini first
       if (geminiKey) {
         try {
-          console.log("Attempting blueprint analysis with Gemini 2.5 Flash...");
+          console.log("Attempting blueprint analysis with Gemini 3.6 Flash...");
           rawText = await analyzeWithGemini(cleanBase64, geminiKey);
           console.log("Gemini analysis succeeded.");
         } catch (geminiErr: any) {
@@ -239,7 +292,8 @@ Respond ONLY with valid raw JSON in this exact structure:
               console.log("Groq fallback succeeded.");
             } catch (groqErr: any) {
               console.warn("Groq fallback also failed:", groqErr?.message || groqErr);
-              throw geminiErr;
+              const combinedErr = new Error(`Gemini Analysis Error:\n${geminiErr.message}\n\nGroq Fallback Error:\n${groqErr.message || String(groqErr)}`);
+              throw combinedErr;
             }
           } else {
             throw geminiErr;

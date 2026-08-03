@@ -161,17 +161,10 @@ export const autoGenerateRoomRadiators = (
 ): ComponentData[] => {
   if (!rooms || rooms.length === 0) return existingComps;
 
-  // Retain non-radiator components (boilers, manifolds, pumps, valves, etc.)
-  const nonRadiators = existingComps.filter(c => c.type !== 'radiator');
+  // Retain other custom components while removing auto boiler and manifold icons
+  const nonRadiators = existingComps.filter(c => c.type !== 'radiator' && c.type !== 'boiler' && c.type !== 'manifold');
   
-  // Auto-add Boiler and Manifold if not present
   const baseComps: ComponentData[] = [...nonRadiators];
-  if (!baseComps.some(c => c.type === 'boiler')) {
-    baseComps.push({ id: 'boiler_auto', type: 'boiler', x: 50, y: 50 });
-  }
-  if (!baseComps.some(c => c.type === 'manifold')) {
-    baseComps.push({ id: 'manifold_auto', type: 'manifold', x: 130, y: 50 });
-  }
 
   const newRadiators: ComponentData[] = [];
   let heatedIndex = 0;
@@ -1161,6 +1154,7 @@ export default function DesignerTool() {
               <div className="absolute inset-0 w-full h-full pointer-events-none z-10">
                  {components.map(comp => {
                     if (comp.type === 'radiator' && !showRadiators) return null;
+                    if (comp.type === 'boiler' || comp.type === 'manifold') return null;
                     const spec = componentSpecs[comp.type];
                     const isSelected = comp.id === selectedComponentId;
                     const roomIdx = comp.assignedRoomIndex !== undefined && comp.assignedRoomIndex >= 0 ? comp.assignedRoomIndex : 0;
