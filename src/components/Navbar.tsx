@@ -45,10 +45,7 @@ export default function Navbar({ onOpenOwnerModal }: NavbarProps) {
       style={{ fontSize: '16px' }}
       className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-4 sm:px-6 md:px-12 py-4 sm:py-6 bg-navy/90 backdrop-blur-md border-b border-border-main"
     >
-      <a href="#" className="flex items-center gap-1.5 sm:gap-2.5 no-underline">
-        <div className="w-9 h-9 sm:w-12 sm:h-12 bg-amber/10 rounded-full border border-amber/30 flex items-center justify-center font-display text-amber text-base sm:text-xl tracking-wider shrink-0">
-          YG
-        </div>
+      <a href="#" className="flex items-center no-underline group">
         <span className="font-display text-lg sm:text-2xl tracking-tight italic text-text-main leading-none">
           Yousif<span className="text-amber">.</span>Group
         </span>
