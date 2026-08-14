@@ -115,6 +115,19 @@ body {
   line-height: 1.65;
 }
 
+/* Backgrounds */
+.hero-radial-bg {
+  background: radial-gradient(ellipse 60% 50% at 80% 50%, rgba(255, 210, 63, 0.12) 0%, transparent 70%),
+              radial-gradient(ellipse 40% 40% at 90% 20%, rgba(255, 180, 0, 0.08) 0%, transparent 60%),
+              #05070a;
+}
+
+:root.light .hero-radial-bg {
+  background: radial-gradient(ellipse 60% 50% at 80% 50%, rgba(202, 138, 4, 0.1) 0%, transparent 70%),
+              radial-gradient(ellipse 40% 40% at 90% 20%, rgba(202, 138, 4, 0.05) 0%, transparent 60%),
+              #f8fafc;
+}
+
 .hero-grid-overlay {
   background-image:
     linear-gradient(color-mix(in srgb, var(--color-text-main) 4%, transparent) 1px, transparent 1px),
