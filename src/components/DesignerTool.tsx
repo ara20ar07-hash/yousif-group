@@ -913,10 +913,10 @@ export default function DesignerTool() {
             <>Heating Layout <br /><span className="italic text-amber">Planner</span></>
           )}
         </h2>
-        <p className="text-lg leading-relaxed font-light text-white/70 max-w-[600px] mb-12">
+        <p className="text-lg leading-relaxed font-light text-white/70 max-w-[680px] mb-12">
           {lang === 'ku' 
-            ? 'نەخشەی بیناکەت بەرزبکەرەوە بۆ کێشانی بۆرییەکان و دانانی بۆیلەر و ئامێرەکانی تری سیستەمەکە.' 
-            : 'Upload your structural blueprint to sketch custom pipelines and position heating arrays, boilers, and manifold nodes directly onto your floor plan layouts.'}
+            ? 'نەخشەی بیناکەت بەرزبکەرەوە بۆ کێشانی بۆرییەکان و دانانی بۆیلەر و ئامێرەکانی تری سیستەمەکە — هەژمێرکردنی خودکارانەی بڕی ڕووبەری شؤفاژی پێویست بۆ هەژمارکردنی تێچووی سیستەمەکەت.' 
+            : 'Upload your structural blueprint to sketch custom pipelines, position heating arrays, and automatically calculate required radiator dimensions to estimate your system costs.'}
         </p>
       </motion.div>
 
