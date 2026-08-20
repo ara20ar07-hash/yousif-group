@@ -54,12 +54,12 @@ export default function Hero() {
                 >
                   یوسف
                 </span>
-                <span className="animate-fade-in-up opacity-0 [animation-delay:150ms] text-[24px] min-[380px]:text-[28px] sm:text-[44px] lg:text-[72px] text-slate-900 dark:text-white">گروپ</span>
+                <span className="animate-fade-in-up opacity-0 [animation-delay:150ms] text-[24px] min-[380px]:text-[28px] sm:text-[44px] lg:text-[72px] text-[#0f172a] dark:text-white">گروپ</span>
               </div>
             ) : (
               <>
                 <span className="italic text-amber-dim dark:text-amber font-serif font-normal">Yousif</span> <br />
-                <span className="text-slate-900 dark:text-white">Group</span>
+                <span className="text-[#0f172a] dark:text-white">Group</span>
               </>
             )}
           </motion.h1>
@@ -70,7 +70,7 @@ export default function Hero() {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.2 }}
-              className="font-arabic text-[10.5px] min-[380px]:text-[12px] sm:text-[13px] md:text-[15px] tracking-wider text-slate-800 dark:text-white/85 text-start mb-2 sm:mb-3 lg:mb-6" dir="rtl"
+              className="font-arabic text-[10.5px] min-[380px]:text-[12px] sm:text-[13px] md:text-[15px] tracking-wider text-[#0f172a] dark:text-white/85 text-start mb-2 sm:mb-3 lg:mb-6" dir="rtl"
             >
               یوسف گروپ — دابین و دانانی سیستەمی گەرمی، ساردی، و غاز
             </motion.p>
@@ -81,7 +81,7 @@ export default function Hero() {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.35 }}
-            className="text-[11.5px] min-[380px]:text-[13px] sm:text-[14px] md:text-[16px] lg:text-[18px] leading-[1.5] sm:leading-relaxed font-normal sm:font-light text-slate-700 dark:text-white/70 max-w-full mb-3 sm:mb-5 lg:mb-10"
+            className="text-[11.5px] min-[380px]:text-[13px] sm:text-[14px] md:text-[16px] lg:text-[18px] leading-[1.5] sm:leading-relaxed font-normal sm:font-light text-[#0f172a] dark:text-white/70 max-w-full mb-3 sm:mb-5 lg:mb-10"
           >
             {lang === 'ku' 
               ? 'تایبەتمەندێکی متمانەپێکراو لە سلێمانی و هەموو کوردستان لە بوارەکانی ساردی و گەرمی، تۆڕی غاز، سیستەمی سۆلار و ئاگرکوژێنەوە – دابینکردنی چارەسەری ئاسوودەیی و سەلامەتی بۆ ماڵ و شوێنە بازرگانییەکان.' 

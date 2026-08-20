@@ -355,7 +355,7 @@ export default function ServiceDetailModal({ isOpen, onClose, initialServiceId }
                 >
                   <span className="flex items-center gap-2.5">
                     {getServiceIcon(activeTab, "w-5 h-5")}
-                    <span className="text-white font-medium">
+                    <span className="text-text-main font-medium">
                       {lang === 'ku' 
                         ? (servicesData.find(s => s.id === activeTab)?.titleKu || 'سیستەمەکان') 
                         : (servicesData.find(s => s.id === activeTab)?.titleEn || 'System Solutions')}
@@ -371,7 +371,7 @@ export default function ServiceDetailModal({ isOpen, onClose, initialServiceId }
 
                 {/* Desktop and Mobile expanded states */}
                 <div className={`flex flex-col gap-2 mt-2 lg:mt-0 ${isMobileSolutionsOpen ? 'flex' : 'hidden lg:flex'}`}>
-                  <div className="text-[10px] font-bold text-white/40 tracking-widest uppercase px-3 mb-2 hidden lg:block">
+                  <div className="text-[10px] font-bold text-text-main/50 tracking-widest uppercase px-3 mb-2 hidden lg:block">
                     {lang === 'ku' ? 'بژاردەکانی سیستەم' : 'System Solutions'}
                   </div>
                   
@@ -387,10 +387,10 @@ export default function ServiceDetailModal({ isOpen, onClose, initialServiceId }
                           setIsEditingCore(false);
                           setIsMobileSolutionsOpen(false); // Auto close on select
                         }}
-                        className={`flex items-center gap-3.5 text-start px-4 py-3.5 rounded-2xl border text-sm transition-all duration-200 w-full font-light
+                        className={`flex items-center gap-3.5 text-start px-4 py-3.5 rounded-2xl border text-sm transition-all duration-200 w-full
                           ${isActive 
-                            ? 'bg-navy-light border-amber/40 text-text-main font-medium shadow-[inset_4px_0_0_#FFD600]' 
-                            : 'border-transparent bg-transparent text-muted hover:bg-white/5 hover:text-text-main'}`}
+                            ? 'bg-navy-light border-amber/40 text-text-main font-semibold shadow-[inset_4px_0_0_#FFD600]' 
+                            : 'border-transparent bg-transparent text-text-main/70 hover:bg-white/5 hover:text-text-main font-normal'}`}
                       >
                         {getServiceIcon(tab.id, "w-5 h-5")}
                         <span className="truncate">{lang === 'ku' ? tab.titleKu : tab.titleEn}</span>
@@ -422,7 +422,7 @@ export default function ServiceDetailModal({ isOpen, onClose, initialServiceId }
 
                   {isOwnerLoggedIn && authError && (authError.includes('admin-restricted-operation') || authError.includes('restricted-operation')) && (
                     <div className="mb-6 p-5 bg-amber/5 border border-amber/20 rounded-[24px] text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-start">
-                      <div className="text-white/80 leading-relaxed">
+                      <div className="text-text-main/85 leading-relaxed">
                         <strong className="text-amber font-semibold uppercase tracking-wide block mb-1">
                           ⚠️ {lang === 'ku' ? 'پاکسازی فایەربەیس پێویستە' : 'Firebase Setup Action Required'}
                         </strong>
@@ -442,26 +442,26 @@ export default function ServiceDetailModal({ isOpen, onClose, initialServiceId }
                   )}
 
                   {isOwnerLoggedIn && isEditingCore ? (
-                    <div className="bg-white/5 p-6 md:p-8 rounded-[32px] border border-white/10 flex flex-col gap-4 mb-6">
+                    <div className="bg-navy-mid p-6 md:p-8 rounded-[32px] border border-white/15 flex flex-col gap-4 mb-6 shadow-lg">
                       <div className="text-xs uppercase tracking-wider text-amber font-semibold mb-2">
                         {lang === 'ku' ? 'مۆدی دەستکاری دەقی سەرەکی' : 'Editing Core Information'}
                       </div>
                       
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                          <label className="block text-[10px] uppercase text-muted tracking-wider mb-1">Title (English)</label>
+                          <label className="block text-[10px] uppercase text-text-main/60 tracking-wider mb-1">Title (English)</label>
                           <input 
                             type="text" 
-                            className="w-full bg-navy border border-white/10 text-sm text-white px-3 py-2 rounded-lg focus:border-amber outline-none"
+                            className="w-full bg-navy border border-white/15 text-sm text-text-main px-3 py-2 rounded-lg focus:border-amber outline-none"
                             value={tempCoreTitleEn}
                             onChange={(e) => setTempCoreTitleEn(e.target.value)}
                           />
                         </div>
                         <div>
-                          <label className="block text-[10px] uppercase text-muted tracking-wider mb-1">Title (Kurdish)</label>
+                          <label className="block text-[10px] uppercase text-text-main/60 tracking-wider mb-1">Title (Kurdish)</label>
                           <input 
                             type="text" 
-                            className="w-full bg-navy border border-white/10 text-sm text-white px-3 py-2 rounded-lg focus:border-amber outline-none"
+                            className="w-full bg-navy border border-white/15 text-sm text-text-main px-3 py-2 rounded-lg focus:border-amber outline-none"
                             value={tempCoreTitleKu}
                             onChange={(e) => setTempCoreTitleKu(e.target.value)}
                           />
@@ -470,19 +470,19 @@ export default function ServiceDetailModal({ isOpen, onClose, initialServiceId }
 
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                          <label className="block text-[10px] uppercase text-muted tracking-wider mb-1">Subtitle (English)</label>
+                          <label className="block text-[10px] uppercase text-text-main/60 tracking-wider mb-1">Subtitle (English)</label>
                           <input 
                             type="text" 
-                            className="w-full bg-navy border border-white/10 text-sm text-white px-3 py-2 rounded-lg focus:border-amber outline-none"
+                            className="w-full bg-navy border border-white/15 text-sm text-text-main px-3 py-2 rounded-lg focus:border-amber outline-none"
                             value={tempCoreSubEn}
                             onChange={(e) => setTempCoreSubEn(e.target.value)}
                           />
                         </div>
                         <div>
-                          <label className="block text-[10px] uppercase text-muted tracking-wider mb-1">Subtitle (Kurdish)</label>
+                          <label className="block text-[10px] uppercase text-text-main/60 tracking-wider mb-1">Subtitle (Kurdish)</label>
                           <input 
                             type="text" 
-                            className="w-full bg-navy border border-white/10 text-sm text-white px-3 py-2 rounded-lg focus:border-amber outline-none"
+                            className="w-full bg-navy border border-white/15 text-sm text-text-main px-3 py-2 rounded-lg focus:border-amber outline-none"
                             value={tempCoreSubKu}
                             onChange={(e) => setTempCoreSubKu(e.target.value)}
                           />
@@ -491,18 +491,18 @@ export default function ServiceDetailModal({ isOpen, onClose, initialServiceId }
 
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                          <label className="block text-[10px] uppercase text-muted tracking-wider mb-1">Brief Card Description (English)</label>
+                          <label className="block text-[10px] uppercase text-text-main/60 tracking-wider mb-1">Brief Card Description (English)</label>
                           <textarea 
-                            className="w-full bg-navy border border-white/10 text-sm text-white px-3 py-2 rounded-lg focus:border-amber outline-none"
+                            className="w-full bg-navy border border-white/15 text-sm text-text-main px-3 py-2 rounded-lg focus:border-amber outline-none"
                             rows={2}
                             value={tempCoreCardDescEn}
                             onChange={(e) => setTempCoreCardDescEn(e.target.value)}
                           />
                         </div>
                         <div>
-                          <label className="block text-[10px] uppercase text-muted tracking-wider mb-1">Brief Card Description (Kurdish)</label>
+                          <label className="block text-[10px] uppercase text-text-main/60 tracking-wider mb-1">Brief Card Description (Kurdish)</label>
                           <textarea 
-                            className="w-full bg-navy border border-white/10 text-sm text-white px-3 py-2 rounded-lg focus:border-amber outline-none"
+                            className="w-full bg-navy border border-white/15 text-sm text-text-main px-3 py-2 rounded-lg focus:border-amber outline-none"
                             rows={2}
                             value={tempCoreCardDescKu}
                             onChange={(e) => setTempCoreCardDescKu(e.target.value)}
@@ -512,18 +512,18 @@ export default function ServiceDetailModal({ isOpen, onClose, initialServiceId }
 
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                          <label className="block text-[10px] uppercase text-muted tracking-wider mb-1">Full Detailed Description (English)</label>
+                          <label className="block text-[10px] uppercase text-text-main/60 tracking-wider mb-1">Full Detailed Description (English)</label>
                           <textarea 
-                            className="w-full bg-navy border border-white/10 text-sm text-white px-3 py-2 rounded-lg focus:border-amber outline-none"
+                            className="w-full bg-navy border border-white/15 text-sm text-text-main px-3 py-2 rounded-lg focus:border-amber outline-none"
                             rows={4}
                             value={tempCoreDescEn}
                             onChange={(e) => setTempCoreDescEn(e.target.value)}
                           />
                         </div>
                         <div>
-                          <label className="block text-[10px] uppercase text-muted tracking-wider mb-1">Full Detailed Description (Kurdish)</label>
+                          <label className="block text-[10px] uppercase text-text-main/60 tracking-wider mb-1">Full Detailed Description (Kurdish)</label>
                           <textarea 
-                            className="w-full bg-navy border border-white/10 text-sm text-white px-3 py-2 rounded-lg focus:border-amber outline-none"
+                            className="w-full bg-navy border border-white/15 text-sm text-text-main px-3 py-2 rounded-lg focus:border-amber outline-none"
                             rows={4}
                             value={tempCoreDescKu}
                             onChange={(e) => setTempCoreDescKu(e.target.value)}
@@ -534,7 +534,7 @@ export default function ServiceDetailModal({ isOpen, onClose, initialServiceId }
                       <div className="flex gap-2 justify-end mt-2">
                         <button 
                           onClick={() => setIsEditingCore(false)}
-                          className="px-4 py-2 bg-white/10 text-[10px] tracking-widest uppercase rounded-full text-white hover:bg-white/20 transition-all font-semibold"
+                          className="px-4 py-2 bg-white/10 text-[10px] tracking-widest uppercase rounded-full text-text-main hover:bg-white/20 transition-all font-semibold"
                         >
                           Cancel
                         </button>
@@ -548,35 +548,38 @@ export default function ServiceDetailModal({ isOpen, onClose, initialServiceId }
                     </div>
                   ) : (
                     <>
-                      <h2 className="font-display text-4xl md:text-5xl tracking-tight text-text-main mb-3">
+                      <h2 className="font-display text-4xl md:text-5xl tracking-tight text-text-main mb-3 font-semibold">
                         {lang === 'ku' ? service.titleKu : service.titleEn}
                       </h2>
-                      <p className="text-sm font-light uppercase tracking-widest text-muted mb-6">
+                      <p className="text-sm font-semibold uppercase tracking-widest text-amber mb-6">
                         {lang === 'ku' ? service.subKu : service.subEn}
                       </p>
                       
-                      <p className="text-md leading-relaxed text-white/80 font-light max-w-4xl bg-white/5 p-6 rounded-3xl border border-white/5">
-                        {lang === 'ku' ? service.descKu : service.descEn}
-                      </p>
+                      {/* Main System Description Card */}
+                      <div className="text-base md:text-lg leading-relaxed text-text-main font-normal max-w-4xl bg-navy-mid p-6 md:p-8 rounded-3xl border border-white/10 shadow-lg">
+                        <p className="text-text-main/90 dark:text-slate-200 leading-relaxed font-normal">
+                          {lang === 'ku' ? service.descKu : service.descEn}
+                        </p>
+                      </div>
                     </>
                   )}
                 </div>
 
                 {/* How it Works / Steps List */}
                 <div>
-                  <h3 className="font-serif text-2xl text-text-main mb-6 flex items-center gap-2">
+                  <h3 className="font-serif text-2xl text-text-main mb-6 flex items-center gap-2 font-medium">
                     <CheckCircle2 className="w-5 h-5 text-amber" />
                     <span>{lang === 'ku' ? 'پرۆسەی ئەندازیاری و چۆنیەتی کارکردن' : 'Engineering Process & How it Works'}</span>
                   </h3>
                   
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     {service.steps.map((st, i) => (
-                      <div key={i} className="relative bg-navy-mid border border-white/5 p-6 rounded-3xl flex flex-col justify-between min-h-[220px]">
+                      <div key={i} className="relative bg-navy-mid border border-white/10 p-6 md:p-7 rounded-3xl flex flex-col justify-between min-h-[220px] shadow-md">
                         <div>
-                          <div className="absolute top-4 end-4 text-3xl font-mono text-white/5 font-extrabold leading-none">
+                          <div className="absolute top-4 end-4 text-3xl font-mono text-text-main/10 font-extrabold leading-none pointer-events-none">
                             0{i+1}
                           </div>
-                          <div className="w-8 h-8 rounded-full bg-amber/10 text-amber flex items-center justify-center text-xs font-bold mb-4">
+                          <div className="w-8 h-8 rounded-full bg-amber/15 text-amber flex items-center justify-center text-xs font-bold mb-4">
                             {i+1}
                           </div>
 
@@ -586,36 +589,36 @@ export default function ServiceDetailModal({ isOpen, onClose, initialServiceId }
                                 {lang === 'ku' ? 'دەستکاریکردنی هەنگاو' : 'Modify Step'}
                               </div>
                               <div>
-                                <label className="block text-[8px] uppercase text-muted tracking-wider mb-0.5">Title (English)</label>
+                                <label className="block text-[8px] uppercase text-text-main/60 tracking-wider mb-0.5">Title (English)</label>
                                 <input 
                                   type="text" 
-                                  className="w-full bg-navy border border-white/10 text-xs text-white p-2 rounded-lg focus:border-amber outline-none"
+                                  className="w-full bg-navy border border-white/15 text-xs text-text-main p-2 rounded-lg focus:border-amber outline-none"
                                   value={tempStepTitleEn}
                                   onChange={(e) => setTempStepTitleEn(e.target.value)}
                                 />
                               </div>
                               <div>
-                                <label className="block text-[8px] uppercase text-muted tracking-wider mb-0.5">Title (Kurdish)</label>
+                                <label className="block text-[8px] uppercase text-text-main/60 tracking-wider mb-0.5">Title (Kurdish)</label>
                                 <input 
                                   type="text" 
-                                  className="w-full bg-navy border border-white/10 text-xs text-white p-2 rounded-lg focus:border-amber outline-none"
+                                  className="w-full bg-navy border border-white/15 text-xs text-text-main p-2 rounded-lg focus:border-amber outline-none"
                                   value={tempStepTitleKu}
                                   onChange={(e) => setTempStepTitleKu(e.target.value)}
                                 />
                               </div>
                               <div>
-                                <label className="block text-[8px] uppercase text-muted tracking-wider mb-0.5">Description (English)</label>
+                                <label className="block text-[8px] uppercase text-text-main/60 tracking-wider mb-0.5">Description (English)</label>
                                 <textarea 
-                                  className="w-full bg-navy border border-white/10 text-xs text-white p-2 rounded-lg focus:border-amber outline-none"
+                                  className="w-full bg-navy border border-white/15 text-xs text-text-main p-2 rounded-lg focus:border-amber outline-none"
                                   rows={3}
                                   value={tempStepDescEn}
                                   onChange={(e) => setTempStepDescEn(e.target.value)}
                                 />
                               </div>
                               <div>
-                                <label className="block text-[8px] uppercase text-muted tracking-wider mb-0.5">Description (Kurdish)</label>
+                                <label className="block text-[8px] uppercase text-text-main/60 tracking-wider mb-0.5">Description (Kurdish)</label>
                                 <textarea 
-                                  className="w-full bg-navy border border-white/10 text-xs text-white p-2 rounded-lg focus:border-amber outline-none"
+                                  className="w-full bg-navy border border-white/15 text-xs text-text-main p-2 rounded-lg focus:border-amber outline-none"
                                   rows={3}
                                   value={tempStepDescKu}
                                   onChange={(e) => setTempStepDescKu(e.target.value)}
@@ -625,7 +628,7 @@ export default function ServiceDetailModal({ isOpen, onClose, initialServiceId }
                                 <button 
                                   type="button"
                                   onClick={() => setEditingStepIndex(null)}
-                                  className="px-2.5 py-1 bg-white/10 text-[9px] tracking-widest uppercase rounded-md text-white hover:bg-white/20 transition-all font-semibold"
+                                  className="px-2.5 py-1 bg-white/10 text-[9px] tracking-widest uppercase rounded-md text-text-main hover:bg-white/20 transition-all font-semibold"
                                 >
                                   Cancel
                                 </button>
@@ -640,10 +643,10 @@ export default function ServiceDetailModal({ isOpen, onClose, initialServiceId }
                             </div>
                           ) : (
                             <>
-                              <h4 className="font-serif text-lg text-text-main mb-2">
+                              <h4 className="font-serif text-xl text-text-main mb-2 font-medium">
                                 {lang === 'ku' ? st.titleKu : st.titleEn}
                               </h4>
-                              <p className="text-xs leading-relaxed text-muted font-light">
+                              <p className="text-sm leading-relaxed text-text-main/80 font-normal">
                                 {lang === 'ku' ? st.descKu : st.descEn}
                               </p>
                             </>
@@ -925,23 +928,30 @@ export default function ServiceDetailModal({ isOpen, onClose, initialServiceId }
                                   </div>
                                 ) : (
                                   <div className="flex items-start gap-3 text-start">
-                                    <div className="w-12 h-12 rounded-2xl bg-amber/10 text-amber flex items-center justify-center shrink-0 mt-1">
-                                      <FolderOpen className="w-6 h-6 animate-pulse" />
+                                    <div className="w-12 h-12 rounded-2xl bg-amber/15 text-amber flex items-center justify-center shrink-0 mt-1">
+                                      <FolderOpen className="w-6 h-6" />
                                     </div>
                                     <div>
-                                      <h4 className="font-serif text-2xl md:text-3xl text-text-main flex items-center gap-2 flex-wrap">
+                                      <h4 className="font-serif text-2xl md:text-3xl text-text-main flex items-center gap-2 flex-wrap font-semibold">
                                         <span>{lang === 'ku' ? folder.titleKu : folder.titleEn}</span>
                                       </h4>
-                                      <div className="flex items-center gap-3 mt-2 text-xs text-muted font-light uppercase tracking-widest flex-wrap">
-                                        <span className="flex items-center gap-1 bg-white/5 border border-white/5 px-3 py-1 rounded-full">
+                                      <div className="flex items-center gap-3 mt-2 text-xs text-text-main/70 font-normal uppercase tracking-widest flex-wrap">
+                                        <span className="flex items-center gap-1.5 bg-white/5 border border-white/10 px-3.5 py-1.5 rounded-full text-text-main/90 font-medium">
                                           <MapPin className="w-3.5 h-3.5 text-amber" />
                                           <span>{lang === 'ku' ? folder.cityKu : folder.cityEn}</span>
                                         </span>
-                                        <span className="flex items-center gap-1 bg-white/5 border border-white/5 px-3 py-1 rounded-full font-mono">
-                                          <Calendar className="w-3.5 h-3.5 animate-pulse" />
+                                        <span className="flex items-center gap-1.5 bg-white/5 border border-white/10 px-3.5 py-1.5 rounded-full font-mono text-text-main/80">
+                                          <Calendar className="w-3.5 h-3.5 text-amber" />
                                           <span>{folder.date}</span>
                                         </span>
                                       </div>
+
+                                      {/* Project Folder Description */}
+                                      {(folder.descKu || folder.descEn) && (
+                                        <p className="mt-3.5 text-sm md:text-base leading-relaxed text-text-main/85 font-normal bg-white/5 p-4 rounded-2xl border border-white/5">
+                                          {lang === 'ku' ? (folder.descKu || folder.descEn) : (folder.descEn || folder.descKu)}
+                                        </p>
+                                      )}
                                     </div>
                                   </div>
                                 )}

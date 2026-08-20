@@ -37,8 +37,8 @@
   --color-amber-light: #fef08a;
   --color-amber-dim: #a16207;
   --color-text-main: #0f172a;
-  --color-muted: #475569;
-  --color-border-main: color-mix(in srgb, #000000 8%, transparent);
+  --color-muted: #334155;
+  --color-border-main: color-mix(in srgb, #000000 10%, transparent);
 }
 
 /* Light Mode Adaptations */
@@ -48,14 +48,23 @@
 :root.light .border-white\/10 {
   border-color: rgba(15, 23, 42, 0.15);
 }
+:root.light .border-white\/15 {
+  border-color: rgba(15, 23, 42, 0.2);
+}
+:root.light .border-white\/20 {
+  border-color: rgba(15, 23, 42, 0.25);
+}
 :root.light .bg-white\/5 {
   background-color: rgba(15, 23, 42, 0.04);
 }
 :root.light .bg-white\/10 {
   background-color: rgba(15, 23, 42, 0.08);
 }
+:root.light .bg-white\/15 {
+  background-color: rgba(15, 23, 42, 0.1);
+}
 :root.light .bg-white\/20 {
-  background-color: rgba(15, 23, 42, 0.12);
+  background-color: rgba(15, 23, 42, 0.14);
 }
 :root.light .hover\:bg-white\/5:hover {
   background-color: rgba(15, 23, 42, 0.04);
@@ -64,34 +73,49 @@
   background-color: rgba(15, 23, 42, 0.08);
 }
 :root.light .hover\:bg-white\/20:hover {
-  background-color: rgba(15, 23, 42, 0.12);
+  background-color: rgba(15, 23, 42, 0.14);
 }
-:root.light .text-white\/70 {
-  color: rgba(15, 23, 42, 0.7);
+:root.light .text-white {
+  color: #0f172a;
+}
+:root.light .text-white\/90 {
+  color: rgba(15, 23, 42, 0.95);
 }
 :root.light .text-white\/85 {
+  color: rgba(15, 23, 42, 0.9);
+}
+:root.light .text-white\/80 {
   color: rgba(15, 23, 42, 0.85);
 }
+:root.light .text-white\/70 {
+  color: rgba(15, 23, 42, 0.78);
+}
+:root.light .text-white\/60 {
+  color: rgba(15, 23, 42, 0.7);
+}
 :root.light .text-white\/40 {
-  color: rgba(15, 23, 42, 0.4);
+  color: rgba(15, 23, 42, 0.5);
 }
 :root.light .text-white\/30 {
-  color: rgba(15, 23, 42, 0.3);
+  color: rgba(15, 23, 42, 0.4);
+}
+:root.light .text-white\/10 {
+  color: rgba(15, 23, 42, 0.15);
 }
 :root.light .text-white\/5 {
-  color: rgba(15, 23, 42, 0.03);
+  color: rgba(15, 23, 42, 0.08);
 }
 :root.light .text-\[\#E0D8D0\] {
-  color: #475569;
+  color: #334155;
 }
 :root.light .hover\:text-white:hover {
   color: #0f172a;
 }
 :root.light .text-slate-300 {
-  color: #334155;
+  color: #1e293b;
 }
 :root.light .text-slate-400 {
-  color: #475569;
+  color: #334155;
 }
 :root.light .group-hover\:text-amber\/5:hover,
 :root.light .group:hover .group-hover\:text-amber\/5 {
