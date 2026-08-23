@@ -118,7 +118,7 @@ export default function Services() {
             
             <div className="mt-8">
               {lang === 'en' && (
-                <span className="block font-arabic text-xs uppercase tracking-widest text-amber-700 dark:text-[#E0D8D0]/60 font-semibold mb-1.5" dir="rtl">
+                <span className="block font-arabic text-xs uppercase tracking-widest text-muted font-semibold mb-1.5" dir="rtl">
                   {svc.titleAr}
                 </span>
               )}

@@ -557,7 +557,7 @@ export default function ServiceDetailModal({ isOpen, onClose, initialServiceId }
                       
                       {/* Main System Description Card */}
                       <div className="text-base md:text-lg leading-relaxed text-text-main font-normal max-w-4xl bg-navy-mid p-6 md:p-8 rounded-3xl border border-white/10 shadow-lg">
-                        <p className="text-text-main/90 dark:text-slate-200 leading-relaxed font-normal">
+                        <p className="text-text-main leading-relaxed font-normal">
                           {lang === 'ku' ? service.descKu : service.descEn}
                         </p>
                       </div>

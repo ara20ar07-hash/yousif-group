@@ -24,7 +24,7 @@ export default function Hero() {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
-            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber/15 border border-amber/30 text-[9px] min-[380px]:text-[10px] sm:text-[11px] lg:text-[12px] tracking-[0.08em] sm:tracking-[0.2em] uppercase text-amber-dim dark:text-amber font-semibold mb-2 sm:mb-3 lg:mb-5 max-w-full"
+            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber/15 border border-amber/30 text-[9px] min-[380px]:text-[10px] sm:text-[11px] lg:text-[12px] tracking-[0.08em] sm:tracking-[0.2em] uppercase text-amber font-semibold mb-2 sm:mb-3 lg:mb-5 max-w-full"
           >
             <MapPin className="w-3 h-3 text-amber shrink-0" />
             <span className="truncate">
@@ -37,12 +37,12 @@ export default function Hero() {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.1 }}
-            className={`font-display text-[34px] min-[380px]:text-[40px] sm:text-[54px] md:text-[72px] lg:text-[90px] xl:text-[104px] ${lang === 'ku' ? 'leading-[1.12]' : 'leading-[0.9]'} tracking-tight text-slate-900 dark:text-white mb-2 sm:mb-3 lg:mb-6`}
+            className={`font-display text-[34px] min-[380px]:text-[40px] sm:text-[54px] md:text-[72px] lg:text-[90px] xl:text-[104px] ${lang === 'ku' ? 'leading-[1.12]' : 'leading-[0.9]'} tracking-tight text-text-main mb-2 sm:mb-3 lg:mb-6`}
           >
             {lang === 'ku' ? (
               <div className="flex flex-col gap-0.5 sm:gap-2">
                 <span 
-                  className="text-amber-dim dark:text-amber animate-fade-in-up opacity-0"
+                  className="text-amber animate-fade-in-up opacity-0"
                   style={{
                     fontFamily: 'Georgia',
                     fontWeight: 'normal',
@@ -54,12 +54,12 @@ export default function Hero() {
                 >
                   یوسف
                 </span>
-                <span className="animate-fade-in-up opacity-0 [animation-delay:150ms] text-[24px] min-[380px]:text-[28px] sm:text-[44px] lg:text-[72px] text-[#0f172a] dark:text-white">گروپ</span>
+                <span className="animate-fade-in-up opacity-0 [animation-delay:150ms] text-[24px] min-[380px]:text-[28px] sm:text-[44px] lg:text-[72px] text-text-main">گروپ</span>
               </div>
             ) : (
               <>
-                <span className="italic text-amber-dim dark:text-amber font-serif font-normal">Yousif</span> <br />
-                <span className="text-[#0f172a] dark:text-white">Group</span>
+                <span className="italic text-amber font-serif font-normal">Yousif</span> <br />
+                <span className="text-text-main">Group</span>
               </>
             )}
           </motion.h1>
@@ -70,7 +70,7 @@ export default function Hero() {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.2 }}
-              className="font-arabic text-[10.5px] min-[380px]:text-[12px] sm:text-[13px] md:text-[15px] tracking-wider text-[#0f172a] dark:text-white/85 text-start mb-2 sm:mb-3 lg:mb-6" dir="rtl"
+              className="font-arabic text-[10.5px] min-[380px]:text-[12px] sm:text-[13px] md:text-[15px] tracking-wider text-text-main/90 text-start mb-2 sm:mb-3 lg:mb-6" dir="rtl"
             >
               یوسف گروپ — دابین و دانانی سیستەمی گەرمی، ساردی، و غاز
             </motion.p>
@@ -81,7 +81,7 @@ export default function Hero() {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.35 }}
-            className="text-[11.5px] min-[380px]:text-[13px] sm:text-[14px] md:text-[16px] lg:text-[18px] leading-[1.5] sm:leading-relaxed font-normal sm:font-light text-[#0f172a] dark:text-white/70 max-w-full mb-3 sm:mb-5 lg:mb-10"
+            className="text-[11.5px] min-[380px]:text-[13px] sm:text-[14px] md:text-[16px] lg:text-[18px] leading-[1.5] sm:leading-relaxed font-normal sm:font-light text-text-main/70 max-w-full mb-3 sm:mb-5 lg:mb-10"
           >
             {lang === 'ku' 
               ? 'تایبەتمەندێکی متمانەپێکراو لە سلێمانی و هەموو کوردستان لە بوارەکانی ساردی و گەرمی، تۆڕی غاز، سیستەمی سۆلار و ئاگرکوژێنەوە – دابینکردنی چارەسەری ئاسوودەیی و سەلامەتی بۆ ماڵ و شوێنە بازرگانییەکان.' 
@@ -98,7 +98,7 @@ export default function Hero() {
             <a href="#services" className="bg-[#FFD23F] text-black font-bold text-[9px] min-[380px]:text-[10px] sm:text-[10px] lg:text-[11px] px-3.5 min-[380px]:px-5 sm:px-6 lg:px-9 py-2.5 min-[380px]:py-3 sm:py-3 lg:py-3.5 rounded-full tracking-[0.08em] sm:tracking-[0.2em] uppercase hover:bg-amber-light hover:-translate-y-px transition-all text-center flex items-center justify-center shadow-[0_4px_15px_rgba(255,210,63,0.35)] whitespace-nowrap">
               {lang === 'ku' ? 'خزمەتگوزارییەکانمان' : 'OUR SERVICES'}
             </a>
-            <a href="#contact" className="bg-transparent border border-slate-400 dark:border-white/20 text-slate-900 dark:text-white font-medium text-[9px] min-[380px]:text-[10px] sm:text-[10px] lg:text-[11px] px-3.5 min-[380px]:px-5 sm:px-6 lg:px-9 py-2.5 min-[380px]:py-3 sm:py-3 lg:py-3.5 rounded-full tracking-[0.08em] sm:tracking-[0.2em] uppercase hover:bg-slate-200/50 dark:hover:bg-white/10 hover:border-slate-600 dark:hover:border-white/40 transition-all text-center flex items-center justify-center whitespace-nowrap">
+            <a href="#contact" className="bg-transparent border border-border-main text-text-main font-medium text-[9px] min-[380px]:text-[10px] sm:text-[10px] lg:text-[11px] px-3.5 min-[380px]:px-5 sm:px-6 lg:px-9 py-2.5 min-[380px]:py-3 sm:py-3 lg:py-3.5 rounded-full tracking-[0.08em] sm:tracking-[0.2em] uppercase hover:bg-white/10 hover:border-amber/40 transition-all text-center flex items-center justify-center whitespace-nowrap">
               {lang === 'ku' ? 'پەیوەندیمان پێوە بکە' : 'CONTACT US'}
             </a>
           </motion.div>
