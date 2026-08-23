@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { useLanguage } from './LanguageContext';
 import { useOwner, ProjectFolder, ProjectPhotoItem } from './OwnerContext';
+import { initialProjectsData } from '../data/defaultProjects';
 
 interface ServiceDetailModalProps {
   isOpen: boolean;
@@ -136,7 +137,9 @@ export default function ServiceDetailModal({ isOpen, onClose, initialServiceId }
   const service = servicesData.find(s => s.id === activeTab) || servicesData[0];
 
   // Resolve projects uploaded by the owner grouped in project folders
-  const activeProjects = customProjects[activeTab] || [];
+  const activeProjects = (customProjects[activeTab] && customProjects[activeTab].length > 0)
+    ? customProjects[activeTab]
+    : (initialProjectsData[activeTab] || []);
 
   // File to base64 converter with canvas compression to prevent localStorage quota exhaustion
   const compressFileToBase64 = (file: File): Promise<string> => {

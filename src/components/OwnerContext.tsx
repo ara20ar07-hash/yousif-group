@@ -10,6 +10,7 @@ import {
 } from 'firebase/firestore';
 import { signInAnonymously, signOut, onAuthStateChanged } from 'firebase/auth';
 import { db, auth, handleFirestoreError, OperationType } from './firebase';
+import { initialProjectsData } from '../data/defaultProjects';
 
 export interface ProjectPhoto {
   id: string;
@@ -285,7 +286,7 @@ export function OwnerProvider({ children }: { children: ReactNode }) {
   });
 
   const [customPhotos, setCustomPhotos] = useState<Record<string, ProjectPhoto[]>>({});
-  const [customProjects, setCustomProjects] = useState<Record<string, ProjectFolder[]>>({});
+  const [customProjects, setCustomProjects] = useState<Record<string, ProjectFolder[]>>(initialProjectsData);
   const [servicesData, setServicesData] = useState<ServiceDetail[]>(initialServicesData);
   const [selectedServiceId, setSelectedServiceId] = useState<string | null>(null);
   const [authError, setAuthError] = useState<string | null>(null);
@@ -397,7 +398,12 @@ export function OwnerProvider({ children }: { children: ReactNode }) {
   // Real-time listener for Project Folders
   useEffect(() => {
     const unsub = onSnapshot(collection(db, 'projects'), (snapshot) => {
+      // Start with a clean copy of default project folders
       const records: Record<string, ProjectFolder[]> = {};
+      Object.keys(initialProjectsData).forEach((key) => {
+        records[key] = [...initialProjectsData[key]];
+      });
+
       snapshot.forEach((snapshotDoc) => {
         const data = snapshotDoc.data();
         const serviceId = data.serviceId;
@@ -408,15 +414,19 @@ export function OwnerProvider({ children }: { children: ReactNode }) {
           const folderData = data as ProjectFolder;
           const folderId = folderData.id || snapshotDoc.id;
           
-          // Deduplicate folder ID inside same service category
-          if (!records[serviceId].some((f) => f.id === folderId)) {
-            records[serviceId].push({ ...folderData, id: folderId });
+          // Deduplicate or replace if already present
+          const existingIdx = records[serviceId].findIndex((f) => f.id === folderId);
+          if (existingIdx >= 0) {
+            records[serviceId][existingIdx] = { ...folderData, id: folderId };
+          } else {
+            records[serviceId].unshift({ ...folderData, id: folderId });
           }
         }
       });
       setCustomProjects(records);
     }, (error) => {
       console.warn('Firestore Projects snapshot listener: database clean/listening offline:', error.message);
+      setCustomProjects(initialProjectsData);
     });
 
     return () => unsub();
@@ -535,6 +545,13 @@ export function OwnerProvider({ children }: { children: ReactNode }) {
     } catch (err) {
       handleFirestoreError(err, OperationType.DELETE, `projects/${folderId}`);
     }
+    setCustomProjects((prev) => {
+      const currentList = prev[serviceId] || [];
+      return {
+        ...prev,
+        [serviceId]: currentList.filter((f) => f.id !== folderId)
+      };
+    });
   };
 
   const addPhotoToFolder = async (serviceId: string, folderId: string, photoUrl: string) => {
@@ -550,6 +567,19 @@ export function OwnerProvider({ children }: { children: ReactNode }) {
     } catch (err) {
       handleFirestoreError(err, OperationType.UPDATE, `projects/${folderId}`);
     }
+
+    setCustomProjects((prev) => {
+      const currentList = prev[serviceId] || [];
+      return {
+        ...prev,
+        [serviceId]: currentList.map((f) => {
+          if (f.id === folderId) {
+            return { ...f, photos: [...f.photos, newPhoto] };
+          }
+          return f;
+        })
+      };
+    });
   };
 
   const deletePhotoFromFolder = async (serviceId: string, folderId: string, photoId: string) => {
@@ -565,6 +595,19 @@ export function OwnerProvider({ children }: { children: ReactNode }) {
     } catch (err) {
       handleFirestoreError(err, OperationType.UPDATE, `projects/${folderId}`);
     }
+
+    setCustomProjects((prev) => {
+      const currentList = prev[serviceId] || [];
+      return {
+        ...prev,
+        [serviceId]: currentList.map((f) => {
+          if (f.id === folderId) {
+            return { ...f, photos: remainingPhotos };
+          }
+          return f;
+        })
+      };
+    });
   };
 
   const updateServiceStep = async (serviceId: string, stepIndex: number, updatedStep: EngineeringStep) => {
