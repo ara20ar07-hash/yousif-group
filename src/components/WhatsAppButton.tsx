@@ -4,7 +4,7 @@ import { MapPin } from 'lucide-react';
 
 export default function WhatsAppButton() {
   const { lang } = useLanguage();
-  const mapUrl = "https://maps.app.goo.gl/Wwk32kn7dHM1N4h37";
+  const mapUrl = "https://maps.app.goo.gl/PjeueMFUtwE1L4PQ6";
 
   return (
     <motion.div

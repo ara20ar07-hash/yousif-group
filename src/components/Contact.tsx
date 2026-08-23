@@ -12,7 +12,7 @@ export default function Contact() {
   const [btnStyle, setBtnStyle] = useState<React.CSSProperties>({});
   const [formData, setFormData] = useState({ name: '', phone: '', service: '', message: '' });
 
-  const mapUrl = "https://maps.app.goo.gl/Wwk32kn7dHM1N4h37";
+  const mapUrl = "https://maps.app.goo.gl/PjeueMFUtwE1L4PQ6";
 
   useEffect(() => {
     if (btnText !== sentBtnText && btnText !== defaultBtnText) {
