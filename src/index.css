@@ -152,13 +152,6 @@ body {
               #f8fafc;
 }
 
-.hero-grid-overlay {
-  background-image:
-    linear-gradient(color-mix(in srgb, var(--color-text-main) 4%, transparent) 1px, transparent 1px),
-    linear-gradient(90deg, color-mix(in srgb, var(--color-text-main) 4%, transparent) 1px, transparent 1px);
-  background-size: 60px 60px;
-}
-
 .designer-workspace-grid {
   background-image:
     linear-gradient(color-mix(in srgb, var(--color-amber) 4%, transparent) 1px, transparent 1px),

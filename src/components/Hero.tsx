@@ -10,9 +10,6 @@ export default function Hero() {
 
   return (
     <section id="home" className="relative min-h-[100dvh] flex items-center px-4 sm:px-6 md:px-12 xl:px-16 pt-20 sm:pt-24 md:py-24 pb-12 sm:pb-16 overflow-hidden hero-radial-bg">
-      {/* Background Overlay */}
-      <div className="absolute inset-0 z-0 pointer-events-none hero-grid-overlay opacity-30" />
-
       {/* Main Hero Container (Text first, images below on mobile; side-by-side on desktop) */}
       <div className={`relative z-20 w-full max-w-7xl mx-auto flex flex-col lg:flex-row items-center justify-between gap-8 lg:gap-12 ${
         isKu ? 'lg:flex-row-reverse' : 'lg:flex-row'
