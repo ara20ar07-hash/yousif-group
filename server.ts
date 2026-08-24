@@ -36,14 +36,15 @@ async function startServer() {
 
   const BLUEPRINT_PROMPT = `You are an expert architectural engineer analyzing a floor plan blueprint. Your job is to read room dimensions and calculate underfloor heating requirements with extreme precision.
 
-CRITICAL MANDATE - STRICT ROOM SEPARATION:
-- Every single room shown on the floor plan MUST be extracted as an INDIVIDUAL, SEPARATE room object in the "rooms" array.
-- NEVER combine or merge multiple rooms together (e.g. if there are 3 bedrooms, return 3 distinct objects: "Bedroom 1", "Bedroom 2", "Bedroom 3" with their own specific width, length, and areaSqm).
-- Distinct spaces like "Main Kitchen", "Auxiliary Kitchen", "Guest Room", "Living Room", "Dining Room", "Corridor / Hallway" MUST be separate objects.
+CRITICAL MANDATES & ROOM SEPARATION:
+- Extract all distinct living spaces, distinct bedrooms, and key functional zones.
+- DRESSING ROOMS & WALK-IN CLOSETS: If a Dressing Room ("جلگۆڕین" / "مەلبەس" / "Dressing" / "Closet" / "Walk-in Closet") is attached to or part of a Bedroom suite, COMBINE it directly into that Bedroom object (e.g. "Master Bedroom + Dressing" / "ژووری نووستنی سەرەکی + جلگۆڕین" or "Bedroom 1 + Dressing" / "ژووری نووستنی ١ + جلگۆڕین") and calculate the combined total area (Bedroom area + Dressing area). Do NOT leave dressing rooms as separate detached objects.
+- Distinct separate spaces like "Main Kitchen", "Auxiliary Kitchen", "Guest Room", "Living Room", "Dining Room", "Corridor / Hallway" MUST be separate objects.
 
 STEP 1 - READ ROOM LABELS:
 Identify every room by its label written inside the room boundary. Labels may be in Kurdish (Sorani), Arabic, or English. Common labels:
-- "نوستن" / "ژووری نووستن" = Bedroom (e.g. Bedroom 1, Bedroom 2, etc.)
+- "نوستن" / "ژووری نووستن" = Bedroom (e.g. Bedroom 1, Bedroom 2, Master Bedroom)
+- "جلگۆڕین" / "مەلبەس" / "Dressing" = Dressing Room / Closet (Merge into the corresponding attached bedroom suite)
 - "مەتبەخ" = Main Kitchen
 - "مساعد مەتبەخ" = Auxiliary Kitchen
 - "هۆڵ" / "هۆڵی دانیشتن" = Living Room / Hall
@@ -77,7 +78,7 @@ For heated rooms only:
 - Minimum 1 loop per heated room
 
 STEP 6 - CALCULATE kW:
-- heatingOutputRequiredKw = areaSqm x 0.17 (for heated rooms only, 170 Watts per heated square meter)
+- heatingOutputRequiredKw = areaSqm x 0.15 (for heated rooms only, 150 Watts per heated square meter)
 - Round to 1 decimal place
 
 STEP 7 - ESTIMATE ROOM LOCATION (BOX):
@@ -89,7 +90,7 @@ For each room, estimate its approximate bounding box percentages (0-100 scale) o
 
 OUTPUT RULES:
 - totalAreaSqm = sum of ALL heated room areas (where isHeated is true)
-- recommendedBoilerKw = (totalAreaSqm x 0.17) x 1.20, minimum 12kW, round up to nearest whole number
+- recommendedBoilerKw = Nearest standard capacity from [9, 12, 16, 20, 32, 55] kW matching (totalAreaSqm x 0.15)
 - recommendedManifoldPorts = sum of all loopCount values
 - estimatedPipeSpacingCm = 15
 
