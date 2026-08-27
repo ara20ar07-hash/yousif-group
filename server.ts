@@ -174,16 +174,17 @@ Respond ONLY with valid raw JSON in this exact structure:
     throw failureErr;
   };
 
-  const analyzeWithGroq = async (cleanBase64: string, apiKey: string) => {
+  const analyzeWithGroq = async (cleanBase64: string, mimeType: string, apiKey: string) => {
     const groq = new Groq({ apiKey });
     const groqModels = [
-      "llama-3.2-11b-vision-preview",
-      "llama-3.2-90b-vision-preview"
+      "qwen/qwen3.6-27b",
+      "qwen/qwen3.8-27b"
     ];
 
-    let lastGroqErr: any = null;
+    const groqErrors: string[] = [];
 
     for (const model of groqModels) {
+      // 1. Try with json_object response format
       try {
         console.log(`Attempting Groq vision analysis with model ${model}...`);
         const response = await groq.chat.completions.create({
@@ -193,7 +194,7 @@ Respond ONLY with valid raw JSON in this exact structure:
             content: [
               {
                 type: "image_url",
-                image_url: { url: `data:image/jpeg;base64,${cleanBase64}` }
+                image_url: { url: `data:${mimeType || "image/jpeg"};base64,${cleanBase64}` }
               },
               {
                 type: "text",
@@ -202,29 +203,76 @@ Respond ONLY with valid raw JSON in this exact structure:
             ]
           }],
           response_format: { type: "json_object" },
-          max_tokens: 2500
+          max_tokens: 3500
         });
 
         const contentText = response.choices?.[0]?.message?.content || "";
         if (contentText.trim().length > 0) {
+          console.log(`Groq analysis successfully completed using model ${model}.`);
           return contentText;
         }
-      } catch (err: any) {
-        console.warn(`Groq model ${model} failed:`, err?.message || err);
-        lastGroqErr = err;
+        groqErrors.push(`${model}: Empty content returned`);
+      } catch (err1: any) {
+        console.warn(`Groq model ${model} (json_object) failed:`, err1?.message || err1);
+        
+        // 2. Retry without response_format if json_object wasn't supported
+        try {
+          console.log(`Retrying Groq model ${model} without response_format constraint...`);
+          const response2 = await groq.chat.completions.create({
+            model,
+            messages: [{
+              role: "user",
+              content: [
+                {
+                  type: "image_url",
+                  image_url: { url: `data:${mimeType || "image/jpeg"};base64,${cleanBase64}` }
+                },
+                {
+                  type: "text",
+                  text: BLUEPRINT_PROMPT
+                }
+              ]
+            }],
+            max_tokens: 3500
+          });
+
+          const contentText2 = response2.choices?.[0]?.message?.content || "";
+          if (contentText2.trim().length > 0) {
+            console.log(`Groq analysis successfully completed on retry with model ${model}.`);
+            return contentText2;
+          }
+        } catch (err2: any) {
+          const detail = `[${model}] ${err1?.message || String(err1)}`;
+          groqErrors.push(detail);
+        }
       }
     }
 
-    throw lastGroqErr || new Error("Groq vision analysis failed.");
+    throw new Error(`All Groq vision models failed:\n- ${groqErrors.join("\n- ")}`);
   };
 
   const parseJsonResponse = (rawText: string) => {
     let clean = rawText.trim();
+    // Remove thinking tags if reasoning models output them
+    clean = clean.replace(/<think>[\s\S]*?<\/think>/gi, "").trim();
+
     if (clean.startsWith("```")) {
       const match = clean.match(/^(?:```(?:json)?\s*)([\s\S]*?)(?:\s*```)$/);
       if (match) clean = match[1].trim();
     }
-    return JSON.parse(clean);
+
+    try {
+      return JSON.parse(clean);
+    } catch {
+      // Find outermost JSON object
+      const firstBrace = clean.indexOf("{");
+      const lastBrace = clean.lastIndexOf("}");
+      if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+        const jsonSubstring = clean.substring(firstBrace, lastBrace + 1);
+        return JSON.parse(jsonSubstring);
+      }
+      throw new Error("Unable to parse valid architectural JSON from AI model response.");
+    }
   };
 
   app.get("/api/projects-data", (req, res) => {
@@ -233,12 +281,21 @@ Respond ONLY with valid raw JSON in this exact structure:
 
   app.post("/api/analyze-blueprint", async (req, res) => {
     try {
-      const availableGeminiKeys = [process.env.GEMINI_API_KEY, process.env.GEMINI_API_KEY2]
-        .filter(k => typeof k === "string" && k.trim().length > 0) as string[];
-      const groqKey = process.env.GROQ_API_KEY;
+      const availableGeminiKeys = [
+        process.env.GEMINI_API_KEY,
+        process.env.GEMINI_API_KEY2,
+        process.env.GEMINI_KEY
+      ].filter(k => typeof k === "string" && k.trim().length > 0) as string[];
 
-      if (availableGeminiKeys.length === 0 && !groqKey) {
-        throw new Error("No API key configured. Please configure GEMINI_API_KEY in the Settings > Secrets panel.");
+      const availableGroqKeys = [
+        process.env.GROQ_API_KEY,
+        process.env.GROQ_KEY,
+        process.env.GROQ_API_KEY2,
+        process.env.GROQ_TOKEN
+      ].filter(k => typeof k === "string" && k.trim().length > 0) as string[];
+
+      if (availableGeminiKeys.length === 0 && availableGroqKeys.length === 0) {
+        throw new Error("No API key configured. Please configure GEMINI_API_KEY or GROQ_API_KEY in the Settings > Secrets panel.");
       }
 
       const { imageBase64 } = req.body;
@@ -246,38 +303,45 @@ Respond ONLY with valid raw JSON in this exact structure:
         return res.status(400).json({ error: "No imageBase64 data provided." });
       }
 
+      const mimeMatch = imageBase64.match(/^data:(image\/\w+);base64,/);
+      const detectedMimeType = mimeMatch ? mimeMatch[1] : "image/jpeg";
       const cleanBase64 = imageBase64.replace(/^data:image\/\w+;base64,/, "");
 
       let rawText = "";
       let usedFallback = false;
       let lastGeminiError: any = null;
 
-      // Try each available Gemini API key
+      // 1. Try available Gemini API keys first
       if (availableGeminiKeys.length > 0) {
         for (const geminiKey of availableGeminiKeys) {
           try {
             rawText = await analyzeWithGemini(cleanBase64, geminiKey);
-            break;
+            if (rawText && rawText.trim().length > 0) break;
           } catch (geminiErr: any) {
             lastGeminiError = geminiErr;
-            console.warn("Gemini key attempt failed, checking fallback...");
+            console.warn("Gemini key attempt encountered error, checking alternative keys or Groq fallback...");
           }
         }
       }
 
-      // If Gemini did not produce rawText, try Groq fallback if configured
-      if (!rawText && groqKey && groqKey.trim().length > 0) {
-        try {
-          console.log("Trying Groq fallback...");
-          rawText = await analyzeWithGroq(cleanBase64, groqKey);
-          usedFallback = true;
-          console.log("Groq fallback succeeded.");
-        } catch (groqErr: any) {
-          console.warn("Groq fallback also failed:", groqErr?.message || groqErr);
-          const combinedMsg = lastGeminiError 
-            ? `Gemini Error:\n${lastGeminiError.message}\n\nGroq Error:\n${groqErr.message || String(groqErr)}`
-            : groqErr.message || String(groqErr);
-          throw new Error(combinedMsg);
+      // 2. If Gemini failed or was not configured, try Groq fallback
+      if (!rawText && availableGroqKeys.length > 0) {
+        for (const groqKey of availableGroqKeys) {
+          try {
+            console.log("Attempting fallback with Groq Cloud vision engine...");
+            rawText = await analyzeWithGroq(cleanBase64, detectedMimeType, groqKey);
+            if (rawText && rawText.trim().length > 0) {
+              usedFallback = true;
+              console.log("Groq fallback analysis succeeded.");
+              break;
+            }
+          } catch (groqErr: any) {
+            console.warn("Groq key attempt failed:", groqErr?.message || groqErr);
+            const combinedMsg = lastGeminiError 
+              ? `Gemini Error:\n${lastGeminiError.message}\n\nGroq Fallback Error:\n${groqErr.message || String(groqErr)}`
+              : groqErr.message || String(groqErr);
+            lastGeminiError = new Error(combinedMsg);
+          }
         }
       }
 
@@ -285,13 +349,13 @@ Respond ONLY with valid raw JSON in this exact structure:
         if (lastGeminiError) {
           throw lastGeminiError;
         }
-        throw new Error("AI analysis did not return a response.");
+        throw new Error("AI analysis did not return a response from any configured model.");
       }
 
       const parsedData = parseJsonResponse(rawText);
 
       if (usedFallback) {
-        parsedData._notice = "Analyzed using Groq fallback.";
+        parsedData._notice = "Analyzed using Groq Vision fallback.";
       }
 
       res.json(parsedData);
