@@ -364,7 +364,8 @@ export const autoGenerateRoomRadiators = (
         y: Math.min(510, Math.max(40, Math.round(cy + 10))),
         sizeCm: size,
         assignedRoomIndex: rIdx,
-        isCustomOverride: true
+        isCustomOverride: true,
+        isAiPlaced: true
       });
     }
   });
@@ -506,12 +507,13 @@ type ComponentData = {
   radiatorCount?: 1 | 2;
   assignedRoomIndex?: number;
   isCustomOverride?: boolean;
+  isAiPlaced?: boolean;
 };
 type PipeData = { id: string; x1: number; y1: number; x2: number; y2: number };
 
 const componentSpecs: Record<Exclude<Tool, 'select' | 'pipe'>, { name: { en: string; ku: string }; icon: React.ReactNode; borderColor: string }> = {
   boiler: { name: { en: 'Boiler / Furnace', ku: 'بۆیلەر / گەرمکەرەوە' }, icon: <Flame className="w-4 h-4 text-red-500" />, borderColor: '#ef4444' },
-  radiator: { name: { en: 'Radiator Panel', ku: 'ڕادێتەر' }, icon: <RadiatorIcon className="w-4 h-4 text-neutral-300" />, borderColor: '#d4d4d4' },
+  radiator: { name: { en: 'Radiator Panel', ku: 'ڕادێتەر' }, icon: <RadiatorIcon className="w-4 h-4 text-white" />, borderColor: '#ffffff' },
   manifold: { name: { en: 'Pipe Manifold', ku: 'مانیفۆڵد' }, icon: <Wrench className="w-4 h-4 text-emerald-500" />, borderColor: '#10b981' },
   valve: { name: { en: 'Safety Valve', ku: 'قفڵی سەلامەتی' }, icon: <CircleDot className="w-4 h-4 text-amber-500" />, borderColor: '#f59e0b' },
   pump: { name: { en: 'Circulation Pump', ku: 'پەمپ' }, icon: <RefreshCw className="w-4 h-4 text-purple-500" />, borderColor: '#8b5cf6' }
@@ -531,8 +533,8 @@ export default function DesignerTool() {
   const [mousePos, setMousePos] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [draggingId, setDraggingId] = useState<string | null>(null);
   
-  // Radiator & Room names visibility control & status (off by default)
-  const [showRadiators, setShowRadiators] = useState<boolean>(false);
+  // Radiator & Room names visibility control & status
+  const [showRadiators, setShowRadiators] = useState<boolean>(true);
   const [showRoomNames, setShowRoomNames] = useState<boolean>(false);
   const [hiddenRoomIndices, setHiddenRoomIndices] = useState<number[]>([]);
   const [whatsappStatusMsg, setWhatsappStatusMsg] = useState<string | null>(null);
@@ -809,6 +811,9 @@ export default function DesignerTool() {
         setPipeStart(null);
       }
     } else if (tool !== 'select' && tool in componentSpecs) {
+      if (tool === 'radiator' && !showRadiators) {
+        setShowRadiators(true);
+      }
       const newId = 'c_' + Math.random().toString(36).substring(2, 9);
       const roomIdx = getDetectedRoomIndex(coords.x, coords.y, analysisResult?.rooms);
 
@@ -818,7 +823,8 @@ export default function DesignerTool() {
         x: coords.x,
         y: coords.y,
         sizeCm: 100,
-        assignedRoomIndex: roomIdx
+        assignedRoomIndex: roomIdx,
+        isAiPlaced: false
       };
 
       setComponents(prev => autoRecalculateComponents([...prev, newComp], analysisResult?.rooms));
@@ -841,7 +847,7 @@ export default function DesignerTool() {
             return { 
               ...c, 
               x: coords.x, 
-              y: coords.y,
+              y: coords.y, 
               assignedRoomIndex: detectedRoom
             };
           }
@@ -878,7 +884,8 @@ export default function DesignerTool() {
       y: 275,
       sizeCm: 100,
       assignedRoomIndex: roomIdx,
-      isCustomOverride: true
+      isCustomOverride: true,
+      isAiPlaced: false
     };
     setComponents(prev => autoRecalculateComponents([...prev, newRad], analysisResult?.rooms));
   };
@@ -918,24 +925,42 @@ export default function DesignerTool() {
           ctx.stroke();
         });
 
-        // Draw manual non-radiator components (e.g. boiler/valve) if any placed manually
+        // Draw components on exported blueprint image
         components.forEach(c => {
-          if (c.type === 'radiator') return; // Radiators are on the side
+          if (c.type === 'radiator' && (c.isAiPlaced || !showRadiators)) return;
           const sz = 32;
           ctx.fillStyle = '#1A2338';
-          ctx.strokeStyle = componentSpecs[c.type]?.borderColor || '#FFD600';
+          ctx.strokeStyle = componentSpecs[c.type]?.borderColor || '#FFFFFF';
           ctx.lineWidth = 2;
-          ctx.beginPath();
-          ctx.roundRect(c.x - sz / 2, c.y - sz / 2, sz, sz, 6);
-          ctx.fill();
-          ctx.stroke();
 
-          ctx.fillStyle = '#FFFFFF';
-          ctx.font = 'bold 10px sans-serif';
-          ctx.textAlign = 'center';
-          ctx.textBaseline = 'middle';
-          const lbl = c.type.toUpperCase().slice(0, 3);
-          ctx.fillText(lbl, c.x, c.y);
+          if (c.type === 'radiator') {
+            const radW = 54;
+            const radH = 24;
+            ctx.beginPath();
+            ctx.roundRect(c.x - radW / 2, c.y - radH / 2, radW, radH, 6);
+            ctx.fillStyle = '#1A2338';
+            ctx.fill();
+            ctx.strokeStyle = '#FFFFFF';
+            ctx.stroke();
+
+            ctx.fillStyle = '#FFFFFF';
+            ctx.font = 'bold 10px monospace, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(`${c.sizeCm || 100}cm`, c.x, c.y);
+          } else {
+            ctx.beginPath();
+            ctx.roundRect(c.x - sz / 2, c.y - sz / 2, sz, sz, 6);
+            ctx.fill();
+            ctx.stroke();
+
+            ctx.fillStyle = '#FFFFFF';
+            ctx.font = 'bold 9px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            const lbl = c.type === 'boiler' ? 'BOILER' : c.type === 'manifold' ? 'MANIF' : c.type === 'valve' ? 'VALVE' : c.type === 'pump' ? 'PUMP' : c.type.toUpperCase().slice(0, 4);
+            ctx.fillText(lbl, c.x, c.y);
+          }
         });
 
         try {
@@ -983,7 +1008,7 @@ export default function DesignerTool() {
     const roomRadSummary: Record<string, number[]> = {};
 
     components.forEach(c => {
-      if (c.type === 'radiator' && !showRadiators) return;
+      if (c.type === 'radiator' && (c.isAiPlaced || !showRadiators)) return;
       count[c.type] = (count[c.type] || 0) + 1;
       if (c.type === 'radiator') {
         const roomIdx = c.assignedRoomIndex !== undefined ? c.assignedRoomIndex : getDetectedRoomIndex(c.x, c.y, analysisResult?.rooms);
@@ -1266,8 +1291,8 @@ export default function DesignerTool() {
                 >
                   {showRadiators ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
                   {showRadiators 
-                    ? (lang === 'ku' ? 'دیاری شۆفاژەکان: چالاکە' : 'Show Radiators: ON') 
-                    : (lang === 'ku' ? 'دیاری شۆفاژەکان: نادیارە' : 'Show Radiators: OFF')}
+                    ? (lang === 'ku' ? 'دیاری ڕادێتەرەکان: چالاکە' : 'Show Radiators: ON') 
+                    : (lang === 'ku' ? 'دیاری ڕادێتەرەکان: نادیارە' : 'Show Radiators: OFF')}
                 </button>
               </div>
 
@@ -1293,17 +1318,17 @@ export default function DesignerTool() {
                 )}
               </svg>
 
-              {/* Components Layer (Pipes and manual hydraulic units. Room names and Radiators are displayed cleanly on the side) */}
+              {/* Components Layer (Radiators, Boiler, Manifold, Valves, Pump) */}
               <div className="absolute inset-0 w-full h-full pointer-events-none z-10">
                  {components.map(comp => {
-                    // Radiators are not placed on the blueprint canvas
-                    if (comp.type === 'radiator') return null;
-                    if (comp.type === 'boiler' || comp.type === 'manifold') return null;
+                    // Only manual radiators (not AI-calculated ones) appear on the blueprint canvas
+                    if (comp.type === 'radiator' && (comp.isAiPlaced || !showRadiators)) return null;
                     const spec = componentSpecs[comp.type];
                     if (!spec) return null;
                     const isSelected = comp.id === selectedComponentId;
-                    const roomIdx = comp.assignedRoomIndex !== undefined && comp.assignedRoomIndex >= 0 ? comp.assignedRoomIndex : 0;
-                    const room = (analysisResult?.rooms && analysisResult.rooms[roomIdx]) ? analysisResult.rooms[roomIdx] : null;
+                    const roomIdx = comp.assignedRoomIndex !== undefined && comp.assignedRoomIndex >= 0 ? comp.assignedRoomIndex : -1;
+                    const room = (roomIdx >= 0 && analysisResult?.rooms && analysisResult.rooms[roomIdx]) ? analysisResult.rooms[roomIdx] : null;
+                    const compBorderColor = isSelected ? '#FFD600' : (comp.type === 'radiator' ? '#FFFFFF' : spec.borderColor);
 
                     return (
                      <div 
@@ -1315,17 +1340,30 @@ export default function DesignerTool() {
                            e.stopPropagation();
                          } 
                        }}
-                       className={`absolute -translate-x-1/2 -translate-y-1/2 rounded bg-navy-mid border-2 flex items-center justify-center shadow-lg group pointer-events-auto transition-all w-8 h-8 ${
+                       className={`absolute -translate-x-1/2 -translate-y-1/2 rounded-xl bg-navy-mid/95 backdrop-blur-sm border-2 flex items-center justify-center shadow-xl group pointer-events-auto transition-all ${
+                         comp.type === 'radiator' ? 'h-8 px-2.5 min-w-[56px]' : 'w-9 h-9'
+                       } ${
                          tool === 'select' ? 'cursor-grab active:cursor-grabbing' : 'cursor-crosshair'
                        } ${
-                         isSelected ? 'ring-2 ring-amber border-amber shadow-[0_0_12px_rgba(255,214,0,0.5)] z-20' : ''
+                         isSelected ? 'ring-2 ring-amber border-amber shadow-[0_0_15px_rgba(255,214,0,0.6)] z-20 scale-105' : ''
                        }`}
-                       style={{ left: comp.x, top: comp.y, borderColor: isSelected ? '#FFD600' : spec.borderColor }}
+                       style={{ left: comp.x, top: comp.y, borderColor: compBorderColor }}
                      >
-                       {spec.icon}
+                       {comp.type === 'radiator' ? (
+                         <div className="flex items-center gap-1.5 pointer-events-none">
+                           <RadiatorIcon className="w-3.5 h-3.5 flex-shrink-0 text-white" />
+                           <span className="text-[10px] font-mono font-bold whitespace-nowrap text-white">
+                             {comp.sizeCm || 100}cm
+                           </span>
+                         </div>
+                       ) : (
+                         spec.icon
+                       )}
                        
-                       <span className="absolute -bottom-7 left-1/2 -translate-x-1/2 bg-navy/95 text-white text-[10px] px-2 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity border-[0.5px] border-border-main whitespace-nowrap pointer-events-none z-30">
-                         {lang === 'ku' ? spec.name.ku : spec.name.en}
+                       <span className="absolute -bottom-7 left-1/2 -translate-x-1/2 bg-navy/95 text-white text-[10px] px-2 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity border border-white/10 whitespace-nowrap pointer-events-none z-30 shadow-lg font-medium">
+                         {comp.type === 'radiator' 
+                           ? `${lang === 'ku' ? 'ڕادێتەر' : 'Radiator'} ${comp.sizeCm || 100}cm` 
+                           : (lang === 'ku' ? spec.name.ku : spec.name.en)}
                          {room ? ` - ${lang === 'ku' ? room.nameKu : room.nameEn}` : ''}
                        </span>
 
@@ -1496,11 +1534,14 @@ export default function DesignerTool() {
                                   key={rad.id}
                                   className="bg-navy-light/80 border border-white/5 p-2 rounded-xl flex flex-col gap-1.5"
                                 >
-                                  <div className="flex items-center justify-between">
+                                   <div className="flex items-center justify-between">
                                     <span className="text-[10px] font-bold text-text-main font-mono flex items-center gap-1.5">
-                                      <span className="w-1.5 h-1.5 rounded-full bg-amber" />
+                                      <span className={`w-2 h-2 rounded-full ${rad.isAiPlaced ? 'bg-amber shadow-[0_0_6px_rgba(255,214,0,0.6)]' : 'bg-white shadow-[0_0_6px_rgba(255,255,255,0.6)]'}`} />
                                       {lang === 'ku' ? `ڕادێتەری ${radIndex + 1}` : `Radiator ${radIndex + 1}`}:
-                                      <strong className="text-amber">{rad.sizeCm || 100} cm</strong>
+                                      <strong className={rad.isAiPlaced ? 'text-amber' : 'text-white'}>{rad.sizeCm || 100} cm</strong>
+                                      <span className={`text-[8px] font-mono px-1 py-0.2 rounded border ${rad.isAiPlaced ? 'bg-amber/10 text-amber border-amber/30' : 'bg-white/10 text-white/80 border-white/20'}`}>
+                                        {rad.isAiPlaced ? 'AI' : (lang === 'ku' ? 'دەستی' : 'Manual')}
+                                      </span>
                                     </span>
                                     <button
                                       type="button"
@@ -1599,12 +1640,25 @@ export default function DesignerTool() {
             <div className="flex justify-between items-center border-b border-white/10 pb-4 mb-5">
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 rounded-xl bg-navy border border-amber/30 flex items-center justify-center">
-                  {spec.icon}
+                  {isRadiator ? (
+                    <RadiatorIcon className={`w-4 h-4 ${selectedComp.isAiPlaced ? 'text-amber' : 'text-white'}`} />
+                  ) : (
+                    spec.icon
+                  )}
                 </div>
                 <div>
                   <h4 className="font-bold text-sm text-text-main flex items-center gap-2">
                     {lang === 'ku' ? spec.name.ku : spec.name.en}
-                    <span className="text-[10px] font-mono text-amber bg-amber/10 px-2 py-0.5 rounded border border-amber/20">
+                    {isRadiator && (
+                      <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded border ${
+                        selectedComp.isAiPlaced 
+                          ? 'text-amber bg-amber/10 border-amber/30' 
+                          : 'text-white bg-white/10 border-white/20'
+                      }`}>
+                        {selectedComp.isAiPlaced ? 'AI' : (lang === 'ku' ? 'دەستی' : 'Manual')}
+                      </span>
+                    )}
+                    <span className="text-[10px] font-mono text-muted bg-white/5 px-2 py-0.5 rounded border border-white/10">
                       {selectedComp.id}
                     </span>
                   </h4>
