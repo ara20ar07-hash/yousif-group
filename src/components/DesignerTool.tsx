@@ -29,8 +29,8 @@ const getEditableFormula = (room: any) => {
 };
 
 // Simple rectangular radiator tool icon matching Lucide toolbar style
-const RadiatorIcon = ({ className = "w-4 h-4 text-neutral-300" }: { className?: string }) => (
-  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+const RadiatorIcon = ({ className = "w-4 h-4 text-neutral-300", style }: { className?: string; style?: React.CSSProperties }) => (
+  <svg className={className} style={style} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <rect x="3" y="6" width="18" height="12" rx="1.5" />
     <line x1="7" y1="9" x2="7" y2="15" />
     <line x1="11" y1="9" x2="11" y2="15" />
@@ -256,17 +256,23 @@ export const getRadiatorRecommendation = (areaSqm: number, isBedroom: boolean = 
 };
 
 // Helper function to detect which room a canvas coordinate belongs to
-export const getDetectedRoomIndex = (compX: number, compY: number, rooms: any[] | undefined): number => {
+export const getDetectedRoomIndex = (
+  compX: number, 
+  compY: number, 
+  rooms: any[] | undefined,
+  canvasWidth: number = 800,
+  canvasHeight: number = 550
+): number => {
   if (!rooms || rooms.length === 0) return 0;
 
   // 1. Check if coordinate falls inside room box percentage bounds
   for (let i = 0; i < rooms.length; i++) {
     const r = rooms[i];
     if (r.box && typeof r.box.x === 'number' && typeof r.box.y === 'number') {
-      const rx = (r.box.x / 100) * 800;
-      const ry = (r.box.y / 100) * 550;
-      const rw = ((r.box.width || 20) / 100) * 800;
-      const rh = ((r.box.height || 20) / 100) * 550;
+      const rx = (r.box.x / 100) * canvasWidth;
+      const ry = (r.box.y / 100) * canvasHeight;
+      const rw = ((r.box.width || 20) / 100) * canvasWidth;
+      const rh = ((r.box.height || 20) / 100) * canvasHeight;
       if (compX >= rx && compX <= rx + rw && compY >= ry && compY <= ry + rh) {
         return i;
       }
@@ -280,18 +286,18 @@ export const getDetectedRoomIndex = (compX: number, compY: number, rooms: any[] 
 
   for (let i = 0; i < rooms.length; i++) {
     const r = rooms[i];
-    let cx = 160;
-    let cy = 160;
+    let cx = canvasWidth * 0.2;
+    let cy = canvasHeight * 0.2;
 
     if (r.box && typeof r.box.x === 'number' && typeof r.box.y === 'number') {
-      cx = ((r.box.x + (r.box.width || 20) / 2) / 100) * 800;
-      cy = ((r.box.y + (r.box.height || 20) / 2) / 100) * 550;
+      cx = ((r.box.x + (r.box.width || 20) / 2) / 100) * canvasWidth;
+      cy = ((r.box.y + (r.box.height || 20) / 2) / 100) * canvasHeight;
     } else {
       const gridCols = Math.min(3, Math.ceil(Math.sqrt(rooms.filter(rm => rm.isHeated !== false).length || 1)));
       const col = heatedCounter % gridCols;
       const row = Math.floor(heatedCounter / gridCols);
-      cx = 160 + col * 240;
-      cy = 160 + row * 150;
+      cx = (canvasWidth * 0.2) + col * (canvasWidth * 0.3);
+      cy = (canvasHeight * 0.2) + row * (canvasHeight * 0.27);
       if (r.isHeated !== false) heatedCounter++;
     }
 
@@ -502,6 +508,7 @@ type ComponentData = {
   type: Exclude<Tool, 'select' | 'pipe'>; 
   x: number; 
   y: number;
+  sizePx?: number;
   sizeCm?: number;
   sizeCm2?: number;
   radiatorCount?: 1 | 2;
@@ -510,6 +517,24 @@ type ComponentData = {
   isAiPlaced?: boolean;
 };
 type PipeData = { id: string; x1: number; y1: number; x2: number; y2: number };
+
+const renderComponentIcon = (type: Exclude<Tool, 'select' | 'pipe'>, iconSize: number = 16) => {
+  const style = { width: `${iconSize}px`, height: `${iconSize}px` };
+  switch (type) {
+    case 'boiler':
+      return <Flame style={style} className="text-red-500 flex-shrink-0" />;
+    case 'radiator':
+      return <RadiatorIcon style={style} className="text-white flex-shrink-0" />;
+    case 'manifold':
+      return <Wrench style={style} className="text-emerald-500 flex-shrink-0" />;
+    case 'valve':
+      return <CircleDot style={style} className="text-amber-500 flex-shrink-0" />;
+    case 'pump':
+      return <RefreshCw style={style} className="text-purple-500 flex-shrink-0" />;
+    default:
+      return null;
+  }
+};
 
 const componentSpecs: Record<Exclude<Tool, 'select' | 'pipe'>, { name: { en: string; ku: string }; icon: React.ReactNode; borderColor: string }> = {
   boiler: { name: { en: 'Boiler / Furnace', ku: 'بۆیلەر / گەرمکەرەوە' }, icon: <Flame className="w-4 h-4 text-red-500" />, borderColor: '#ef4444' },
@@ -524,6 +549,19 @@ export default function DesignerTool() {
 
   const [tool, setTool] = useState<Tool>('select');
   const [blueprint, setBlueprint] = useState<string | null>(null);
+  const [blueprintDimensions, setBlueprintDimensions] = useState<{
+    width: number;
+    height: number;
+    aspectRatio: number;
+    isPortrait: boolean;
+  }>({
+    width: 800,
+    height: 550,
+    aspectRatio: 800 / 550,
+    isPortrait: false
+  });
+  const [globalToolSize, setGlobalToolSize] = useState<number>(34);
+
   const [components, setComponents] = useState<ComponentData[]>([]);
   const [pipes, setPipes] = useState<PipeData[]>([]);
   const [selectedComponentId, setSelectedComponentId] = useState<string | null>(null);
@@ -569,6 +607,10 @@ export default function DesignerTool() {
   } | null>(null);
 
   const canvasRef = useRef<HTMLDivElement>(null);
+
+  // Dynamic virtual coordinate system matching the blueprint's native aspect ratio
+  const canvasVirtualWidth = 800;
+  const canvasVirtualHeight = Math.max(200, Math.round(800 / (blueprintDimensions.aspectRatio || (800 / 550))));
 
   const totalHeatedArea = analysisResult
     ? Number(
@@ -680,16 +722,35 @@ export default function DesignerTool() {
     });
   };
 
-  const handleFileUpload = (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        setBlueprint(event.target?.result as string);
+  const loadBlueprintFile = (file: File) => {
+    if (!file.type.startsWith('image/')) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const dataUrl = event.target?.result as string;
+      const img = new Image();
+      img.onload = () => {
+        const nw = img.naturalWidth || 800;
+        const nh = img.naturalHeight || 550;
+        const ratio = nw / nh;
+        setBlueprintDimensions({
+          width: nw,
+          height: nh,
+          aspectRatio: ratio,
+          isPortrait: nh > nw
+        });
+        setBlueprint(dataUrl);
         setAnalysisResult(null);
         setAnalysisError(null);
       };
-      reader.readAsDataURL(file);
+      img.src = dataUrl;
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleFileUpload = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      loadBlueprintFile(file);
     }
   };
 
@@ -699,6 +760,12 @@ export default function DesignerTool() {
     setIsDrawing(false);
     setPipeStart(null);
     setBlueprint(null);
+    setBlueprintDimensions({
+      width: 800,
+      height: 550,
+      aspectRatio: 800 / 550,
+      isPortrait: false
+    });
     setAnalysisResult(null);
     setAnalysisError(null);
   };
@@ -790,11 +857,11 @@ export default function DesignerTool() {
       return null;
     }
 
-    const scaleX = 800 / rect.width;
-    const scaleY = 550 / rect.height;
+    const scaleX = canvasVirtualWidth / rect.width;
+    const scaleY = canvasVirtualHeight / rect.height;
 
-    const x = Math.min(800, Math.max(0, Math.round((clientX - rect.left) * scaleX)));
-    const y = Math.min(550, Math.max(0, Math.round((clientY - rect.top) * scaleY)));
+    const x = Math.min(canvasVirtualWidth, Math.max(0, Math.round((clientX - rect.left) * scaleX)));
+    const y = Math.min(canvasVirtualHeight, Math.max(0, Math.round((clientY - rect.top) * scaleY)));
 
     return { x, y };
   };
@@ -825,17 +892,15 @@ export default function DesignerTool() {
         setPipeStart(null);
       }
     } else if (tool !== 'select' && tool in componentSpecs) {
-      if (tool === 'radiator' && !showRadiators) {
-        setShowRadiators(true);
-      }
       const newId = 'c_' + Math.random().toString(36).substring(2, 9);
-      const roomIdx = getDetectedRoomIndex(coords.x, coords.y, analysisResult?.rooms);
+      const roomIdx = getDetectedRoomIndex(coords.x, coords.y, analysisResult?.rooms, canvasVirtualWidth, canvasVirtualHeight);
 
       const newComp: ComponentData = {
         id: newId,
         type: tool as Exclude<Tool, 'select' | 'pipe'>,
         x: coords.x,
         y: coords.y,
+        sizePx: globalToolSize,
         assignedRoomIndex: roomIdx,
         isAiPlaced: false
       };
@@ -856,7 +921,7 @@ export default function DesignerTool() {
       setComponents(prev => {
         return prev.map(c => {
           if (c.id === draggingId) {
-            const detectedRoom = getDetectedRoomIndex(coords.x, coords.y, analysisResult?.rooms);
+            const detectedRoom = getDetectedRoomIndex(coords.x, coords.y, analysisResult?.rooms, canvasVirtualWidth, canvasVirtualHeight);
             return { 
               ...c, 
               x: coords.x, 
@@ -894,17 +959,15 @@ export default function DesignerTool() {
         setPipeStart(null);
       }
     } else if (tool !== 'select' && tool in componentSpecs) {
-      if (tool === 'radiator' && !showRadiators) {
-        setShowRadiators(true);
-      }
       const newId = 'c_' + Math.random().toString(36).substring(2, 9);
-      const roomIdx = getDetectedRoomIndex(coords.x, coords.y, analysisResult?.rooms);
+      const roomIdx = getDetectedRoomIndex(coords.x, coords.y, analysisResult?.rooms, canvasVirtualWidth, canvasVirtualHeight);
 
       const newComp: ComponentData = {
         id: newId,
         type: tool as Exclude<Tool, 'select' | 'pipe'>,
         x: coords.x,
         y: coords.y,
+        sizePx: globalToolSize,
         assignedRoomIndex: roomIdx,
         isAiPlaced: false
       };
@@ -924,7 +987,7 @@ export default function DesignerTool() {
       setComponents(prev => {
         return prev.map(c => {
           if (c.id === draggingId) {
-            const detectedRoom = getDetectedRoomIndex(coords.x, coords.y, analysisResult?.rooms);
+            const detectedRoom = getDetectedRoomIndex(coords.x, coords.y, analysisResult?.rooms, canvasVirtualWidth, canvasVirtualHeight);
             return { 
               ...c, 
               x: coords.x, 
@@ -1009,7 +1072,7 @@ export default function DesignerTool() {
 
         // Draw components on exported blueprint image
         components.forEach(c => {
-          if (c.type === 'radiator' && !showRadiators) return;
+          if (c.isAiPlaced) return;
           const sz = 32;
           ctx.fillStyle = '#1A2338';
           ctx.strokeStyle = componentSpecs[c.type]?.borderColor || '#FFFFFF';
@@ -1085,7 +1148,7 @@ export default function DesignerTool() {
     const count: Record<string, number> = {};
 
     components.forEach(c => {
-      if (c.type === 'radiator' && !showRadiators) return;
+      if (c.isAiPlaced) return;
       count[c.type] = (count[c.type] || 0) + 1;
     });
 
@@ -1213,6 +1276,51 @@ export default function DesignerTool() {
               </button>
             </div>
 
+            {/* Placed Toolset Size Control */}
+            <div className="bg-white/5 border border-white/10 rounded-2xl p-3 flex flex-col gap-2 mt-1">
+              <div className="flex items-center justify-between text-[11px] font-semibold text-text-main">
+                <span className="flex items-center gap-1.5 text-amber">
+                  <Sliders className="w-3.5 h-3.5" />
+                  {lang === 'ku' ? 'قەبارەی ئامرازەکان' : 'Toolset Size'}
+                </span>
+                <span className="font-mono text-[10px] text-white/80 bg-white/10 px-2 py-0.5 rounded-md">
+                  {globalToolSize}px
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <input 
+                  type="range" 
+                  min="20" 
+                  max="64" 
+                  step="2" 
+                  value={globalToolSize}
+                  onChange={(e) => setGlobalToolSize(Number(e.target.value))}
+                  className="w-full h-1.5 bg-white/10 rounded-lg appearance-none cursor-pointer accent-amber"
+                />
+              </div>
+              <div className="grid grid-cols-4 gap-1 pt-1 border-t border-white/5">
+                {[
+                  { label: 'S', val: 24 },
+                  { label: 'M', val: 34 },
+                  { label: 'L', val: 46 },
+                  { label: 'XL', val: 58 }
+                ].map(preset => (
+                  <button
+                    key={preset.label}
+                    type="button"
+                    onClick={() => setGlobalToolSize(preset.val)}
+                    className={`text-[10px] font-bold py-1 rounded-lg transition-all border ${
+                      globalToolSize === preset.val
+                        ? 'bg-amber text-navy border-amber shadow-sm'
+                        : 'bg-white/5 text-white/60 border-white/5 hover:bg-white/10 hover:text-white'
+                    }`}
+                  >
+                    {preset.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
             <div className="grid grid-cols-2 lg:grid-cols-1 gap-2 mt-1">
               <button 
                 type="button"
@@ -1242,9 +1350,7 @@ export default function DesignerTool() {
                     : 'bg-white/5 border-white/10 text-white/50 hover:bg-white/10'}`}
               >
                 {showRadiators ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
-                {showRadiators 
-                  ? (lang === 'ku' ? 'شۆفاژەکان' : 'Radiators') 
-                  : (lang === 'ku' ? 'شۆفاژەکان' : 'Radiators')}
+                {lang === 'ku' ? 'شیکاری شۆفاژ' : 'Radiator Scan'}
               </button>
             </div>
           </div>
@@ -1320,15 +1426,26 @@ export default function DesignerTool() {
               onTouchMove={handleTouchMove}
               onTouchEnd={handleTouchEnd}
               onTouchCancel={handleTouchEnd}
-              className={`relative w-full max-w-[800px] aspect-[800/550] bg-navy border border-white/10 rounded-2xl shadow-2xl overflow-hidden select-none touch-none transition-all duration-200 ${tool === 'select' ? 'cursor-default' : 'cursor-crosshair'}`}
+              style={{
+                aspectRatio: `${blueprintDimensions.aspectRatio || (800 / 550)}`
+              }}
+              className={`relative w-full ${blueprintDimensions.isPortrait ? 'max-w-[480px]' : 'max-w-[800px]'} bg-navy border border-white/10 rounded-2xl shadow-2xl overflow-hidden select-none touch-none transition-all duration-200 ${tool === 'select' ? 'cursor-default' : 'cursor-crosshair'}`}
             >
-              {/* Blueprint Image Element - Fills exact 800:550 aspect ratio */}
+              {/* Blueprint Image Element - Adapts to natural aspect ratio (portrait or landscape) */}
               <img 
                 src={blueprint} 
                 alt="Floorplan Blueprint" 
-                className="w-full h-full object-fill pointer-events-none select-none"
+                className="w-full h-full object-contain pointer-events-none select-none"
                 draggable={false}
               />
+
+              {/* Orientation & Scale Indicator Badge */}
+              <div className="absolute bottom-2.5 left-2.5 z-20 pointer-events-none bg-navy/90 backdrop-blur-md border border-white/10 px-2 py-0.5 rounded-lg text-[10px] text-white/60 font-mono flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber"></span>
+                <span>{blueprintDimensions.isPortrait ? (lang === 'ku' ? 'ستوونی (Portrait)' : 'Portrait') : (lang === 'ku' ? 'ئاسۆیی (Landscape)' : 'Landscape')}</span>
+                <span className="text-white/30">•</span>
+                <span>{blueprintDimensions.width}x{blueprintDimensions.height}</span>
+              </div>
 
               {/* Top Canvas Controls: Show/Hide Room Names & Show/Hide Radiators toggles */}
               <div className="absolute top-2.5 right-2.5 sm:top-3 sm:right-3 z-30 flex items-center gap-1.5 sm:gap-2">
@@ -1368,14 +1485,12 @@ export default function DesignerTool() {
                   }`}
                 >
                   {showRadiators ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
-                  {showRadiators 
-                    ? (lang === 'ku' ? 'شۆفاژەکان' : 'Radiators') 
-                    : (lang === 'ku' ? 'شۆفاژەکان' : 'Radiators')}
+                  {lang === 'ku' ? 'شیکاری شۆفاژ' : 'Radiator Scan'}
                 </button>
               </div>
 
               {/* Pipes Layer */}
-              <svg viewBox="0 0 800 550" className="absolute inset-0 w-full h-full pointer-events-none z-0">
+              <svg viewBox={`0 0 ${canvasVirtualWidth} ${canvasVirtualHeight}`} className="absolute inset-0 w-full h-full pointer-events-none z-0">
                 {pipes.map(pipe => (
                   <g key={pipe.id} className="group pointer-events-auto cursor-pointer" onClick={(e) => removePipe(pipe.id, e as unknown as MouseEvent)}>
                      <line 
@@ -1399,11 +1514,12 @@ export default function DesignerTool() {
               {/* Components Layer (Radiators, Boiler, Manifold, Valves, Pump) */}
               <div className="absolute inset-0 w-full h-full pointer-events-none z-10">
                  {components.map(comp => {
-                    // Only manual radiators (not AI-calculated ones) appear on the blueprint canvas
-                    if (comp.type === 'radiator' && (comp.isAiPlaced || !showRadiators)) return null;
+                    // Manual radiator toolset icons placed on the canvas always display
+                    if (comp.isAiPlaced) return null;
                     const spec = componentSpecs[comp.type];
                     if (!spec) return null;
                     const isSelected = comp.id === selectedComponentId;
+                    const compSize = comp.sizePx || globalToolSize;
                     const roomIdx = comp.assignedRoomIndex !== undefined && comp.assignedRoomIndex >= 0 ? comp.assignedRoomIndex : -1;
                     const room = (roomIdx >= 0 && analysisResult?.rooms && analysisResult.rooms[roomIdx]) ? analysisResult.rooms[roomIdx] : null;
                     const compBorderColor = isSelected ? '#FFD600' : (comp.type === 'radiator' ? '#FFFFFF' : spec.borderColor);
@@ -1418,30 +1534,65 @@ export default function DesignerTool() {
                            e.stopPropagation();
                          } 
                        }}
-                       onTouchStart={(e) => {
-                         if (tool === 'select') {
+                       onTouchStart={(e) => { 
+                         if (tool === 'select') { 
                            setDraggingId(comp.id);
                            setSelectedComponentId(comp.id);
                            e.stopPropagation();
                          }
                        }}
-                       className={`absolute -translate-x-1/2 -translate-y-1/2 rounded-xl bg-navy-mid/95 backdrop-blur-sm border-2 flex items-center justify-center shadow-xl group pointer-events-auto transition-transform w-8 h-8 sm:w-9 sm:h-9 ${
+                       className={`absolute -translate-x-1/2 -translate-y-1/2 rounded-xl bg-navy-mid/95 backdrop-blur-sm border-2 flex items-center justify-center shadow-xl group pointer-events-auto transition-all ${
                          tool === 'select' ? 'cursor-grab active:cursor-grabbing' : 'cursor-crosshair'
                        } ${
-                         isSelected ? 'ring-2 ring-amber border-amber shadow-[0_0_15px_rgba(255,214,0,0.6)] z-20 scale-110' : ''
+                         isSelected ? 'ring-2 ring-amber border-amber shadow-[0_0_15px_rgba(255,214,0,0.6)] z-30' : 'z-10'
                        }`}
                        style={{ 
-                         left: `${(comp.x / 800) * 100}%`, 
-                         top: `${(comp.y / 550) * 100}%`, 
+                         left: `${(comp.x / canvasVirtualWidth) * 100}%`, 
+                         top: `${(comp.y / canvasVirtualHeight) * 100}%`, 
+                         width: `${compSize}px`,
+                         height: `${compSize}px`,
                          borderColor: compBorderColor 
                        }}
                      >
-                       {spec.icon}
+                       {renderComponentIcon(comp.type, Math.max(12, Math.round(compSize * 0.48)))}
                        
-                       <span className="absolute -bottom-7 left-1/2 -translate-x-1/2 bg-navy/95 text-white text-[10px] px-2 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity border border-white/10 whitespace-nowrap pointer-events-none z-30 shadow-lg font-medium">
-                         {lang === 'ku' ? spec.name.ku : spec.name.en}
-                         {room ? ` - ${lang === 'ku' ? room.nameKu : room.nameEn}` : ''}
-                       </span>
+                       {/* Quick Size Controller for selected tool on canvas */}
+                       {isSelected && tool === 'select' && (
+                         <div 
+                           onClick={(e) => e.stopPropagation()}
+                           onMouseDown={(e) => e.stopPropagation()}
+                           onTouchStart={(e) => e.stopPropagation()}
+                           className="absolute -bottom-8 left-1/2 -translate-x-1/2 bg-navy/95 border border-amber/50 text-amber text-[10px] px-1.5 py-0.5 rounded-lg flex items-center gap-1 shadow-2xl backdrop-blur-md z-40 whitespace-nowrap"
+                         >
+                           <button
+                             type="button"
+                             onClick={() => updateComponentProperty(comp.id, { sizePx: Math.max(18, compSize - 4) })}
+                             className="w-4 h-4 rounded bg-white/10 hover:bg-amber hover:text-navy flex items-center justify-center font-bold text-xs cursor-pointer transition-colors"
+                             title={lang === 'ku' ? 'بچووککردنەوە' : 'Smaller'}
+                           >
+                             -
+                           </button>
+                           <span className="font-mono font-bold px-1 text-[10px] text-white">
+                             {compSize}px
+                           </span>
+                           <button
+                             type="button"
+                             onClick={() => updateComponentProperty(comp.id, { sizePx: Math.min(80, compSize + 4) })}
+                             className="w-4 h-4 rounded bg-white/10 hover:bg-amber hover:text-navy flex items-center justify-center font-bold text-xs cursor-pointer transition-colors"
+                             title={lang === 'ku' ? 'گەورەکردن' : 'Larger'}
+                           >
+                             +
+                           </button>
+                         </div>
+                       )}
+
+                       {/* Hover Tooltip (when not selected) */}
+                       {!isSelected && (
+                         <span className="absolute -bottom-7 left-1/2 -translate-x-1/2 bg-navy/95 text-white text-[10px] px-2 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity border border-white/10 whitespace-nowrap pointer-events-none z-30 shadow-lg font-medium">
+                           {lang === 'ku' ? spec.name.ku : spec.name.en}
+                           {room ? ` - ${lang === 'ku' ? room.nameKu : room.nameEn}` : ''}
+                         </span>
+                       )}
 
                        {tool === 'select' && (
                          <button 
@@ -1462,7 +1613,7 @@ export default function DesignerTool() {
                <div className="text-center text-muted p-4 max-w-[400px]">
                   <ClipboardList className="w-12 h-12 sm:w-14 sm:h-14 mx-auto mb-3 text-amber/60" />
                   <p className="text-xs sm:text-[0.95rem] leading-relaxed">
-                    {lang === 'ku' ? 'تکایە نەخشەیەک بەرزبکەرەوە بۆ دەستپێکردنی کارکردن.' : 'Please drop or upload a blueprint floor plan image file in the sidebar to begin mapping infrastructure pipelines.'}
+                    {lang === 'ku' ? 'تکایە نەخشەیەک بەرزبکەرەوە بۆ دەستپێکردنی کارکردن (ستوونی یان ئاسۆیی بە پێوانەی ڕاستەقینە).' : 'Please drop or upload a blueprint floor plan image file in the sidebar to begin mapping infrastructure pipelines (portrait or landscape).'}
                   </p>
                </div>
             </div>
@@ -1601,6 +1752,7 @@ export default function DesignerTool() {
 
         const spec = componentSpecs[selectedComp.type];
         if (!spec) return null;
+        const currentSize = selectedComp.sizePx || globalToolSize;
 
         return (
           <motion.div 
@@ -1611,8 +1763,8 @@ export default function DesignerTool() {
             {/* Panel Header */}
             <div className="flex justify-between items-center border-b border-white/10 pb-4 mb-4">
               <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-navy border border-amber/30 flex items-center justify-center">
-                  {spec.icon}
+                <div className="w-10 h-10 rounded-xl bg-navy border border-amber/30 flex items-center justify-center">
+                  {renderComponentIcon(selectedComp.type, 20)}
                 </div>
                 <div>
                   <h4 className="font-bold text-sm text-text-main flex items-center gap-2">
@@ -1649,10 +1801,90 @@ export default function DesignerTool() {
               </div>
             </div>
 
+            {/* Placed Toolset Size Customizer */}
+            <div className="bg-navy border border-white/10 rounded-2xl p-4 mb-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
+                <div className="flex items-center gap-2">
+                  <Sliders className="w-4 h-4 text-amber" />
+                  <div>
+                    <span className="text-xs font-bold text-text-main block">
+                      {lang === 'ku' ? 'قەبارەی ئامراز لەسەر نەخشەکە' : 'Placed Toolset Blueprint Size'}
+                    </span>
+                    <span className="text-[11px] text-muted block">
+                      {lang === 'ku' ? 'دەتوانیت قەبارەکەی گەورە یان بچووک بکەیت بەپێی نەخشەکەت' : 'Adjust the visual scale of this component on the blueprint'}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 self-start sm:self-auto">
+                  <button
+                    type="button"
+                    onClick={() => updateComponentProperty(selectedComp.id, { sizePx: Math.max(18, currentSize - 4) })}
+                    className="w-7 h-7 rounded-lg bg-white/5 border border-white/10 hover:bg-amber hover:text-navy text-white flex items-center justify-center font-bold text-sm transition-colors cursor-pointer"
+                    title={lang === 'ku' ? 'بچووککردنەوە' : 'Decrease Size'}
+                  >
+                    -
+                  </button>
+                  <span className="font-mono font-bold text-xs text-amber bg-amber/10 border border-amber/30 px-3 py-1 rounded-lg">
+                    {currentSize} px
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => updateComponentProperty(selectedComp.id, { sizePx: Math.min(80, currentSize + 4) })}
+                    className="w-7 h-7 rounded-lg bg-white/5 border border-white/10 hover:bg-amber hover:text-navy text-white flex items-center justify-center font-bold text-sm transition-colors cursor-pointer"
+                    title={lang === 'ku' ? 'گەورەکردن' : 'Increase Size'}
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+
+              {/* Range slider */}
+              <div className="flex items-center gap-3 mb-3">
+                <span className="text-[10px] font-mono text-muted">18px</span>
+                <input 
+                  type="range" 
+                  min="18" 
+                  max="80" 
+                  step="2" 
+                  value={currentSize}
+                  onChange={(e) => updateComponentProperty(selectedComp.id, { sizePx: Number(e.target.value) })}
+                  className="w-full h-1.5 bg-white/10 rounded-lg appearance-none cursor-pointer accent-amber"
+                />
+                <span className="text-[10px] font-mono text-muted">80px</span>
+              </div>
+
+              {/* Preset buttons */}
+              <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-white/5">
+                <span className="text-[10px] text-muted font-medium">
+                  {lang === 'ku' ? 'قەبارە ئامادەکراوەکان:' : 'Presets:'}
+                </span>
+                {[
+                  { label: 'Small (24px)', val: 24 },
+                  { label: 'Medium (34px)', val: 34 },
+                  { label: 'Large (46px)', val: 46 },
+                  { label: 'Extra Large (58px)', val: 58 }
+                ].map(preset => (
+                  <button
+                    key={preset.label}
+                    type="button"
+                    onClick={() => updateComponentProperty(selectedComp.id, { sizePx: preset.val })}
+                    className={`text-[10px] font-bold px-2.5 py-1 rounded-lg transition-all border ${
+                      currentSize === preset.val
+                        ? 'bg-amber text-navy border-amber shadow-sm'
+                        : 'bg-white/5 text-white/70 border-white/10 hover:bg-white/10 hover:text-white'
+                    }`}
+                  >
+                    {preset.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
             <p className="text-xs text-muted">
               {lang === 'ku' 
-                ? 'ئەم ئامێرە لە نەخشەکەدا دەستنیشانکراوە. دەتوانیت بە دراگ شوێنەکەی بگۆڕیت یان لێرە بیسڕیتەوە.' 
-                : 'Selected on the blueprint. Drag to reposition or click Remove to delete.'}
+                ? 'ئەم ئامێرە لە نەخشەکەدا دەستنیشانکراوە. دەتوانیت بە دراگ شوێنەکەی بگۆڕیت یان لێرە قەبارەکەی دەستکاری بکەیت.' 
+                : 'Selected on the blueprint. Drag to reposition, adjust size above, or click Remove to delete.'}
             </p>
           </motion.div>
         );
