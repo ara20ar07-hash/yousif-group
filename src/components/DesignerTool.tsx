@@ -1,4 +1,4 @@
-import React, { useState, useRef, MouseEvent, ChangeEvent } from 'react';
+import React, { useState, useRef, useEffect, MouseEvent, ChangeEvent } from 'react';
 import { MousePointer2, Flame, Wrench, CircleDot, RefreshCw, Minus, Upload, X, ClipboardList, Send, Pencil, Trash2, Plus, Sparkles, CheckCircle2, AlertTriangle, Sliders, Eye, EyeOff, Image as ImageIcon, Download } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useLanguage } from './LanguageContext';
@@ -570,6 +570,7 @@ export default function DesignerTool() {
   const [pipeStart, setPipeStart] = useState<{ x: number; y: number } | null>(null);
   const [mousePos, setMousePos] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [draggingId, setDraggingId] = useState<string | null>(null);
+  const [isTouchDragging, setIsTouchDragging] = useState<boolean>(false);
   
   // Radiator & Room names visibility control & status
   const [showRadiators, setShowRadiators] = useState<boolean>(true);
@@ -605,6 +606,27 @@ export default function DesignerTool() {
     calculatedSummaryEn: string;
     calculatedSummaryKu: string;
   } | null>(null);
+
+  // Drag performance, coordinate caching, and ghost-click guards
+  const cachedCanvasRectRef = useRef<DOMRect | null>(null);
+  const lastDragEndTimeRef = useRef<number>(0);
+  const dragRafIdRef = useRef<number | null>(null);
+  const pendingDragPosRef = useRef<{ x: number; y: number } | null>(null);
+  const draggingIdRef = useRef<string | null>(null);
+  const toolRef = useRef<Tool>(tool);
+  const analysisResultRef = useRef(analysisResult);
+
+  useEffect(() => {
+    draggingIdRef.current = draggingId;
+  }, [draggingId]);
+
+  useEffect(() => {
+    toolRef.current = tool;
+  }, [tool]);
+
+  useEffect(() => {
+    analysisResultRef.current = analysisResult;
+  }, [analysisResult]);
 
   const canvasRef = useRef<HTMLDivElement>(null);
 
@@ -836,9 +858,64 @@ export default function DesignerTool() {
     }
   };
 
-  const getCanvasCoords = (e: MouseEvent<any> | React.MouseEvent<any> | React.TouchEvent<any>) => {
+  // Native non-passive touchmove listener to avoid touch scroll interference and guarantee preventDefault() during drag
+  useEffect(() => {
+    const canvasEl = canvasRef.current;
+    if (!canvasEl) return;
+
+    const handleNativeTouchMove = (e: TouchEvent) => {
+      if (draggingIdRef.current && toolRef.current === 'select') {
+        if (e.cancelable) {
+          e.preventDefault();
+        }
+        const coords = getCanvasCoords(e, true);
+        if (!coords) return;
+
+        pendingDragPosRef.current = coords;
+
+        if (!dragRafIdRef.current) {
+          dragRafIdRef.current = requestAnimationFrame(() => {
+            dragRafIdRef.current = null;
+            if (pendingDragPosRef.current && draggingIdRef.current) {
+              const currentPos = pendingDragPosRef.current;
+              setMousePos(currentPos);
+              // Only update x, y during drag to prevent 60fps full recalculation of room analysis
+              setComponents(prev =>
+                prev.map(c =>
+                  c.id === draggingIdRef.current
+                    ? { ...c, x: currentPos.x, y: currentPos.y }
+                    : c
+                )
+              );
+            }
+          });
+        }
+      }
+    };
+
+    canvasEl.addEventListener('touchmove', handleNativeTouchMove, { passive: false });
+
+    return () => {
+      canvasEl.removeEventListener('touchmove', handleNativeTouchMove);
+      if (dragRafIdRef.current) {
+        cancelAnimationFrame(dragRafIdRef.current);
+        dragRafIdRef.current = null;
+      }
+    };
+  }, [blueprint, canvasVirtualWidth, canvasVirtualHeight]);
+
+  const getCanvasCoords = (
+    e: MouseEvent<any> | React.MouseEvent<any> | TouchEvent | React.TouchEvent<any>,
+    useCachedRect: boolean = false
+  ) => {
     if (!canvasRef.current) return null;
-    const rect = canvasRef.current.getBoundingClientRect();
+    let rect = useCachedRect && cachedCanvasRectRef.current ? cachedCanvasRectRef.current : null;
+    if (!rect) {
+      rect = canvasRef.current.getBoundingClientRect();
+      if (useCachedRect) {
+        cachedCanvasRectRef.current = rect;
+      }
+    }
     if (!rect.width || !rect.height) return null;
 
     let clientX = 0;
@@ -871,6 +948,9 @@ export default function DesignerTool() {
   };
 
   const handleCanvasClick = (e: MouseEvent<HTMLDivElement> | React.MouseEvent<HTMLDivElement>) => {
+    // Prevent ghost-click deselecting the component within 350ms of a touchend/dragend
+    const timeSinceDragEnd = Date.now() - lastDragEndTimeRef.current;
+    if (timeSinceDragEnd < 350) return;
     if (draggingId || (e.target as HTMLElement).closest('button')) return;
     
     const coords = getCanvasCoords(e);
@@ -913,33 +993,60 @@ export default function DesignerTool() {
   };
 
   const handleMouseMove = (e: MouseEvent<HTMLDivElement> | React.MouseEvent<HTMLDivElement>) => {
-    const coords = getCanvasCoords(e);
+    const isDragging = !!(draggingId && tool === 'select');
+    const coords = getCanvasCoords(e, isDragging);
     if (!coords) return;
     setMousePos(coords);
 
-    if (draggingId && tool === 'select') {
+    if (isDragging) {
+      pendingDragPosRef.current = coords;
+      if (!dragRafIdRef.current) {
+        dragRafIdRef.current = requestAnimationFrame(() => {
+          dragRafIdRef.current = null;
+          if (pendingDragPosRef.current && draggingIdRef.current) {
+            const currentPos = pendingDragPosRef.current;
+            setComponents(prev =>
+              prev.map(c =>
+                c.id === draggingIdRef.current
+                  ? { ...c, x: currentPos.x, y: currentPos.y }
+                  : c
+              )
+            );
+          }
+        });
+      }
+    }
+  };
+
+  const handleMouseUp = () => {
+    if (dragRafIdRef.current) {
+      cancelAnimationFrame(dragRafIdRef.current);
+      dragRafIdRef.current = null;
+    }
+    if (draggingId) {
+      lastDragEndTimeRef.current = Date.now();
+      // Recalculate room assignment once when drag ends
       setComponents(prev => {
         return prev.map(c => {
           if (c.id === draggingId) {
-            const detectedRoom = getDetectedRoomIndex(coords.x, coords.y, analysisResult?.rooms, canvasVirtualWidth, canvasVirtualHeight);
-            return { 
-              ...c, 
-              x: coords.x, 
-              y: coords.y, 
-              assignedRoomIndex: detectedRoom
-            };
+            const detectedRoom = getDetectedRoomIndex(c.x, c.y, analysisResultRef.current?.rooms, canvasVirtualWidth, canvasVirtualHeight);
+            return { ...c, assignedRoomIndex: detectedRoom };
           }
           return c;
         });
       });
     }
+    setDraggingId(null);
+    setIsTouchDragging(false);
+    cachedCanvasRectRef.current = null;
   };
-
-  const handleMouseUp = () => setDraggingId(null);
 
   const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
     if ((e.target as HTMLElement).closest('button')) return;
-    const coords = getCanvasCoords(e);
+    if (canvasRef.current) {
+      cachedCanvasRectRef.current = canvasRef.current.getBoundingClientRect();
+    }
+    const coords = getCanvasCoords(e, true);
     if (!coords) return;
     setMousePos(coords);
 
@@ -978,31 +1085,35 @@ export default function DesignerTool() {
   };
 
   const handleTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
-    const coords = getCanvasCoords(e);
-    if (!coords) return;
-    setMousePos(coords);
+    // Native listener handles the drag with non-passive preventDefault and rAF throttling.
+    // For non-drag tool interactions (like drawing pipes), update mousePos:
+    if (!draggingId && tool === 'pipe') {
+      const coords = getCanvasCoords(e, true);
+      if (coords) setMousePos(coords);
+    }
+  };
 
-    if (draggingId && tool === 'select') {
-      if (e.cancelable) e.preventDefault();
+  const handleTouchEnd = () => {
+    if (dragRafIdRef.current) {
+      cancelAnimationFrame(dragRafIdRef.current);
+      dragRafIdRef.current = null;
+    }
+    if (draggingId) {
+      lastDragEndTimeRef.current = Date.now();
+      // Recalculate room assignment once when drag ends
       setComponents(prev => {
         return prev.map(c => {
           if (c.id === draggingId) {
-            const detectedRoom = getDetectedRoomIndex(coords.x, coords.y, analysisResult?.rooms, canvasVirtualWidth, canvasVirtualHeight);
-            return { 
-              ...c, 
-              x: coords.x, 
-              y: coords.y, 
-              assignedRoomIndex: detectedRoom
-            };
+            const detectedRoom = getDetectedRoomIndex(c.x, c.y, analysisResultRef.current?.rooms, canvasVirtualWidth, canvasVirtualHeight);
+            return { ...c, assignedRoomIndex: detectedRoom };
           }
           return c;
         });
       });
     }
-  };
-
-  const handleTouchEnd = () => {
     setDraggingId(null);
+    setIsTouchDragging(false);
+    cachedCanvasRectRef.current = null;
   };
 
   const removeComponent = (id: string, e: MouseEvent) => {
@@ -1284,7 +1395,9 @@ export default function DesignerTool() {
                   {lang === 'ku' ? 'قەبارەی ئامرازەکان' : 'Toolset Size'}
                 </span>
                 <span className="font-mono text-[10px] text-white/80 bg-white/10 px-2 py-0.5 rounded-md">
-                  {globalToolSize}px
+                  {selectedComponentId 
+                    ? `${components.find(c => c.id === selectedComponentId)?.sizePx || globalToolSize}px (${lang === 'ku' ? 'دیاریکراو' : 'Selected'})` 
+                    : `${globalToolSize}px`}
                 </span>
               </div>
               <div className="flex items-center gap-2">
@@ -1293,8 +1406,14 @@ export default function DesignerTool() {
                   min="20" 
                   max="64" 
                   step="2" 
-                  value={globalToolSize}
-                  onChange={(e) => setGlobalToolSize(Number(e.target.value))}
+                  value={selectedComponentId ? (components.find(c => c.id === selectedComponentId)?.sizePx || globalToolSize) : globalToolSize}
+                  onChange={(e) => {
+                    const newSz = Number(e.target.value);
+                    setGlobalToolSize(newSz);
+                    if (selectedComponentId) {
+                      updateComponentProperty(selectedComponentId, { sizePx: newSz });
+                    }
+                  }}
                   className="w-full h-1.5 bg-white/10 rounded-lg appearance-none cursor-pointer accent-amber"
                 />
               </div>
@@ -1304,20 +1423,30 @@ export default function DesignerTool() {
                   { label: 'M', val: 34 },
                   { label: 'L', val: 46 },
                   { label: 'XL', val: 58 }
-                ].map(preset => (
-                  <button
-                    key={preset.label}
-                    type="button"
-                    onClick={() => setGlobalToolSize(preset.val)}
-                    className={`text-[10px] font-bold py-1 rounded-lg transition-all border ${
-                      globalToolSize === preset.val
-                        ? 'bg-amber text-navy border-amber shadow-sm'
-                        : 'bg-white/5 text-white/60 border-white/5 hover:bg-white/10 hover:text-white'
-                    }`}
-                  >
-                    {preset.label}
-                  </button>
-                ))}
+                ].map(preset => {
+                  const activeSize = selectedComponentId 
+                    ? (components.find(c => c.id === selectedComponentId)?.sizePx || globalToolSize)
+                    : globalToolSize;
+                  return (
+                    <button
+                      key={preset.label}
+                      type="button"
+                      onClick={() => {
+                        setGlobalToolSize(preset.val);
+                        if (selectedComponentId) {
+                          updateComponentProperty(selectedComponentId, { sizePx: preset.val });
+                        }
+                      }}
+                      className={`text-[10px] font-bold py-1 rounded-lg transition-all border ${
+                        activeSize === preset.val
+                          ? 'bg-amber text-navy border-amber shadow-sm'
+                          : 'bg-white/5 text-white/60 border-white/5 hover:bg-white/10 hover:text-white'
+                      }`}
+                    >
+                      {preset.label}
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
@@ -1524,68 +1653,54 @@ export default function DesignerTool() {
                     const room = (roomIdx >= 0 && analysisResult?.rooms && analysisResult.rooms[roomIdx]) ? analysisResult.rooms[roomIdx] : null;
                     const compBorderColor = isSelected ? '#FFD600' : (comp.type === 'radiator' ? '#FFFFFF' : spec.borderColor);
 
+                    const isCompTouchDragging = isTouchDragging && draggingId === comp.id;
+
                     return (
                      <div 
                        key={comp.id}
                        onMouseDown={(e) => { 
                          if (tool === 'select') { 
+                           if (canvasRef.current) {
+                             cachedCanvasRectRef.current = canvasRef.current.getBoundingClientRect();
+                           }
                            setDraggingId(comp.id);
+                           setIsTouchDragging(false);
                            setSelectedComponentId(comp.id);
                            e.stopPropagation();
                          } 
                        }}
                        onTouchStart={(e) => { 
                          if (tool === 'select') { 
+                           if (canvasRef.current) {
+                             cachedCanvasRectRef.current = canvasRef.current.getBoundingClientRect();
+                           }
                            setDraggingId(comp.id);
+                           setIsTouchDragging(true);
                            setSelectedComponentId(comp.id);
                            e.stopPropagation();
                          }
                        }}
-                       className={`absolute -translate-x-1/2 -translate-y-1/2 rounded-xl bg-navy-mid/95 backdrop-blur-sm border-2 flex items-center justify-center shadow-xl group pointer-events-auto transition-all ${
+                       className={`absolute rounded-xl bg-navy-mid/95 backdrop-blur-sm border-2 flex items-center justify-center shadow-xl group pointer-events-auto transition-shadow ${
                          tool === 'select' ? 'cursor-grab active:cursor-grabbing' : 'cursor-crosshair'
                        } ${
                          isSelected ? 'ring-2 ring-amber border-amber shadow-[0_0_15px_rgba(255,214,0,0.6)] z-30' : 'z-10'
+                       } ${
+                         isCompTouchDragging ? 'shadow-[0_10px_25px_rgba(0,0,0,0.5)] z-40' : ''
                        }`}
                        style={{ 
                          left: `${(comp.x / canvasVirtualWidth) * 100}%`, 
                          top: `${(comp.y / canvasVirtualHeight) * 100}%`, 
                          width: `${compSize}px`,
                          height: `${compSize}px`,
-                         borderColor: compBorderColor 
+                         borderColor: compBorderColor,
+                         transform: isCompTouchDragging 
+                           ? 'translate(-50%, calc(-50% - 36px)) scale(1.08)' 
+                           : 'translate(-50%, -50%)',
+                         willChange: isCompTouchDragging ? 'left, top, transform' : 'auto'
                        }}
                      >
                        {renderComponentIcon(comp.type, Math.max(12, Math.round(compSize * 0.48)))}
                        
-                       {/* Quick Size Controller for selected tool on canvas */}
-                       {isSelected && tool === 'select' && (
-                         <div 
-                           onClick={(e) => e.stopPropagation()}
-                           onMouseDown={(e) => e.stopPropagation()}
-                           onTouchStart={(e) => e.stopPropagation()}
-                           className="absolute -bottom-8 left-1/2 -translate-x-1/2 bg-navy/95 border border-amber/50 text-amber text-[10px] px-1.5 py-0.5 rounded-lg flex items-center gap-1 shadow-2xl backdrop-blur-md z-40 whitespace-nowrap"
-                         >
-                           <button
-                             type="button"
-                             onClick={() => updateComponentProperty(comp.id, { sizePx: Math.max(18, compSize - 4) })}
-                             className="w-4 h-4 rounded bg-white/10 hover:bg-amber hover:text-navy flex items-center justify-center font-bold text-xs cursor-pointer transition-colors"
-                             title={lang === 'ku' ? 'بچووککردنەوە' : 'Smaller'}
-                           >
-                             -
-                           </button>
-                           <span className="font-mono font-bold px-1 text-[10px] text-white">
-                             {compSize}px
-                           </span>
-                           <button
-                             type="button"
-                             onClick={() => updateComponentProperty(comp.id, { sizePx: Math.min(80, compSize + 4) })}
-                             className="w-4 h-4 rounded bg-white/10 hover:bg-amber hover:text-navy flex items-center justify-center font-bold text-xs cursor-pointer transition-colors"
-                             title={lang === 'ku' ? 'گەورەکردن' : 'Larger'}
-                           >
-                             +
-                           </button>
-                         </div>
-                       )}
-
                        {/* Hover Tooltip (when not selected) */}
                        {!isSelected && (
                          <span className="absolute -bottom-7 left-1/2 -translate-x-1/2 bg-navy/95 text-white text-[10px] px-2 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity border border-white/10 whitespace-nowrap pointer-events-none z-30 shadow-lg font-medium">
@@ -1594,12 +1709,27 @@ export default function DesignerTool() {
                          </span>
                        )}
 
+                       {/* Delete Cross Button on the corner of the icon (Desktop hover + Always visible when selected or on touch) */}
                        {tool === 'select' && (
                          <button 
-                           onClick={(e) => removeComponent(comp.id, e)}
-                           className="absolute -top-1.5 -right-1.5 bg-red-500 text-white w-4 h-4 rounded-full flex items-center justify-center text-[9px] opacity-0 group-hover:opacity-100 shadow-md transition-opacity hover:bg-red-600 cursor-pointer z-30"
+                           type="button"
+                           onClick={(e) => {
+                             e.stopPropagation();
+                             removeComponent(comp.id, e as unknown as MouseEvent);
+                           }}
+                           onTouchStart={(e) => {
+                             e.stopPropagation();
+                           }}
+                           onTouchEnd={(e) => {
+                             e.stopPropagation();
+                             removeComponent(comp.id, e as unknown as MouseEvent);
+                           }}
+                           className={`absolute -top-2 -right-2 bg-red-500 hover:bg-red-600 text-white w-5 h-5 rounded-full flex items-center justify-center text-[10px] shadow-lg transition-all cursor-pointer z-40 border border-white/40 active:scale-90 ${
+                             isSelected ? 'opacity-100 scale-100' : 'opacity-80 sm:opacity-0 sm:group-hover:opacity-100'
+                           }`}
+                           title={lang === 'ku' ? 'سڕینەوە' : 'Delete'}
                          >
-                           <X className="w-2.5 h-2.5" />
+                           <X className="w-3 h-3 stroke-[3]" />
                          </button>
                        )}
                      </div>
@@ -1744,151 +1874,6 @@ export default function DesignerTool() {
           </div>
         )}
       </div>
-
-      {/* Selected Component Properties Inspector Panel */}
-      {selectedComponentId && (() => {
-        const selectedComp = components.find(c => c.id === selectedComponentId);
-        if (!selectedComp) return null;
-
-        const spec = componentSpecs[selectedComp.type];
-        if (!spec) return null;
-        const currentSize = selectedComp.sizePx || globalToolSize;
-
-        return (
-          <motion.div 
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mt-6 bg-navy-mid border border-amber/30 rounded-[30px] p-6 shadow-2xl relative text-start transition-all"
-          >
-            {/* Panel Header */}
-            <div className="flex justify-between items-center border-b border-white/10 pb-4 mb-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-navy border border-amber/30 flex items-center justify-center">
-                  {renderComponentIcon(selectedComp.type, 20)}
-                </div>
-                <div>
-                  <h4 className="font-bold text-sm text-text-main flex items-center gap-2">
-                    {lang === 'ku' ? spec.name.ku : spec.name.en}
-                    <span className="text-[10px] font-mono text-muted bg-white/5 px-2 py-0.5 rounded border border-white/10">
-                      {selectedComp.id}
-                    </span>
-                  </h4>
-                  <p className="text-[11px] text-muted">
-                    {lang === 'ku' 
-                      ? `شوێن: X: ${Math.round(selectedComp.x)}px, Y: ${Math.round(selectedComp.y)}px`
-                      : `Canvas coordinates: X: ${Math.round(selectedComp.x)}px, Y: ${Math.round(selectedComp.y)}px`}
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={(e) => removeComponent(selectedComp.id, e as unknown as MouseEvent)}
-                  className="text-red-400 hover:text-red-300 hover:bg-red-500/10 p-2 rounded-xl border border-red-500/20 text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
-                  title={lang === 'ku' ? 'سڕینەوە' : 'Remove'}
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                  {lang === 'ku' ? 'سڕینەوە' : 'Remove'}
-                </button>
-                <button 
-                  type="button"
-                  onClick={() => setSelectedComponentId(null)} 
-                  className="text-muted hover:text-white p-2 rounded-xl bg-white/5 hover:bg-white/10 transition-colors cursor-pointer"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-
-            {/* Placed Toolset Size Customizer */}
-            <div className="bg-navy border border-white/10 rounded-2xl p-4 mb-4">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
-                <div className="flex items-center gap-2">
-                  <Sliders className="w-4 h-4 text-amber" />
-                  <div>
-                    <span className="text-xs font-bold text-text-main block">
-                      {lang === 'ku' ? 'قەبارەی ئامراز لەسەر نەخشەکە' : 'Placed Toolset Blueprint Size'}
-                    </span>
-                    <span className="text-[11px] text-muted block">
-                      {lang === 'ku' ? 'دەتوانیت قەبارەکەی گەورە یان بچووک بکەیت بەپێی نەخشەکەت' : 'Adjust the visual scale of this component on the blueprint'}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2 self-start sm:self-auto">
-                  <button
-                    type="button"
-                    onClick={() => updateComponentProperty(selectedComp.id, { sizePx: Math.max(18, currentSize - 4) })}
-                    className="w-7 h-7 rounded-lg bg-white/5 border border-white/10 hover:bg-amber hover:text-navy text-white flex items-center justify-center font-bold text-sm transition-colors cursor-pointer"
-                    title={lang === 'ku' ? 'بچووککردنەوە' : 'Decrease Size'}
-                  >
-                    -
-                  </button>
-                  <span className="font-mono font-bold text-xs text-amber bg-amber/10 border border-amber/30 px-3 py-1 rounded-lg">
-                    {currentSize} px
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => updateComponentProperty(selectedComp.id, { sizePx: Math.min(80, currentSize + 4) })}
-                    className="w-7 h-7 rounded-lg bg-white/5 border border-white/10 hover:bg-amber hover:text-navy text-white flex items-center justify-center font-bold text-sm transition-colors cursor-pointer"
-                    title={lang === 'ku' ? 'گەورەکردن' : 'Increase Size'}
-                  >
-                    +
-                  </button>
-                </div>
-              </div>
-
-              {/* Range slider */}
-              <div className="flex items-center gap-3 mb-3">
-                <span className="text-[10px] font-mono text-muted">18px</span>
-                <input 
-                  type="range" 
-                  min="18" 
-                  max="80" 
-                  step="2" 
-                  value={currentSize}
-                  onChange={(e) => updateComponentProperty(selectedComp.id, { sizePx: Number(e.target.value) })}
-                  className="w-full h-1.5 bg-white/10 rounded-lg appearance-none cursor-pointer accent-amber"
-                />
-                <span className="text-[10px] font-mono text-muted">80px</span>
-              </div>
-
-              {/* Preset buttons */}
-              <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-white/5">
-                <span className="text-[10px] text-muted font-medium">
-                  {lang === 'ku' ? 'قەبارە ئامادەکراوەکان:' : 'Presets:'}
-                </span>
-                {[
-                  { label: 'Small (24px)', val: 24 },
-                  { label: 'Medium (34px)', val: 34 },
-                  { label: 'Large (46px)', val: 46 },
-                  { label: 'Extra Large (58px)', val: 58 }
-                ].map(preset => (
-                  <button
-                    key={preset.label}
-                    type="button"
-                    onClick={() => updateComponentProperty(selectedComp.id, { sizePx: preset.val })}
-                    className={`text-[10px] font-bold px-2.5 py-1 rounded-lg transition-all border ${
-                      currentSize === preset.val
-                        ? 'bg-amber text-navy border-amber shadow-sm'
-                        : 'bg-white/5 text-white/70 border-white/10 hover:bg-white/10 hover:text-white'
-                    }`}
-                  >
-                    {preset.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <p className="text-xs text-muted">
-              {lang === 'ku' 
-                ? 'ئەم ئامێرە لە نەخشەکەدا دەستنیشانکراوە. دەتوانیت بە دراگ شوێنەکەی بگۆڕیت یان لێرە قەبارەکەی دەستکاری بکەیت.' 
-                : 'Selected on the blueprint. Drag to reposition, adjust size above, or click Remove to delete.'}
-            </p>
-          </motion.div>
-        );
-      })()}
 
       {/* AI Thermal Analysis Dashboard */}
       {analysisResult && (
