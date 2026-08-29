@@ -769,20 +769,41 @@ export default function DesignerTool() {
     }
   };
 
-  const getCanvasCoords = (e: MouseEvent<HTMLDivElement | SVGSVGElement>) => {
+  const getCanvasCoords = (e: MouseEvent<any> | React.MouseEvent<any> | React.TouchEvent<any>) => {
     if (!canvasRef.current) return null;
     const rect = canvasRef.current.getBoundingClientRect();
-    return {
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top
-    };
+    if (!rect.width || !rect.height) return null;
+
+    let clientX = 0;
+    let clientY = 0;
+
+    if ('touches' in e && e.touches && e.touches.length > 0) {
+      clientX = e.touches[0].clientX;
+      clientY = e.touches[0].clientY;
+    } else if ('changedTouches' in e && e.changedTouches && e.changedTouches.length > 0) {
+      clientX = e.changedTouches[0].clientX;
+      clientY = e.changedTouches[0].clientY;
+    } else if ('clientX' in e) {
+      clientX = (e as MouseEvent).clientX;
+      clientY = (e as MouseEvent).clientY;
+    } else {
+      return null;
+    }
+
+    const scaleX = 800 / rect.width;
+    const scaleY = 550 / rect.height;
+
+    const x = Math.min(800, Math.max(0, Math.round((clientX - rect.left) * scaleX)));
+    const y = Math.min(550, Math.max(0, Math.round((clientY - rect.top) * scaleY)));
+
+    return { x, y };
   };
 
   const updateComponentProperty = (id: string, updates: Partial<ComponentData>) => {
     setComponents(prev => prev.map(c => c.id === id ? { ...c, ...updates } : c));
   };
 
-  const handleCanvasClick = (e: MouseEvent<HTMLDivElement>) => {
+  const handleCanvasClick = (e: MouseEvent<HTMLDivElement> | React.MouseEvent<HTMLDivElement>) => {
     if (draggingId || (e.target as HTMLElement).closest('button')) return;
     
     const coords = getCanvasCoords(e);
@@ -826,7 +847,7 @@ export default function DesignerTool() {
     }
   };
 
-  const handleMouseMove = (e: MouseEvent<HTMLDivElement>) => {
+  const handleMouseMove = (e: MouseEvent<HTMLDivElement> | React.MouseEvent<HTMLDivElement>) => {
     const coords = getCanvasCoords(e);
     if (!coords) return;
     setMousePos(coords);
@@ -850,6 +871,76 @@ export default function DesignerTool() {
   };
 
   const handleMouseUp = () => setDraggingId(null);
+
+  const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
+    if ((e.target as HTMLElement).closest('button')) return;
+    const coords = getCanvasCoords(e);
+    if (!coords) return;
+    setMousePos(coords);
+
+    if (tool === 'pipe') {
+      if (!isDrawing) {
+        setIsDrawing(true);
+        setPipeStart(coords);
+      } else if (pipeStart) {
+        setPipes(prev => [...prev, {
+          id: 'p_' + Math.random().toString(36).substring(2, 9),
+          x1: pipeStart.x,
+          y1: pipeStart.y,
+          x2: coords.x,
+          y2: coords.y
+        }]);
+        setIsDrawing(false);
+        setPipeStart(null);
+      }
+    } else if (tool !== 'select' && tool in componentSpecs) {
+      if (tool === 'radiator' && !showRadiators) {
+        setShowRadiators(true);
+      }
+      const newId = 'c_' + Math.random().toString(36).substring(2, 9);
+      const roomIdx = getDetectedRoomIndex(coords.x, coords.y, analysisResult?.rooms);
+
+      const newComp: ComponentData = {
+        id: newId,
+        type: tool as Exclude<Tool, 'select' | 'pipe'>,
+        x: coords.x,
+        y: coords.y,
+        assignedRoomIndex: roomIdx,
+        isAiPlaced: false
+      };
+
+      setComponents(prev => [...prev, newComp]);
+      setSelectedComponentId(newId);
+    }
+  };
+
+  const handleTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
+    const coords = getCanvasCoords(e);
+    if (!coords) return;
+    setMousePos(coords);
+
+    if (draggingId && tool === 'select') {
+      if (e.cancelable) e.preventDefault();
+      setComponents(prev => {
+        return prev.map(c => {
+          if (c.id === draggingId) {
+            const detectedRoom = getDetectedRoomIndex(coords.x, coords.y, analysisResult?.rooms);
+            return { 
+              ...c, 
+              x: coords.x, 
+              y: coords.y, 
+              assignedRoomIndex: detectedRoom
+            };
+          }
+          return c;
+        });
+      });
+    }
+  };
+
+  const handleTouchEnd = () => {
+    setDraggingId(null);
+  };
 
   const removeComponent = (id: string, e: MouseEvent) => {
     e.stopPropagation();
@@ -1049,13 +1140,13 @@ export default function DesignerTool() {
         </p>
       </motion.div>
 
-      <div className={`grid grid-cols-1 ${showRoomNames || showRadiators ? 'lg:grid-cols-[220px_1fr_330px]' : 'lg:grid-cols-[220px_1fr]'} bg-navy-mid border border-white/5 rounded-[40px] overflow-hidden min-h-[600px]`}>
+      <div className={`grid grid-cols-1 ${showRoomNames || showRadiators ? 'lg:grid-cols-[240px_1fr_340px]' : 'lg:grid-cols-[240px_1fr]'} bg-navy-mid border border-white/5 rounded-[32px] sm:rounded-[40px] overflow-hidden min-h-[550px]`}>
         
         {/* Sidebar Tools */}
-        <div className="bg-navy-mid border-b lg:border-b-0 lg:border-r border-white/5 p-4 flex flex-col gap-4">
-          <div className="flex flex-col gap-2">
-            <label className="bg-white/5 border border-white/10 text-text-main font-semibold text-[10px] py-2.5 px-3 rounded-xl text-center uppercase tracking-wider cursor-pointer hover:bg-white/10 transition-colors">
-              <Upload className="w-3.5 h-3.5 inline-block me-1.5 -mt-0.5" /> {lang === 'ku' ? 'نەخشە' : 'Blueprint'}
+        <div className="bg-navy-mid border-b lg:border-b-0 lg:border-r border-white/5 p-4 sm:p-5 flex flex-col gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-1 gap-2">
+            <label className="bg-white/5 border border-white/10 text-text-main font-semibold text-[11px] py-2.5 px-3 rounded-xl text-center uppercase tracking-wider cursor-pointer hover:bg-white/10 transition-colors flex items-center justify-center gap-1.5">
+              <Upload className="w-3.5 h-3.5 text-amber" /> {lang === 'ku' ? 'نەخشە' : 'Blueprint'}
               <input type="file" accept="image/*" className="hidden" onChange={handleFileUpload} />
             </label>
             {blueprint && (
@@ -1063,24 +1154,24 @@ export default function DesignerTool() {
                 <button 
                   onClick={handleAIAnalyze}
                   disabled={isAnalyzing}
-                  className="bg-amber text-navy font-bold text-[10px] py-2.5 px-3 rounded-xl uppercase tracking-wider hover:bg-amber-light transition-all w-full flex items-center justify-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                  className="bg-amber text-navy font-bold text-[11px] py-2.5 px-3 rounded-xl uppercase tracking-wider hover:bg-amber-light transition-all flex items-center justify-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow"
                 >
                   <RefreshCw className={`w-3.5 h-3.5 ${isAnalyzing ? 'animate-spin' : ''}`} /> 
                   {isAnalyzing 
-                    ? (lang === 'ku' ? 'شیکردنەوەی...' : 'Scanning...') 
+                    ? (lang === 'ku' ? 'شیکردنەوە...' : 'Scanning...') 
                     : (lang === 'ku' ? 'پشکنینی نەخشە' : 'AI Read Plan')}
                 </button>
                 <button 
                   onClick={handleSendToWhatsApp}
                   disabled={isAnalyzing}
-                  className="bg-[#25D366]/10 border border-[#25D366]/30 text-[#25D366] font-semibold text-[10px] py-2.5 px-3 rounded-xl uppercase tracking-wider hover:bg-[#25D366]/20 transition-colors w-full flex items-center justify-center gap-1.5"
+                  className="bg-[#25D366]/10 border border-[#25D366]/30 text-[#25D366] font-semibold text-[11px] py-2.5 px-3 rounded-xl uppercase tracking-wider hover:bg-[#25D366]/20 transition-colors flex items-center justify-center gap-1.5"
                 >
                   <Send className="w-3.5 h-3.5" /> {lang === 'ku' ? 'واتسئاپ' : 'WhatsApp'}
                 </button>
                 <button 
                   onClick={handleClear}
                   disabled={isAnalyzing}
-                  className="bg-red-500/10 border border-red-500/30 text-red-400 font-semibold text-[10px] py-2.5 px-3 rounded-xl uppercase tracking-wider hover:bg-red-500/20 transition-colors w-full flex items-center justify-center gap-1.5"
+                  className="bg-red-500/10 border border-red-500/30 text-red-400 font-semibold text-[11px] py-2.5 px-3 rounded-xl uppercase tracking-wider hover:bg-red-500/20 transition-colors flex items-center justify-center gap-1.5"
                 >
                   <X className="w-3.5 h-3.5" /> {lang === 'ku' ? 'سڕینەوە' : 'Reset'}
                 </button>
@@ -1088,81 +1179,85 @@ export default function DesignerTool() {
             )}
           </div>
 
-          <div className="flex flex-col gap-1.5">
-            <div className="text-[9px] tracking-widest uppercase text-muted font-semibold mb-1">
+          <div className="flex flex-col gap-2">
+            <div className="text-[10px] tracking-widest uppercase text-muted font-semibold">
               {lang === 'ku' ? 'ئامرازەکان' : 'Toolsets'}
             </div>
             
-            <button 
-              onClick={() => { setTool('select'); setIsDrawing(false); }}
-              className={`flex items-center gap-2.5 text-xs font-light px-3.5 py-2 rounded-xl transition-all border w-full text-start
-                ${tool === 'select' ? 'bg-navy-light border-amber text-text-main shadow-[inset_3px_0_0_#FFD600]' : 'bg-transparent border-transparent text-muted hover:bg-white/5'}`}
-            >
-              <MousePointer2 className="w-4 h-4" /> {lang === 'ku' ? 'گواستنەوە' : 'Reposition'}
-            </button>
-            
-            {(Object.keys(componentSpecs) as Exclude<Tool, 'select' | 'pipe'>[]).map(compType => (
-               <button 
-                key={compType}
-                onClick={() => { setTool(compType); setIsDrawing(false); }}
-                className={`flex items-center gap-2.5 text-xs font-light px-3.5 py-2 rounded-xl transition-all border w-full text-start
-                  ${tool === compType ? 'bg-navy-light border-amber text-text-main shadow-[inset_3px_0_0_#FFD600]' : 'bg-transparent border-transparent text-muted hover:bg-white/5'}`}
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-1 gap-2">
+              <button 
+                onClick={() => { setTool('select'); setIsDrawing(false); }}
+                className={`flex items-center gap-2.5 text-xs font-medium px-3.5 py-2.5 rounded-xl transition-all border w-full text-start
+                  ${tool === 'select' ? 'bg-amber/15 border-amber text-amber font-bold shadow-[0_0_12px_rgba(255,214,0,0.15)]' : 'bg-white/5 border-white/5 text-muted hover:bg-white/10 hover:text-white'}`}
               >
-                {componentSpecs[compType].icon} {lang === 'ku' ? componentSpecs[compType].name.ku : componentSpecs[compType].name.en}
+                <MousePointer2 className="w-4 h-4 text-amber" /> {lang === 'ku' ? 'گواستنەوە' : 'Reposition'}
               </button>
-            ))}
+              
+              {(Object.keys(componentSpecs) as Exclude<Tool, 'select' | 'pipe'>[]).map(compType => (
+                 <button 
+                  key={compType}
+                  onClick={() => { setTool(compType); setIsDrawing(false); }}
+                  className={`flex items-center gap-2.5 text-xs font-medium px-3.5 py-2.5 rounded-xl transition-all border w-full text-start
+                    ${tool === compType ? 'bg-amber/15 border-amber text-amber font-bold shadow-[0_0_12px_rgba(255,214,0,0.15)]' : 'bg-white/5 border-white/5 text-muted hover:bg-white/10 hover:text-white'}`}
+                >
+                  {componentSpecs[compType].icon} {lang === 'ku' ? componentSpecs[compType].name.ku : componentSpecs[compType].name.en}
+                </button>
+              ))}
 
-            <button 
-              onClick={() => setTool('pipe')}
-              className={`flex items-center gap-2.5 text-xs font-light px-3.5 py-2 rounded-xl transition-all border w-full text-start
-                ${tool === 'pipe' ? 'bg-navy-light border-amber text-text-main shadow-[inset_3px_0_0_#FFD600]' : 'bg-transparent border-transparent text-muted hover:bg-white/5'}`}
-            >
-              <Minus strokeWidth={4} className="w-4 h-4 text-amber" /> {lang === 'ku' ? 'بەستنەوەی بۆری' : 'Connect Pipe'}
-            </button>
+              <button 
+                onClick={() => setTool('pipe')}
+                className={`flex items-center gap-2.5 text-xs font-medium px-3.5 py-2.5 rounded-xl transition-all border w-full text-start
+                  ${tool === 'pipe' ? 'bg-amber/15 border-amber text-amber font-bold shadow-[0_0_12px_rgba(255,214,0,0.15)]' : 'bg-white/5 border-white/5 text-muted hover:bg-white/10 hover:text-white'}`}
+              >
+                <Minus strokeWidth={4} className="w-4 h-4 text-amber" /> {lang === 'ku' ? 'بەستنەوەی بۆری' : 'Connect Pipe'}
+              </button>
+            </div>
 
-            <button 
-              type="button"
-              onClick={() => {
-                setShowRoomNames(prev => {
-                  if (!prev) setHiddenRoomIndices([]);
-                  return !prev;
-                });
-              }}
-              className={`flex items-center gap-2.5 text-xs font-semibold px-3.5 py-2 rounded-xl transition-all border w-full text-start mt-2 cursor-pointer
-                ${showRoomNames 
-                  ? 'bg-amber/15 border-amber/50 text-amber' 
-                  : 'bg-white/5 border-white/10 text-white/50 hover:bg-white/10'}`}
-            >
-              {showRoomNames ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
-              {showRoomNames 
-                ? (lang === 'ku' ? 'ناوی ژوورەکان: دیارە' : 'Room Names: Visible') 
-                : (lang === 'ku' ? 'ناوی ژوورەکان: شاراوەیە' : 'Room Names: Hidden')}
-            </button>
+            <div className="grid grid-cols-2 lg:grid-cols-1 gap-2 mt-1">
+              <button 
+                type="button"
+                onClick={() => {
+                  setShowRoomNames(prev => {
+                    if (!prev) setHiddenRoomIndices([]);
+                    return !prev;
+                  });
+                }}
+                className={`flex items-center gap-2 text-xs font-semibold px-3.5 py-2 rounded-xl transition-all border w-full text-start cursor-pointer
+                  ${showRoomNames 
+                    ? 'bg-amber/15 border-amber/50 text-amber' 
+                    : 'bg-white/5 border-white/10 text-white/50 hover:bg-white/10'}`}
+              >
+                {showRoomNames ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                {showRoomNames 
+                  ? (lang === 'ku' ? 'ناوی ژوورەکان' : 'Room Names') 
+                  : (lang === 'ku' ? 'ناوی ژوورەکان' : 'Room Names')}
+              </button>
 
-            <button 
-              type="button"
-              onClick={() => setShowRadiators(prev => !prev)}
-              className={`flex items-center gap-2.5 text-xs font-semibold px-3.5 py-2 rounded-xl transition-all border w-full text-start cursor-pointer
-                ${showRadiators 
-                  ? 'bg-amber/15 border-amber/50 text-amber' 
-                  : 'bg-white/5 border-white/10 text-white/50 hover:bg-white/10'}`}
-            >
-              {showRadiators ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
-              {showRadiators 
-                ? (lang === 'ku' ? 'ڕادێتەرەکان: دیارن' : 'Radiators: Visible') 
-                : (lang === 'ku' ? 'ڕادێتەرەکان: شاراوەن' : 'Radiators: Hidden')}
-            </button>
+              <button 
+                type="button"
+                onClick={() => setShowRadiators(prev => !prev)}
+                className={`flex items-center gap-2 text-xs font-semibold px-3.5 py-2 rounded-xl transition-all border w-full text-start cursor-pointer
+                  ${showRadiators 
+                    ? 'bg-amber/15 border-amber/50 text-amber' 
+                    : 'bg-white/5 border-white/10 text-white/50 hover:bg-white/10'}`}
+              >
+                {showRadiators ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                {showRadiators 
+                  ? (lang === 'ku' ? 'شۆفاژەکان' : 'Radiators') 
+                  : (lang === 'ku' ? 'شۆفاژەکان' : 'Radiators')}
+              </button>
+            </div>
           </div>
 
-          <div className="bg-navy-light border border-white/5 p-3.5 rounded-xl text-[11px] text-muted leading-relaxed mt-auto font-light">
-             <p className="mb-1"><strong className="text-amber font-medium">Place:</strong> Tap canvas.</p>
-             <p className="mb-1"><strong className="text-amber font-medium">Route:</strong> Pipe tool.</p>
-             <p className="mb-0"><strong className="text-amber font-medium">Modify:</strong> Drag/Delete.</p>
+          <div className="bg-navy-light border border-white/5 p-3.5 rounded-xl text-[11px] text-muted leading-relaxed mt-auto font-light hidden sm:block lg:block">
+             <p className="mb-1"><strong className="text-amber font-medium">Place:</strong> Tap or click canvas.</p>
+             <p className="mb-1"><strong className="text-amber font-medium">Route:</strong> Tap start & end point.</p>
+             <p className="mb-0"><strong className="text-amber font-medium">Reposition:</strong> Drag placed icon.</p>
           </div>
         </div>
 
         {/* Workspace Canvas */}
-        <div className="p-4 lg:p-8 flex items-center justify-center bg-navy designer-workspace-grid overflow-auto h-[600px] lg:h-auto relative">
+        <div className="p-3 sm:p-5 lg:p-8 flex items-center justify-center bg-navy designer-workspace-grid overflow-hidden relative min-h-[380px] sm:min-h-[460px] lg:min-h-[580px]">
           
           {isAnalyzing && (
             <div className="absolute inset-0 bg-navy/95 backdrop-blur-md z-50 flex flex-col items-center justify-center p-8 text-center">
@@ -1221,11 +1316,22 @@ export default function DesignerTool() {
               onMouseMove={handleMouseMove}
               onMouseUp={handleMouseUp}
               onMouseLeave={handleMouseUp}
-              className={`relative bg-navy border border-white/5 shadow-2xl max-w-full bg-contain bg-no-repeat bg-center ${tool === 'select' ? 'cursor-default' : 'cursor-crosshair'}`}
-              style={{ backgroundImage: `url(${blueprint})`, width: '800px', height: '550px' }}
+              onTouchStart={handleTouchStart}
+              onTouchMove={handleTouchMove}
+              onTouchEnd={handleTouchEnd}
+              onTouchCancel={handleTouchEnd}
+              className={`relative w-full max-w-[800px] aspect-[800/550] bg-navy border border-white/10 rounded-2xl shadow-2xl overflow-hidden select-none touch-none transition-all duration-200 ${tool === 'select' ? 'cursor-default' : 'cursor-crosshair'}`}
             >
+              {/* Blueprint Image Element - Fills exact 800:550 aspect ratio */}
+              <img 
+                src={blueprint} 
+                alt="Floorplan Blueprint" 
+                className="w-full h-full object-fill pointer-events-none select-none"
+                draggable={false}
+              />
+
               {/* Top Canvas Controls: Show/Hide Room Names & Show/Hide Radiators toggles */}
-              <div className="absolute top-3 right-3 z-30 flex items-center gap-2">
+              <div className="absolute top-2.5 right-2.5 sm:top-3 sm:right-3 z-30 flex items-center gap-1.5 sm:gap-2">
                 <button
                   type="button"
                   onClick={(e) => {
@@ -1235,7 +1341,7 @@ export default function DesignerTool() {
                       return !prev;
                     });
                   }}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold shadow-lg backdrop-blur-md transition-all cursor-pointer border ${
+                  className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl text-[11px] sm:text-xs font-bold shadow-lg backdrop-blur-md transition-all cursor-pointer border ${
                     showRoomNames && hiddenRoomIndices.length === 0
                       ? 'bg-amber text-navy border-amber hover:bg-amber-light shadow-amber/20' 
                       : showRoomNames
@@ -1245,8 +1351,8 @@ export default function DesignerTool() {
                 >
                   {showRoomNames ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
                   {showRoomNames 
-                    ? (lang === 'ku' ? 'ناوی ژوورەکان: چالاکە' : 'Room Names: ON') 
-                    : (lang === 'ku' ? 'ناوی ژوورەکان: نادیارە' : 'Room Names: OFF')}
+                    ? (lang === 'ku' ? 'ناوی ژوورەکان' : 'Room Names') 
+                    : (lang === 'ku' ? 'ناوی ژوورەکان' : 'Room Names')}
                 </button>
 
                 <button
@@ -1255,7 +1361,7 @@ export default function DesignerTool() {
                     e.stopPropagation();
                     setShowRadiators(prev => !prev);
                   }}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold shadow-lg backdrop-blur-md transition-all cursor-pointer border ${
+                  className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl text-[11px] sm:text-xs font-bold shadow-lg backdrop-blur-md transition-all cursor-pointer border ${
                     showRadiators 
                       ? 'bg-amber text-navy border-amber hover:bg-amber-light shadow-amber/20' 
                       : 'bg-navy-mid/90 text-white/70 border-white/20 hover:bg-white/10'
@@ -1263,13 +1369,13 @@ export default function DesignerTool() {
                 >
                   {showRadiators ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
                   {showRadiators 
-                    ? (lang === 'ku' ? 'دیاری ڕادێتەرەکان: چالاکە' : 'Show Radiators: ON') 
-                    : (lang === 'ku' ? 'دیاری ڕادێتەرەکان: نادیارە' : 'Show Radiators: OFF')}
+                    ? (lang === 'ku' ? 'شۆفاژەکان' : 'Radiators') 
+                    : (lang === 'ku' ? 'شۆفاژەکان' : 'Radiators')}
                 </button>
               </div>
 
               {/* Pipes Layer */}
-              <svg className="absolute inset-0 w-full h-full pointer-events-none z-0">
+              <svg viewBox="0 0 800 550" className="absolute inset-0 w-full h-full pointer-events-none z-0">
                 {pipes.map(pipe => (
                   <g key={pipe.id} className="group pointer-events-auto cursor-pointer" onClick={(e) => removePipe(pipe.id, e as unknown as MouseEvent)}>
                      <line 
@@ -1312,12 +1418,23 @@ export default function DesignerTool() {
                            e.stopPropagation();
                          } 
                        }}
-                       className={`absolute -translate-x-1/2 -translate-y-1/2 rounded-xl bg-navy-mid/95 backdrop-blur-sm border-2 flex items-center justify-center shadow-xl group pointer-events-auto transition-all w-9 h-9 ${
+                       onTouchStart={(e) => {
+                         if (tool === 'select') {
+                           setDraggingId(comp.id);
+                           setSelectedComponentId(comp.id);
+                           e.stopPropagation();
+                         }
+                       }}
+                       className={`absolute -translate-x-1/2 -translate-y-1/2 rounded-xl bg-navy-mid/95 backdrop-blur-sm border-2 flex items-center justify-center shadow-xl group pointer-events-auto transition-transform w-8 h-8 sm:w-9 sm:h-9 ${
                          tool === 'select' ? 'cursor-grab active:cursor-grabbing' : 'cursor-crosshair'
                        } ${
-                         isSelected ? 'ring-2 ring-amber border-amber shadow-[0_0_15px_rgba(255,214,0,0.6)] z-20 scale-105' : ''
+                         isSelected ? 'ring-2 ring-amber border-amber shadow-[0_0_15px_rgba(255,214,0,0.6)] z-20 scale-110' : ''
                        }`}
-                       style={{ left: comp.x, top: comp.y, borderColor: compBorderColor }}
+                       style={{ 
+                         left: `${(comp.x / 800) * 100}%`, 
+                         top: `${(comp.y / 550) * 100}%`, 
+                         borderColor: compBorderColor 
+                       }}
                      >
                        {spec.icon}
                        
@@ -1341,10 +1458,10 @@ export default function DesignerTool() {
 
             </div>
           ) : (
-            <div className="w-full max-w-[750px] h-[480px] bg-navy-light/40 flex items-center justify-center border border-dashed border-amber/30 rounded">
-               <div className="text-center text-muted p-8 max-w-[400px]">
-                  <ClipboardList className="w-14 h-14 mx-auto mb-4 text-amber/60" />
-                  <p className="text-[0.95rem]">
+            <div className="w-full max-w-[750px] aspect-[800/550] bg-navy-light/40 flex items-center justify-center border border-dashed border-amber/30 rounded-2xl p-6">
+               <div className="text-center text-muted p-4 max-w-[400px]">
+                  <ClipboardList className="w-12 h-12 sm:w-14 sm:h-14 mx-auto mb-3 text-amber/60" />
+                  <p className="text-xs sm:text-[0.95rem] leading-relaxed">
                     {lang === 'ku' ? 'تکایە نەخشەیەک بەرزبکەرەوە بۆ دەستپێکردنی کارکردن.' : 'Please drop or upload a blueprint floor plan image file in the sidebar to begin mapping infrastructure pipelines.'}
                   </p>
                </div>
@@ -1659,29 +1776,15 @@ export default function DesignerTool() {
                 <h4 className="text-lg font-semibold text-text-main font-display">
                   {lang === 'ku' ? 'شەن و کەو کردنی گەرمی ژوورەکان' : 'Estimated Room Heating Details'}
                 </h4>
-                <div className="flex items-center gap-2">
+                {isEditing && (
                   <button
-                    onClick={() => {
-                      if (analysisResult?.rooms) {
-                        const autoComps = autoGenerateRoomRadiators(analysisResult.rooms, components);
-                        setComponents(autoComps);
-                      }
-                    }}
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-amber hover:bg-amber-light text-navy font-bold text-xs rounded-lg transition-all shadow cursor-pointer"
+                    onClick={addNewRoom}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-amber/15 hover:bg-amber/25 text-amber text-xs rounded-lg border border-amber/30 transition-all font-mono self-start sm:self-auto"
                   >
-                    <RefreshCw className="w-3.5 h-3.5" />
-                    {lang === 'ku' ? 'داگرتنی شۆفاژ بۆ هەموو ژوورەکان' : 'Auto-Place Radiators'}
+                    <Plus className="w-3.5 h-3.5" />
+                    {lang === 'ku' ? 'زیادکردنی ژوور' : 'Add Room'}
                   </button>
-                  {isEditing && (
-                    <button
-                      onClick={addNewRoom}
-                      className="flex items-center gap-1.5 px-3 py-1.5 bg-amber/15 hover:bg-amber/25 text-amber text-xs rounded-lg border border-amber/30 transition-all font-mono"
-                    >
-                      <Plus className="w-3.5 h-3.5" />
-                      {lang === 'ku' ? 'زیادکردنی ژوور' : 'Add Room'}
-                    </button>
-                  )}
-                </div>
+                )}
               </div>
               
               <div className="overflow-x-auto">
