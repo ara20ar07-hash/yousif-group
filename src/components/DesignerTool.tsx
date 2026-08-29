@@ -1556,9 +1556,10 @@ export default function DesignerTool() {
               onTouchEnd={handleTouchEnd}
               onTouchCancel={handleTouchEnd}
               style={{
-                aspectRatio: `${blueprintDimensions.aspectRatio || (800 / 550)}`
+                aspectRatio: `${blueprintDimensions.aspectRatio || (800 / 550)}`,
+                touchAction: (draggingId || (tool === 'pipe' && isDrawing)) ? 'none' : 'pan-y'
               }}
-              className={`relative w-full ${blueprintDimensions.isPortrait ? 'max-w-[480px]' : 'max-w-[800px]'} bg-navy border border-white/10 rounded-2xl shadow-2xl overflow-hidden select-none touch-none transition-all duration-200 ${tool === 'select' ? 'cursor-default' : 'cursor-crosshair'}`}
+              className={`relative w-full ${blueprintDimensions.isPortrait ? 'max-w-[480px]' : 'max-w-[800px]'} bg-navy border border-white/10 rounded-2xl shadow-2xl overflow-hidden select-none ${(draggingId || (tool === 'pipe' && isDrawing)) ? 'touch-none' : 'touch-pan-y'} transition-all duration-200 ${tool === 'select' ? 'cursor-default' : 'cursor-crosshair'}`}
             >
               {/* Blueprint Image Element - Adapts to natural aspect ratio (portrait or landscape) */}
               <img 
@@ -1680,7 +1681,7 @@ export default function DesignerTool() {
                            e.stopPropagation();
                          }
                        }}
-                       className={`absolute rounded-xl bg-navy-mid/95 backdrop-blur-sm border-2 flex items-center justify-center shadow-xl group pointer-events-auto transition-shadow ${
+                       className={`absolute rounded-xl bg-navy-mid/95 backdrop-blur-sm border-2 flex items-center justify-center shadow-xl group pointer-events-auto touch-none transition-shadow ${
                          tool === 'select' ? 'cursor-grab active:cursor-grabbing' : 'cursor-crosshair'
                        } ${
                          isSelected ? 'ring-2 ring-amber border-amber shadow-[0_0_15px_rgba(255,214,0,0.6)] z-30' : 'z-10'
