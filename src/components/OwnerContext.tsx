@@ -411,13 +411,19 @@ export function OwnerProvider({ children }: { children: ReactNode }) {
           if (!records[serviceId]) {
             records[serviceId] = [];
           }
+          const folderId = data.id || snapshotDoc.id;
+
+          if (data.isDeleted) {
+            records[serviceId] = records[serviceId].filter((f) => f.id !== folderId);
+            return;
+          }
+
           const folderData = data as ProjectFolder;
-          const folderId = folderData.id || snapshotDoc.id;
           
           // Deduplicate or replace if already present
           const existingIdx = records[serviceId].findIndex((f) => f.id === folderId);
           if (existingIdx >= 0) {
-            records[serviceId][existingIdx] = { ...folderData, id: folderId };
+            records[serviceId][existingIdx] = { ...records[serviceId][existingIdx], ...folderData, id: folderId };
           } else {
             records[serviceId].unshift({ ...folderData, id: folderId });
           }
@@ -518,7 +524,7 @@ export function OwnerProvider({ children }: { children: ReactNode }) {
       ...folderData,
       id: folderId,
       date: new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
-      photos: []
+      photos: folderData.photos || []
     };
 
     try {
@@ -529,24 +535,58 @@ export function OwnerProvider({ children }: { children: ReactNode }) {
     } catch (err) {
       handleFirestoreError(err, OperationType.CREATE, `projects/${folderId}`);
     }
+
+    setCustomProjects((prev) => {
+      const currentList = prev[serviceId] || initialProjectsData[serviceId] || [];
+      return {
+        ...prev,
+        [serviceId]: [newFolder, ...currentList.filter(f => f.id !== folderId)]
+      };
+    });
   };
 
   const updateProjectFolder = async (serviceId: string, folderId: string, updated: Partial<ProjectFolder>) => {
+    const currentFolder = (customProjects[serviceId] || []).find((f) => f.id === folderId)
+      || (initialProjectsData[serviceId] || []).find((f) => f.id === folderId);
+
+    const mergedFolder = currentFolder 
+      ? { ...currentFolder, ...updated, serviceId, id: folderId }
+      : { ...updated, serviceId, id: folderId };
+
     try {
-      await setDoc(doc(db, 'projects', folderId), updated, { merge: true });
+      await setDoc(doc(db, 'projects', folderId), mergedFolder, { merge: true });
     } catch (err) {
       handleFirestoreError(err, OperationType.UPDATE, `projects/${folderId}`);
     }
+
+    setCustomProjects((prev) => {
+      const currentList = prev[serviceId] || initialProjectsData[serviceId] || [];
+      return {
+        ...prev,
+        [serviceId]: currentList.map((f) => {
+          if (f.id === folderId) {
+            return { ...f, ...updated };
+          }
+          return f;
+        })
+      };
+    });
   };
 
   const deleteProjectFolder = async (serviceId: string, folderId: string) => {
     try {
+      // Mark as deleted in Firestore and remove document
+      await setDoc(doc(db, 'projects', folderId), {
+        id: folderId,
+        serviceId,
+        isDeleted: true
+      }, { merge: true });
       await deleteDoc(doc(db, 'projects', folderId));
     } catch (err) {
       handleFirestoreError(err, OperationType.DELETE, `projects/${folderId}`);
     }
     setCustomProjects((prev) => {
-      const currentList = prev[serviceId] || [];
+      const currentList = prev[serviceId] || initialProjectsData[serviceId] || [];
       return {
         ...prev,
         [serviceId]: currentList.filter((f) => f.id !== folderId)
@@ -560,21 +600,37 @@ export function OwnerProvider({ children }: { children: ReactNode }) {
       url: photoUrl
     };
 
+    const currentFolder = (customProjects[serviceId] || []).find((f) => f.id === folderId)
+      || (initialProjectsData[serviceId] || []).find((f) => f.id === folderId);
+
+    const updatedPhotos = currentFolder ? [...(currentFolder.photos || []), newPhoto] : [newPhoto];
+
     try {
-      await updateDoc(doc(db, 'projects', folderId), {
-        photos: arrayUnion(newPhoto)
-      });
+      if (currentFolder) {
+        await setDoc(doc(db, 'projects', folderId), {
+          ...currentFolder,
+          serviceId,
+          id: folderId,
+          photos: updatedPhotos
+        }, { merge: true });
+      } else {
+        await setDoc(doc(db, 'projects', folderId), {
+          id: folderId,
+          serviceId,
+          photos: updatedPhotos
+        }, { merge: true });
+      }
     } catch (err) {
       handleFirestoreError(err, OperationType.UPDATE, `projects/${folderId}`);
     }
 
     setCustomProjects((prev) => {
-      const currentList = prev[serviceId] || [];
+      const currentList = prev[serviceId] || initialProjectsData[serviceId] || [];
       return {
         ...prev,
         [serviceId]: currentList.map((f) => {
           if (f.id === folderId) {
-            return { ...f, photos: [...f.photos, newPhoto] };
+            return { ...f, photos: updatedPhotos };
           }
           return f;
         })
@@ -583,21 +639,25 @@ export function OwnerProvider({ children }: { children: ReactNode }) {
   };
 
   const deletePhotoFromFolder = async (serviceId: string, folderId: string, photoId: string) => {
-    const folder = (customProjects[serviceId] || []).find((f) => f.id === folderId);
-    if (!folder) return;
+    const currentFolder = (customProjects[serviceId] || []).find((f) => f.id === folderId)
+      || (initialProjectsData[serviceId] || []).find((f) => f.id === folderId);
+    if (!currentFolder) return;
 
-    const remainingPhotos = folder.photos.filter((p) => p.id !== photoId);
+    const remainingPhotos = (currentFolder.photos || []).filter((p) => p.id !== photoId);
 
     try {
-      await updateDoc(doc(db, 'projects', folderId), {
+      await setDoc(doc(db, 'projects', folderId), {
+        ...currentFolder,
+        serviceId,
+        id: folderId,
         photos: remainingPhotos
-      });
+      }, { merge: true });
     } catch (err) {
       handleFirestoreError(err, OperationType.UPDATE, `projects/${folderId}`);
     }
 
     setCustomProjects((prev) => {
-      const currentList = prev[serviceId] || [];
+      const currentList = prev[serviceId] || initialProjectsData[serviceId] || [];
       return {
         ...prev,
         [serviceId]: currentList.map((f) => {

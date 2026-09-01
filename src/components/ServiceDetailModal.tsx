@@ -137,7 +137,7 @@ export default function ServiceDetailModal({ isOpen, onClose, initialServiceId }
   const service = servicesData.find(s => s.id === activeTab) || servicesData[0];
 
   // Resolve projects uploaded by the owner grouped in project folders
-  const activeProjects = (customProjects[activeTab] && customProjects[activeTab].length > 0)
+  const activeProjects = (customProjects[activeTab] !== undefined)
     ? customProjects[activeTab]
     : (initialProjectsData[activeTab] || []);
 

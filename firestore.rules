@@ -17,17 +17,17 @@ service cloud.firestore {
     }
 
     function isValidService(data) {
-      return data.id is string && data.id.size() <= 32 
-        && data.titleEn is string && data.titleEn.size() <= 200
-        && data.titleKu is string && data.titleKu.size() <= 200;
+      return (!('id' in data) || (data.id is string && data.id.size() <= 32))
+        && (!('titleEn' in data) || (data.titleEn is string && data.titleEn.size() <= 200))
+        && (!('titleKu' in data) || (data.titleKu is string && data.titleKu.size() <= 200));
     }
 
     function isValidProject(data) {
-      return data.id is string && data.id.size() <= 128
-        && data.serviceId is string && data.serviceId.size() <= 32
-        && data.titleEn is string && data.titleEn.size() <= 200
-        && data.titleKu is string && data.titleKu.size() <= 200
-        && data.photos is list && data.photos.size() <= 1000;
+      return (!('id' in data) || (data.id is string && data.id.size() <= 128))
+        && (!('serviceId' in data) || (data.serviceId is string && data.serviceId.size() <= 32))
+        && (!('titleEn' in data) || (data.titleEn is string && data.titleEn.size() <= 200))
+        && (!('titleKu' in data) || (data.titleKu is string && data.titleKu.size() <= 200))
+        && (!('photos' in data) || (data.photos is list && data.photos.size() <= 1000));
     }
 
     match /services/{serviceId} {

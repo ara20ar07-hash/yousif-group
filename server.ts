@@ -34,84 +34,82 @@ async function startServer() {
     };
   };
 
-  const BLUEPRINT_PROMPT = `You are an expert architectural engineer analyzing a floor plan blueprint. Your job is to read room dimensions and calculate underfloor heating requirements with extreme precision.
+  const BLUEPRINT_PROMPT = `You are an expert architectural engineer analyzing a floor plan blueprint. Your job is to read room dimensions and calculate underfloor heating requirements with extreme precision. You must read the ENTIRE floor plan holistically before finalizing any single room's dimensions — misreading one room's wall length is the most common failure mode, and the steps below exist specifically to catch that before it reaches the output.
 
-CRITICAL MANDATES & ROOM SEPARATION:
-- Extract all distinct living spaces, distinct bedrooms, and key functional zones.
-- DRESSING ROOMS & WALK-IN CLOSETS: If a Dressing Room ("جلگۆڕین" / "مەلبەس" / "Dressing" / "Closet" / "Walk-in Closet") is attached to or part of a Bedroom suite, COMBINE it directly into that Bedroom object (e.g. "Master Bedroom + Dressing" / "ژووری نووستنی سەرەکی + جلگۆڕین" or "Bedroom 1 + Dressing" / "ژووری نووستنی ١ + جلگۆڕین") and calculate the combined total area (Bedroom area + Dressing area). Do NOT leave dressing rooms as separate detached objects.
-- Distinct separate spaces like "Main Kitchen", "Auxiliary Kitchen", "Guest Room", "Living Room", "Dining Room", "Corridor / Hallway" MUST be separate objects.
+STEP 0 - ESTABLISH GROUND TRUTH (DO THIS FIRST, BEFORE READING INDIVIDUAL ROOMS):
+Locate the OVERALL exterior building dimensions, usually printed along the outside perimeter of the blueprint (e.g. a total width like "12.40m" along the bottom edge, a total length like "9.80m" along the side). Record these as exteriorWidth and exteriorLength. Calculate exteriorFootprintSqm = exteriorWidth x exteriorLength. This is your ground truth constraint that every room reading must be consistent with.
 
 STEP 1 - READ ROOM LABELS:
 Identify every room by its label written inside the room boundary. Labels may be in Kurdish (Sorani), Arabic, or English. Common labels:
-- "نوستن" / "ژووری نووستن" = Bedroom (e.g. Bedroom 1, Bedroom 2, Master Bedroom)
-- "جلگۆڕین" / "مەلبەس" / "Dressing" = Dressing Room / Closet (Merge into the corresponding attached bedroom suite)
+- "نوستن" / "ژووری نووستن" = Bedroom
 - "مەتبەخ" = Main Kitchen
 - "مساعد مەتبەخ" = Auxiliary Kitchen
 - "هۆڵ" / "هۆڵی دانیشتن" = Living Room / Hall
-- "میوان" / "ژووری میوان" = Guest Room
 - "کراوە" = Open Shaft / Courtyard
 - "توالیت" = Toilet
 - "حەمام" = Bathroom
 - "گراج" / "گەراج" = Garage
 - "کۆگا" = Storage
-- "مەمەڕ" / "ڕێڕەو" = Corridor / Hallway
+- "مەمەڕ" / "ڕێڕەو" = Corridor
 
 STEP 2 - READ DIMENSIONS:
-For each individual room, find the dimension numbers printed on or inside its boundary walls. These are usually in meters (e.g. 3.20, 4.60, 2.95). Read both width AND length for every room. If a dimension is unreadable, estimate conservatively based on adjacent rooms.
+For each room, find the dimension numbers printed on or inside its boundary walls. These are usually in meters (e.g. 3.20, 4.60, 2.95). Read both width AND length for every room. Pay close attention to digits that are commonly misread near room labels where text is smudged, small, or partially obscured — a "3" can be misread as "8", a "1" as "7". If a dimension is unclear or missing, state "unreadable" and estimate conservatively (use a smaller value, not larger).
 
 STEP 3 - CALCULATE AREA:
 For every room calculate: areaSqm = width x length
 Show the formula explicitly, e.g. "3.20m x 4.60m = 14.72 sqm"
 Never guess an area without showing the dimensional working.
 
-STEP 4 - DETERMINE HEATING:
+STEP 4 - CROSS-VALIDATION PASS (MANDATORY — do this before finalizing any output):
+1. SHARED WALL CHECK: For any two rooms that share a wall (adjacent in the layout), the shared wall length must match in both rooms' dimensions. If they don't match, re-read both rooms' wall dimension text directly from the image and use whichever value is more clearly legible. Do not average the two numbers — pick the correct one.
+2. FOOTPRINT SUM CHECK: Sum all room areaSqm values (interior rooms only). This total will be smaller than exteriorFootprintSqm due to wall thickness — expect it to land roughly 80-92% of exteriorFootprintSqm. If the sum falls outside that range, the largest and smallest rooms are suspect: re-examine their printed dimension digits specifically before finalizing.
+3. OUTLIER CHECK: Compare each room's area against other rooms of the same category (all Bedrooms together, all Toilets together, etc). If any single room's area deviates more than 60% from the median of its category, re-verify its dimension digits by looking again at the specific numbers printed in that room's boundary before accepting the value.
+4. Only finalize the JSON output after all three checks above have been performed.
+
+STEP 5 - DETERMINE HEATING:
 Rooms that get underfloor heating (isHeated = true):
-- Bedrooms, Living rooms, Guest rooms, Main Kitchens, Corridors/Hallways, Dining rooms
+- Bedrooms, Living rooms, Kitchens, Corridors
 
 Rooms excluded from underfloor heating (isHeated = false, loopCount = 0, heatingOutputRequiredKw = 0):
-- Bathrooms, Toilets, Bathroom Lobbies, Toilet Lobbies, Open shafts, Garages, Storage rooms, Auxiliary kitchens
+- Bathrooms, Toilets, Bathroom Lobbies, Toilet Lobbies, Lobbies adjacent to toilets/bathrooms, Open shafts, Garages, Storage rooms, Auxiliary kitchens
 
-STEP 5 - CALCULATE LOOPS:
+STEP 6 - CALCULATE LOOPS:
 For heated rooms only:
 - loopCount = ceil(areaSqm / 12)
 - Examples: 10 sqm = 1 loop, 12 sqm = 1 loop, 13 sqm = 2 loops, 24 sqm = 2 loops, 25 sqm = 3 loops
 - Minimum 1 loop per heated room
 
-STEP 6 - CALCULATE kW:
-- heatingOutputRequiredKw = areaSqm x 0.15 (for heated rooms only, 150 Watts per heated square meter)
+STEP 7 - CALCULATE kW:
+- heatingOutputRequiredKw = areaSqm x 0.17 (for heated rooms only, 170 Watts per heated square meter)
 - Round to 1 decimal place
-
-STEP 7 - ESTIMATE ROOM LOCATION (BOX):
-For each room, estimate its approximate bounding box percentages (0-100 scale) on the floor plan image:
-- x: percentage from left edge (0-100)
-- y: percentage from top edge (0-100)
-- width: room width percentage relative to image (0-100)
-- height: room height percentage relative to image (0-100)
 
 OUTPUT RULES:
 - totalAreaSqm = sum of ALL heated room areas (where isHeated is true)
-- recommendedBoilerKw = Nearest standard capacity from [9, 12, 16, 20, 32, 55] kW matching (totalAreaSqm x 0.15)
+- recommendedBoilerKw = (totalAreaSqm x 0.17) x 1.20, minimum 12kW, round up to nearest whole number
 - recommendedManifoldPorts = sum of all loopCount values
 - estimatedPipeSpacingCm = 15
 
 Respond ONLY with valid raw JSON in this exact structure:
 {
+  "exteriorWidth": 0,
+  "exteriorLength": 0,
+  "exteriorFootprintSqm": 0,
   "rooms": [
     {
-      "nameEn": "Bedroom 1",
-      "nameKu": "ژووری نووستنی ١",
+      "nameEn": "room name in English",
+      "nameKu": "room name in Kurdish",
       "areaSqm": 14.72,
-      "heatingOutputRequiredKw": 2.5,
+      "heatingOutputRequiredKw": 1.5,
       "loopCount": 2,
       "isHeated": true,
-      "formula": "3.20m x 4.60m = 14.72 sqm",
-      "box": { "x": 15, "y": 20, "width": 30, "height": 25 }
+      "formula": "3.20m x 4.60m = 14.72 sqm"
     }
   ],
   "totalAreaSqm": 0,
   "recommendedBoilerKw": 0,
   "recommendedManifoldPorts": 0,
   "estimatedPipeSpacingCm": 15,
+  "validationNotes": "list any rooms that were re-checked during cross-validation and why, or state 'No inconsistencies detected' if the initial read passed all checks",
   "calculatedSummaryEn": "detailed engineering summary",
   "calculatedSummaryKu": "پوختەی ئەندازیاری"
 }`;
