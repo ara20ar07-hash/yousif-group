@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 import { useState } from 'react';
+import { Analytics } from '@vercel/analytics/react';
 import Navbar from './components/Navbar';
 import Hero from './components/Hero';
 import Stats from './components/Stats';
@@ -40,6 +41,7 @@ export default function App() {
             onClose={() => setIsOwnerModalOpen(false)} 
           />
         </div>
+        <Analytics />
       </OwnerProvider>
     </LanguageProvider>
   );
